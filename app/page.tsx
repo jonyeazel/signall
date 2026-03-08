@@ -246,11 +246,16 @@ export default function Home() {
 
               <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
                 <h2 style={{ fontSize: "48px", fontWeight: 600, color: t.textPrimary, letterSpacing: "-0.03em", lineHeight: 1.1, margin: "0 0 16px 0" }}>{xEnv.name}</h2>
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "32px" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "20px" }}>
                   {xEnv.useCases.map((uc, j) => (
                     <div key={j} style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "16px", color: t.textSecondary }}>
                       <span style={{ color: GOLD, fontSize: "6px" }}>●</span>{uc}
                     </div>
+                  ))}
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "32px" }}>
+                  {xEnv.domains.map((d) => (
+                    <span key={d} style={{ fontSize: "11px", color: t.textTertiary, background: t.bg, padding: "4px 10px", borderRadius: "6px", border: `1px solid ${t.border}` }}>{d}</span>
                   ))}
                 </div>
 
@@ -283,36 +288,21 @@ export default function Home() {
 
       {/* --- Main content --- */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "24px 32px 0", overflow: "hidden" }}>
-        {/* Top bar: brand + stats */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexShrink: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <span style={{ fontSize: "17px", fontWeight: 700, color: t.accent }}>[~]</span>
-            <span style={{ fontSize: "14px", fontWeight: 600, color: t.textPrimary }}>Signall</span>
-          </div>
-          {completedCount > 0 && (
-            <div style={{ display: "flex", gap: "12px", alignItems: "baseline" }}>
-              <span style={{ fontSize: "18px", fontWeight: 600, color: t.textPrimary }}>{avgEfficiency}%</span>
-              <span style={{ fontSize: "10px", color: t.textTertiary }}>{completedCount}/10</span>
-            </div>
-          )}
-        </div>
-
         {/* Content: headline + body + cards */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", gap: "24px", minHeight: 0 }}>
           {/* Hero */}
           <div style={{ textAlign: "center", maxWidth: "640px" }}>
             <h1 style={{ fontSize: "38px", fontWeight: 600, color: t.textPrimary, letterSpacing: "-0.03em", lineHeight: 1.15, margin: "0 0 12px 0" }}>
-              Train AI agents that <span style={{ color: t.accent }}>think</span> before they <span style={{ color: t.accent }}>act</span>
+              The best agents are <span style={{ color: t.accent }}>generalists</span>.
             </h1>
             <p style={{ fontSize: "15px", lineHeight: 1.6, color: t.textSecondary, margin: 0 }}>
-              Your agents train here. Pick a skill. Watch the learning curve climb.
+              You already know specialists hit a ceiling. This is where your agents learn the 10 skills that let them work across any problem — not just the one they were built for.
             </p>
           </div>
 
           {/* Card grid */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "10px", width: "100%", maxWidth: "920px" }}>
             {ENVIRONMENTS.map((env, i) => {
-              const envScore = scores[env.id];
               const group = ENV_GROUPS.find((g) => g.envs.includes(env));
               return (
                 <div
@@ -338,12 +328,13 @@ export default function Home() {
                       <div style={{ fontSize: "9px", color: GOLD, letterSpacing: "0.04em", textTransform: "uppercase" }}>{group?.label}</div>
                     </div>
                   </div>
-                  <div style={{ fontSize: "10px", color: t.textTertiary, lineHeight: 1.4, marginTop: "8px", flex: 1 }}>
+                  <div style={{ fontSize: "10px", color: t.textTertiary, lineHeight: 1.4, marginTop: "8px" }}>
                     {env.capability}
                   </div>
-                  <div style={{ display: "flex", alignItems: "baseline", gap: "8px", marginTop: "8px" }}>
-                    <div style={{ fontSize: "18px", fontWeight: 600, color: t.accent, letterSpacing: "-0.02em" }}>{envScore?.best ?? 0}%</div>
-                    <div style={{ fontSize: "10px", color: t.textTertiary }}>{envScore?.attempts ?? 0} runs</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "3px", marginTop: "auto", paddingTop: "8px" }}>
+                    {env.domains.map((d) => (
+                      <span key={d} style={{ fontSize: "8px", color: t.textSecondary, background: t.panelBg, padding: "2px 6px", borderRadius: "4px", letterSpacing: "0.02em" }}>{d}</span>
+                    ))}
                   </div>
                 </div>
               );
@@ -628,6 +619,67 @@ async with GenericEnvClient(
         print(result.reward)`}
               </pre>
             </div>
+
+            {/* LLM Training */}
+            <div style={{ borderTop: `1px solid ${t.border}`, paddingTop: "20px", marginTop: "20px" }}>
+              <div style={{ fontSize: "9px", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: GOLD, marginBottom: "10px" }}>LLM Fine-tuning</div>
+              <div style={{ fontSize: "11px", color: t.textSecondary, marginBottom: "12px", lineHeight: 1.5 }}>
+                Train a language model to play this environment using GRPO reinforcement learning. The model receives live rewards from this API during training.
+              </div>
+              <div style={{
+                display: "flex", flexDirection: "column", gap: "8px",
+                padding: "14px 16px", background: "#F5F3EF", border: `1px solid ${t.border}`, borderRadius: "10px",
+                marginBottom: "12px",
+              }}>
+                {[
+                  { label: "Model", value: "Qwen2.5-0.5B-Instruct" },
+                  { label: "Method", value: "Unsloth LoRA + TRL GRPO" },
+                  { label: "Reward", value: "Live MCP → normalized [0, 1]" },
+                  { label: "Runtime", value: "Colab free tier (T4 GPU)" },
+                ].map((row) => (
+                  <div key={row.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: "10px", color: t.textTertiary }}>{row.label}</span>
+                    <span style={{ fontSize: "10px", fontWeight: 500, color: t.textPrimary }}>{row.value}</span>
+                  </div>
+                ))}
+              </div>
+              <pre style={{
+                fontSize: "10px", lineHeight: 1.6, color: "#3D3D3A",
+                background: "#F5F3EF", border: `1px solid ${t.border}`, borderRadius: "8px",
+                padding: "14px 16px", margin: 0, overflow: "auto",
+                fontFamily: "var(--font-mono, monospace)",
+              }}>
+{`from unsloth import FastLanguageModel
+from trl import GRPOConfig, GRPOTrainer
+
+model, tok = FastLanguageModel.from_pretrained(
+    "unsloth/Qwen2.5-0.5B-Instruct-bnb-4bit",
+    max_seq_length=512, load_in_4bit=True,
+)
+model = FastLanguageModel.get_peft_model(
+    model, r=8, lora_alpha=16,
+    use_gradient_checkpointing="unsloth",
+)
+
+async def reward_func(completions, **kw):
+    # Calls live HF Space MCP for each action
+    return [pull_arm(parse(c)) for c in completions]
+
+trainer = GRPOTrainer(
+    model=model, processing_class=tok,
+    reward_funcs=[format_reward, reward_func],
+    args=GRPOConfig(
+        num_generations=4, beta=0.0,
+        max_completion_length=64,
+    ),
+    train_dataset=prompts,
+)
+trainer.train()`}
+              </pre>
+              <div style={{ fontSize: "10px", color: t.textTertiary, marginTop: "10px", lineHeight: 1.4 }}>
+                Full notebook: <span style={{ fontFamily: "var(--font-mono, monospace)", color: t.textSecondary }}>train_llm_agent.ipynb</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -807,6 +859,34 @@ async with GenericEnvClient(
                     })}
                   </div>
                 )}
+
+                {/* LLM Fine-tuning */}
+                <div style={{ background: t.bg, border: `1px solid ${t.border}`, borderRadius: "10px", padding: "12px 14px" }}>
+                  <div style={{ fontSize: "8px", fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase", color: t.textTertiary, marginBottom: "4px" }}>LLM fine-tuning</div>
+                  <div style={{ fontSize: "9px", color: t.textTertiary, marginBottom: "8px", lineHeight: 1.4 }}>
+                    Beyond epsilon-greedy: fine-tune a language model on this environment using reinforcement learning from live API rewards.
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                    {[
+                      { label: "Model", value: "Qwen2.5-0.5B" },
+                      { label: "LoRA", value: "Unsloth (4-bit, r=8)" },
+                      { label: "Trainer", value: "TRL GRPOTrainer" },
+                      { label: "Reward", value: "Live HF Space MCP" },
+                      { label: "Runtime", value: "Colab free tier (T4)" },
+                    ].map((row) => (
+                      <div key={row.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontSize: "9px", color: t.textTertiary }}>{row.label}</span>
+                        <span style={{ fontSize: "9px", fontWeight: 500, color: t.textPrimary }}>{row.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{
+                    marginTop: "10px", paddingTop: "8px", borderTop: `1px solid ${t.border}`,
+                    fontSize: "9px", color: t.textTertiary, lineHeight: 1.4,
+                  }}>
+                    <span style={{ fontFamily: "var(--font-mono, monospace)", color: t.textSecondary, fontSize: "9px" }}>train_llm_agent.ipynb</span>
+                  </div>
+                </div>
               </div>
             );
           })()}

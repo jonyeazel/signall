@@ -77,6 +77,13 @@ async with BanditEnv(base_url="http://localhost:8000") as client:
         result = await client.step(BanditAction(source_id=best_arm))
 ```
 
+### Train an LLM agent (Colab)
+The included [`train_llm_agent.ipynb`](train_llm_agent.ipynb) notebook fine-tunes a small LLM to play the Bandit environment using **Unsloth** (LoRA) and **HF TRL** (GRPO). It runs on Colab free tier (T4 GPU) and calls the live HuggingFace Space API for reward signal.
+
+```
+Unsloth (Qwen2.5-0.5B + LoRA) → TRL GRPOTrainer → Live OpenEnv API rewards
+```
+
 ## Live on HuggingFace
 
 All 10 environments are deployed:

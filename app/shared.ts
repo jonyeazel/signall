@@ -105,6 +105,7 @@ export type EnvDef = {
   path: string;
   station?: string; // legacy, kept for compatibility
   useCases: [string, string, string];
+  domains: string[];
 };
 
 export type EnvGroup = {
@@ -116,26 +117,26 @@ export const ENV_GROUPS: EnvGroup[] = [
   {
     label: "Foundation",
     envs: [
-      { id: "bandit", name: "Explore vs Exploit", capability: "When to try new things vs stick with what works", path: "/bandit", useCases: ["A/B test optimization at scale", "Ad spend across channels", "Product recommendation tuning"] },
-      { id: "sequence", name: "Pattern Match", capability: "Find the rule in the data", path: "/sequence", useCases: ["Sales demand forecasting", "Price trend prediction", "Inventory restocking signals"] },
-      { id: "map", name: "Navigate Blind", capability: "Plan a path when you can't see the whole map", path: "/map-nav", useCases: ["Supply chain routing", "Delivery path optimization", "Market entry navigation"] },
-      { id: "auction", name: "Spend Smart", capability: "Buy the right things with a limited budget", path: "/auction", useCases: ["Ad bidding budget allocation", "Procurement under constraints", "Portfolio investment sizing"] },
+      { id: "bandit", name: "Explore vs Exploit", capability: "Try new things or stick with what works?", path: "/bandit", useCases: ["A/B testing at scale", "Ad spend across channels", "Product recommendations"], domains: ["Decisions", "Probability", "Pricing"] },
+      { id: "sequence", name: "Pattern Match", capability: "Spot the pattern. Predict what comes next.", path: "/sequence", useCases: ["Demand forecasting", "Price trends", "Restocking signals"], domains: ["Data analysis", "Forecasting", "Statistics"] },
+      { id: "map", name: "Navigate Blind", capability: "Find a path when you can't see the whole map.", path: "/map-nav", useCases: ["Supply chain routing", "Delivery optimization", "Market entry"], domains: ["Planning", "Logistics", "Systems thinking"] },
+      { id: "auction", name: "Spend Smart", capability: "Get the most value out of a limited budget.", path: "/auction", useCases: ["Ad bidding", "Procurement", "Portfolio sizing"], domains: ["Economics", "Optimization", "Budgeting"] },
     ],
   },
   {
     label: "Reasoning",
     envs: [
-      { id: "tower", name: "Order of Ops", capability: "Figure out what has to happen first", path: "/tower", useCases: ["Product launch coordination", "CI/CD pipeline ordering", "Campaign task sequencing"] },
-      { id: "signal", name: "Spot the Spike", capability: "Find real signals hidden in noise", path: "/signal", useCases: ["Fraud transaction detection", "Analytics anomaly alerts", "Real vs bot traffic filtering"] },
-      { id: "negotiation", name: "Read the Room", capability: "Figure out what the other side wants", path: "/negotiation", useCases: ["Vendor contract negotiation", "Dynamic pricing strategy", "Customer retention offers"] },
-      { id: "repair", name: "Find the Break", capability: "Diagnose which part of the system failed", path: "/repair", useCases: ["Conversion funnel debugging", "Revenue drop diagnosis", "System outage triage"] },
+      { id: "tower", name: "Order of Ops", capability: "Figure out what needs to happen first.", path: "/tower", useCases: ["Launch coordination", "Pipeline ordering", "Task sequencing"], domains: ["Project management", "Sequencing", "Operations"] },
+      { id: "signal", name: "Spot the Spike", capability: "Find the real signal hiding in the noise.", path: "/signal", useCases: ["Fraud detection", "Anomaly alerts", "Bot filtering"], domains: ["Anomaly detection", "Security", "Quality"] },
+      { id: "negotiation", name: "Read the Room", capability: "Figure out what the other side really wants.", path: "/negotiation", useCases: ["Contract negotiation", "Dynamic pricing", "Retention offers"], domains: ["Game theory", "Psychology", "Persuasion"] },
+      { id: "repair", name: "Find the Break", capability: "Figure out what broke and why.", path: "/repair", useCases: ["Funnel debugging", "Revenue diagnosis", "Outage triage"], domains: ["Root cause analysis", "Debugging", "Diagnostics"] },
     ],
   },
   {
     label: "Mastery",
     envs: [
-      { id: "transfer", name: "Apply What Works", capability: "Market expansion & domain adaptation", path: "/transfer", useCases: ["New market expansion", "Cross-vertical strategy reuse", "Product line extension"] },
-      { id: "meta", name: "Know Your Limits", capability: "Risk management & confidence calibration", path: "/metacognition", useCases: ["Risk-adjusted decision making", "When to escalate to humans", "Model confidence scoring"] },
+      { id: "transfer", name: "Apply What Works", capability: "Use what worked before in a new situation.", path: "/transfer", useCases: ["New market entry", "Cross-industry reuse", "Product expansion"], domains: ["Pattern transfer", "Strategy", "Adaptation"] },
+      { id: "meta", name: "Know Your Limits", capability: "Know when to be confident and when to ask for help.", path: "/metacognition", useCases: ["Risk-adjusted decisions", "Human escalation", "Confidence scoring"], domains: ["Self-awareness", "Risk", "Calibration"] },
     ],
   },
 ];
