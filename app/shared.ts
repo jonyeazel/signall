@@ -1,13 +1,13 @@
 // --- Palette ---
 
 export const C = {
-  bg: "#0E0E10",
-  surface: "#1C1C1F",
-  border: "#2A2A2E",
-  borderActive: "#3A3A3E",
-  textPrimary: "#E8E8E3",
-  textSecondary: "#9A9A96",
-  textTertiary: "#5A5A58",
+  bg: "#F5F3EF",
+  surface: "#FFFFFF",
+  border: "#E4E0DA",
+  borderActive: "#C8C4BC",
+  textPrimary: "#191919",
+  textSecondary: "#6B6B68",
+  textTertiary: "#9B9B98",
   accent: "#E05A00",
 } as const;
 
@@ -134,8 +134,8 @@ export const ENV_GROUPS: EnvGroup[] = [
   {
     label: "Mastery",
     envs: [
-      { id: "transfer", name: "Apply What Works", capability: "Use a solution from one domain in another", path: "/transfer", useCases: ["New market expansion", "Cross-vertical strategy reuse", "Product line extension"] },
-      { id: "meta", name: "Know Your Limits", capability: "Know when you're confident and when you're guessing", path: "/metacognition", useCases: ["Risk-adjusted decision making", "When to escalate to humans", "Model confidence scoring"] },
+      { id: "transfer", name: "Apply What Works", capability: "Market expansion & domain adaptation", path: "/transfer", useCases: ["New market expansion", "Cross-vertical strategy reuse", "Product line extension"] },
+      { id: "meta", name: "Know Your Limits", capability: "Risk management & confidence calibration", path: "/metacognition", useCases: ["Risk-adjusted decision making", "When to escalate to humans", "Model confidence scoring"] },
     ],
   },
 ];

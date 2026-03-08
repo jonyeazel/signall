@@ -3,76 +3,119 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { Shell, MetricCard, LessonCard } from "../shell";
 import { C, card, buttonStyle, ghostButton, saveScore, isDemoMode, getNextDemoPath, isAgentEmbed } from "../shared";
-import { ArrowRight, RotateCcw, Play } from "lucide-react";
+import { ArrowRight, RotateCcw, Play, Check, X } from "lucide-react";
 
 type Phase = "intro" | "playing" | "reveal";
 type GamePhase = 1 | 2;
+type Outcome = "Win" | "Loss";
 
-function countInversions(arr: number[]): number {
-  let count = 0;
-  for (let i = 0; i < arr.length; i++) {
-    for (let j = i + 1; j < arr.length; j++) {
-      if (arr[i] > arr[j]) count++;
-    }
-  }
-  return count;
+interface DataPoint {
+  featureA: number;
+  featureB: number;
+  outcome: Outcome;
 }
 
-function generatePermutation(): number[] {
-  const arr = [0, 1, 2, 3];
-  // Fisher-Yates shuffle
-  for (let i = arr.length - 1; i > 0; i--) {
+interface TransferDataPoint {
+  featureA: number;
+  featureB: number;
+  outcome: Outcome;
+  prediction?: Outcome;
+}
+
+// Generate a random threshold between 4 and 7
+function generateThreshold(): number {
+  return Math.floor(Math.random() * 4) + 4; // 4, 5, 6, or 7
+}
+
+// Generate Phase 1 data points with the rule: Feature A > threshold = Win
+function generatePhase1Data(threshold: number): DataPoint[] {
+  const data: DataPoint[] = [];
+
+  // Ensure we have good coverage of both outcomes
+  // 3 wins (above threshold) and 3 losses (at or below threshold)
+  const wins = [threshold + 1, threshold + 2, threshold + 3].slice(0, 3);
+  const losses = [threshold - 1, threshold, threshold - 2].filter(v => v >= 1).slice(0, 3);
+
+  // Fill remaining losses if needed
+  while (losses.length < 3) {
+    const val = Math.floor(Math.random() * (threshold)) + 1;
+    if (!losses.includes(val)) losses.push(val);
+  }
+
+  wins.forEach(a => {
+    data.push({
+      featureA: Math.min(10, a),
+      featureB: Math.floor(Math.random() * 10) + 1,
+      outcome: "Win"
+    });
+  });
+
+  losses.forEach(a => {
+    data.push({
+      featureA: Math.max(1, a),
+      featureB: Math.floor(Math.random() * 10) + 1,
+      outcome: "Loss"
+    });
+  });
+
+  // Shuffle
+  for (let i = data.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  // Ensure not already sorted
-  if (arr.every((v, i) => v === i)) {
-    [arr[0], arr[1]] = [arr[1], arr[0]];
-  }
-  return arr;
-}
-
-function isSorted(arr: number[]): boolean {
-  return arr.every((v, i) => v === i);
-}
-
-const LETTERS = ["A", "B", "C", "D"];
-const NUMBERS = ["1", "2", "3", "4"];
-
-// --- Transfer learning agent ---
-
-// Computes the optimal sequence of adjacent swaps to sort the array
-function computeOptimalSwapSequence(arr: number[]): number[] {
-  const swaps: number[] = [];
-  const working = [...arr];
-
-  // Bubble sort approach - always finds adjacent swaps
-  for (let i = 0; i < working.length; i++) {
-    for (let j = 0; j < working.length - 1 - i; j++) {
-      if (working[j] > working[j + 1]) {
-        [working[j], working[j + 1]] = [working[j + 1], working[j]];
-        swaps.push(j);
-      }
-    }
+    [data[i], data[j]] = [data[j], data[i]];
   }
 
-  return swaps;
+  return data;
 }
+
+// Generate Phase 2 data points (test data)
+function generatePhase2Data(threshold: number): TransferDataPoint[] {
+  const data: TransferDataPoint[] = [];
+
+  // 2 wins, 2 losses to test
+  const wins = [threshold + 1, threshold + Math.floor(Math.random() * 3) + 1];
+  const losses = [threshold, threshold - Math.floor(Math.random() * 2) - 1];
+
+  wins.forEach(a => {
+    data.push({
+      featureA: Math.min(10, a),
+      featureB: Math.floor(Math.random() * 10) + 1,
+      outcome: "Win"
+    });
+  });
+
+  losses.forEach(a => {
+    data.push({
+      featureA: Math.max(1, a),
+      featureB: Math.floor(Math.random() * 10) + 1,
+      outcome: "Loss"
+    });
+  });
+
+  // Shuffle
+  for (let i = data.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [data[i], data[j]] = [data[j], data[i]];
+  }
+
+  return data;
+}
+
+// Phase 1 labels
+const PHASE1_LABELS = { featureA: "Feature A", featureB: "Feature B" };
+// Phase 2 labels (different surface, same structure)
+const PHASE2_LABELS = { featureA: "Score", featureB: "Speed" };
 
 export default function TransferPage() {
   const [phase, setPhase] = useState<Phase>("intro");
   const [gamePhase, setGamePhase] = useState<GamePhase>(1);
-  const [initialPermutation, setInitialPermutation] = useState<number[]>([]);
-  const [currentArrangement, setCurrentArrangement] = useState<number[]>([]);
-  const [moveCount, setMoveCount] = useState(0);
-  const [phase1Moves, setPhase1Moves] = useState(0);
-  const [phase2Moves, setPhase2Moves] = useState(0);
-  const [optimalMoves, setOptimalMoves] = useState(0);
+  const [threshold, setThreshold] = useState<number>(5);
+  const [phase1Data, setPhase1Data] = useState<DataPoint[]>([]);
+  const [phase2Data, setPhase2Data] = useState<TransferDataPoint[]>([]);
+  const [currentPredictionIndex, setCurrentPredictionIndex] = useState(0);
   const [agentMode, setAgentMode] = useState(false);
-  const [phase1SwapSequence, setPhase1SwapSequence] = useState<number[]>([]);
-  const [selectedSwap, setSelectedSwap] = useState<number | null>(null);
   const [demoMode, setDemoMode] = useState(false);
   const [agentEmbed, setAgentEmbed] = useState(false);
+  const [agentLearnedThreshold, setAgentLearnedThreshold] = useState<number | null>(null);
   const agentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Check demo mode on mount
@@ -109,129 +152,111 @@ export default function TransferPage() {
     }
   }, [demoMode, phase]);
 
-  const efficiency = useMemo(() => {
-    if (phase2Moves === 0) return 0;
-    return Math.round(Math.min(100, (optimalMoves / phase2Moves) * 100));
-  }, [optimalMoves, phase2Moves]);
+  // Agent learns threshold from Phase 1 data
+  const learnThreshold = useCallback((data: DataPoint[]): number => {
+    // Find the threshold by analyzing wins vs losses
+    const wins = data.filter(d => d.outcome === "Win").map(d => d.featureA);
+    const losses = data.filter(d => d.outcome === "Loss").map(d => d.featureA);
 
-  const improvement = useMemo(() => {
-    return phase1Moves - phase2Moves;
-  }, [phase1Moves, phase2Moves]);
+    const minWin = Math.min(...wins);
+    const maxLoss = Math.max(...losses);
 
-  // Agent auto-play
+    // The threshold is the value where maxLoss <= threshold < minWin
+    return maxLoss;
+  }, []);
+
+  // Agent auto-play in Phase 2
   useEffect(() => {
-    if (!agentMode || phase !== "playing") return;
-    if (isSorted(currentArrangement)) return;
+    if (!agentMode || phase !== "playing" || gamePhase !== 2) return;
+    if (currentPredictionIndex >= phase2Data.length) return;
 
     agentTimerRef.current = setTimeout(() => {
-      let swapIndex: number;
+      const learned = agentLearnedThreshold ?? threshold;
+      const currentPoint = phase2Data[currentPredictionIndex];
+      const prediction: Outcome = currentPoint.featureA > learned ? "Win" : "Loss";
 
-      if (gamePhase === 1) {
-        // Phase 1: compute optimal swap sequence and use it
-        const optimalSequence = computeOptimalSwapSequence(currentArrangement);
-        if (optimalSequence.length > 0) {
-          swapIndex = optimalSequence[0];
-        } else {
-          return;
-        }
-      } else {
-        // Phase 2: use the recorded sequence from phase 1
-        // The agent "remembers" the structure and applies the same pattern
-        const optimalSequence = computeOptimalSwapSequence(currentArrangement);
-        if (optimalSequence.length > 0) {
-          swapIndex = optimalSequence[0];
-        } else {
-          return;
-        }
-      }
-
-      setSelectedSwap(swapIndex);
-
-      // Brief pause to show selection, then swap
-      setTimeout(() => {
-        const newArr = [...currentArrangement];
-        [newArr[swapIndex], newArr[swapIndex + 1]] = [newArr[swapIndex + 1], newArr[swapIndex]];
-        setCurrentArrangement(newArr);
-        setMoveCount((c) => c + 1);
-
-        // Record the swap in phase 1
-        if (gamePhase === 1) {
-          setPhase1SwapSequence((prev) => [...prev, swapIndex]);
-        }
-
-        setSelectedSwap(null);
-      }, 200);
-    }, 400);
+      makePrediction(prediction);
+    }, 800);
 
     return () => {
       if (agentTimerRef.current) clearTimeout(agentTimerRef.current);
     };
-  }, [agentMode, phase, currentArrangement, gamePhase]);
+  }, [agentMode, phase, gamePhase, currentPredictionIndex, phase2Data, agentLearnedThreshold, threshold]);
 
-  // Check for completion
+  // Auto-transition from Phase 1 to Phase 2 after delay
   useEffect(() => {
-    if (phase !== "playing") return;
-    if (!isSorted(currentArrangement)) return;
-
-    // Add a small delay to show the final state
-    const completionTimer = setTimeout(() => {
-      if (gamePhase === 1) {
-        setPhase1Moves(moveCount);
-        // Reset for phase 2 with same permutation
-        setCurrentArrangement([...initialPermutation]);
-        setMoveCount(0);
+    if (phase === "playing" && gamePhase === 1) {
+      const timer = setTimeout(() => {
+        // Agent learns the threshold
+        if (agentMode) {
+          const learned = learnThreshold(phase1Data);
+          setAgentLearnedThreshold(learned);
+        }
         setGamePhase(2);
-      } else {
-        setPhase2Moves(moveCount);
-        const eff = Math.round(Math.min(100, (optimalMoves / Math.max(1, moveCount)) * 100));
-        saveScore("transfer", eff);
-        setPhase("reveal");
-      }
-    }, agentMode ? 400 : 0);
+      }, agentMode ? 2500 : 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [phase, gamePhase, agentMode, phase1Data, learnThreshold]);
 
-    return () => clearTimeout(completionTimer);
-  }, [currentArrangement, gamePhase, moveCount, initialPermutation, optimalMoves, phase, agentMode]);
+  const correctPredictions = useMemo(() => {
+    return phase2Data.filter(d => d.prediction === d.outcome).length;
+  }, [phase2Data]);
+
+  const efficiency = useMemo(() => {
+    if (phase2Data.length === 0) return 0;
+    const completed = phase2Data.filter(d => d.prediction !== undefined).length;
+    if (completed === 0) return 0;
+    return Math.round((correctPredictions / phase2Data.length) * 100);
+  }, [phase2Data, correctPredictions]);
 
   const handleBegin = useCallback((withAgent: boolean = false) => {
-    const perm = generatePermutation();
-    setInitialPermutation(perm);
-    setCurrentArrangement([...perm]);
-    setOptimalMoves(countInversions(perm));
-    setMoveCount(0);
-    setPhase1Moves(0);
-    setPhase2Moves(0);
-    setGamePhase(1);
+    const t = generateThreshold();
+    const p1 = generatePhase1Data(t);
+    const p2 = generatePhase2Data(t);
+
+    setThreshold(t);
+    setPhase1Data(p1);
+    setPhase2Data(p2);
+    setCurrentPredictionIndex(0);
     setAgentMode(withAgent);
-    setPhase1SwapSequence([]);
-    setSelectedSwap(null);
+    setAgentLearnedThreshold(null);
+    setGamePhase(1);
     setPhase("playing");
   }, []);
 
-  const swap = useCallback(
-    (index: number) => {
-      if (agentMode) return;
-      if (index >= currentArrangement.length - 1) return;
-      const newArr = [...currentArrangement];
-      [newArr[index], newArr[index + 1]] = [newArr[index + 1], newArr[index]];
-      setCurrentArrangement(newArr);
-      setMoveCount((c) => c + 1);
-    },
-    [currentArrangement, agentMode]
-  );
+  const makePrediction = useCallback((prediction: Outcome) => {
+    if (currentPredictionIndex >= phase2Data.length) return;
 
-  const getDisplay = (value: number): string => {
-    if (gamePhase === 1) {
-      return LETTERS[value];
-    }
-    return NUMBERS[value];
-  };
+    setPhase2Data(prev => {
+      const updated = [...prev];
+      updated[currentPredictionIndex] = { ...updated[currentPredictionIndex], prediction };
+      return updated;
+    });
 
-  const getTargetDisplay = (): string => {
-    if (gamePhase === 1) {
-      return "A B C D";
+    const nextIndex = currentPredictionIndex + 1;
+    setCurrentPredictionIndex(nextIndex);
+
+    // Check if all predictions made
+    if (nextIndex >= phase2Data.length) {
+      setTimeout(() => {
+        const correct = phase2Data.filter((d, i) => {
+          const pred = i === currentPredictionIndex ? prediction : d.prediction;
+          return pred === d.outcome;
+        }).length + (prediction === phase2Data[currentPredictionIndex].outcome ? 0 : 0);
+
+        // Recalculate with final prediction
+        const finalData = [...phase2Data];
+        finalData[currentPredictionIndex] = { ...finalData[currentPredictionIndex], prediction };
+        const finalCorrect = finalData.filter(d => d.prediction === d.outcome).length;
+        const eff = Math.round((finalCorrect / finalData.length) * 100);
+
+        saveScore("transfer", eff);
+        setPhase("reveal");
+      }, agentMode ? 600 : 300);
     }
-    return "1 2 3 4";
-  };
+  }, [currentPredictionIndex, phase2Data, agentMode]);
+
+  const getLabels = () => gamePhase === 1 ? PHASE1_LABELS : PHASE2_LABELS;
 
   if (phase === "intro") {
     return (
@@ -246,8 +271,7 @@ export default function TransferPage() {
               marginBottom: "24px",
             }}
           >
-            Sort elements into the correct order using adjacent swaps only.
-            Click between two elements to swap them.
+            Study the training data to find the hidden pattern. Then apply what you learned to predict outcomes in a new domain.
           </p>
           <p
             style={{
@@ -258,8 +282,7 @@ export default function TransferPage() {
               marginBottom: "24px",
             }}
           >
-            You will complete two phases with different representations. The
-            underlying structure is identical—recognizing this pattern is key.
+            The surface details will change but the underlying structure transfers. Recognize deep patterns to succeed.
           </p>
           <p
             style={{
@@ -270,8 +293,7 @@ export default function TransferPage() {
               marginBottom: "32px",
             }}
           >
-            Your performance in phase 2 reveals whether you transferred learning
-            from phase 1.
+            Your score depends on correct predictions in the transfer phase.
           </p>
           <div style={{ display: "flex", gap: "8px" }}>
             <button style={buttonStyle} onClick={() => handleBegin(false)}>
@@ -289,6 +311,8 @@ export default function TransferPage() {
   }
 
   if (phase === "playing") {
+    const labels = getLabels();
+
     return (
       <Shell env="The Transfer">
         <div
@@ -296,7 +320,7 @@ export default function TransferPage() {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            marginBottom: "32px",
+            marginBottom: "24px",
           }}
         >
           <span
@@ -309,156 +333,184 @@ export default function TransferPage() {
             {agentMode && (
               <span style={{ color: C.accent, marginRight: "8px" }}>Agent</span>
             )}
-            Phase {gamePhase}: {gamePhase === 1 ? "Letters" : "Numbers"}
+            Phase {gamePhase}: {gamePhase === 1 ? "Learn" : "Transfer"}
           </span>
-          <span
-            style={{
-              fontSize: "13px",
-              color: C.textTertiary,
-            }}
-          >
-            Moves: {moveCount}
-          </span>
+          {gamePhase === 2 && (
+            <span
+              style={{
+                fontSize: "13px",
+                color: C.textTertiary,
+              }}
+            >
+              {currentPredictionIndex} / {phase2Data.length} predicted
+            </span>
+          )}
         </div>
 
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "0",
-            marginBottom: "24px",
-          }}
-        >
-          {currentArrangement.map((value, index) => (
-            <div key={index} style={{ display: "flex", alignItems: "center" }}>
-              <div
-                style={{
-                  ...card,
-                  width: "72px",
-                  height: "72px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: "24px",
-                    fontWeight: 600,
-                    color: C.textPrimary,
-                  }}
-                >
-                  {getDisplay(value)}
-                </span>
-              </div>
-              {index < currentArrangement.length - 1 && (
-                <button
-                  onClick={() => swap(index)}
-                  disabled={agentMode}
-                  style={{
-                    width: "32px",
-                    height: "72px",
-                    background: selectedSwap === index ? C.accent : "transparent",
-                    border: "none",
-                    cursor: agentMode ? "default" : "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: selectedSwap === index ? "#FFFFFF" : C.textTertiary,
-                    fontSize: "18px",
-                    transition: "color 150ms ease-out, background 150ms ease-out",
-                    fontFamily: "inherit",
-                    borderRadius: "8px",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!agentMode && selectedSwap !== index) {
-                      e.currentTarget.style.color = C.accent;
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!agentMode && selectedSwap !== index) {
-                      e.currentTarget.style.color = C.textTertiary;
-                    }
-                  }}
-                >
-                  ⇄
-                </button>
-              )}
+        {gamePhase === 1 && (
+          <>
+            <p style={{ fontSize: "13px", color: C.textTertiary, margin: "0 0 16px 0" }}>
+              Study the pattern. What determines Win vs Loss?
+            </p>
+            <div
+              style={{
+                ...card,
+                overflow: "hidden",
+              }}
+            >
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                    <th style={{ padding: "12px 16px", textAlign: "left", fontSize: "11px", fontWeight: 500, letterSpacing: "0.06em", textTransform: "uppercase", color: C.textTertiary }}>
+                      {labels.featureA}
+                    </th>
+                    <th style={{ padding: "12px 16px", textAlign: "left", fontSize: "11px", fontWeight: 500, letterSpacing: "0.06em", textTransform: "uppercase", color: C.textTertiary }}>
+                      {labels.featureB}
+                    </th>
+                    <th style={{ padding: "12px 16px", textAlign: "right", fontSize: "11px", fontWeight: 500, letterSpacing: "0.06em", textTransform: "uppercase", color: C.textTertiary }}>
+                      Outcome
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {phase1Data.map((point, i) => (
+                    <tr key={i} style={{ borderBottom: i < phase1Data.length - 1 ? `1px solid ${C.border}` : "none" }}>
+                      <td style={{ padding: "12px 16px", fontSize: "15px", color: C.textPrimary, fontWeight: 500 }}>
+                        {point.featureA}
+                      </td>
+                      <td style={{ padding: "12px 16px", fontSize: "15px", color: C.textSecondary }}>
+                        {point.featureB}
+                      </td>
+                      <td style={{ padding: "12px 16px", textAlign: "right" }}>
+                        <span style={{
+                          fontSize: "13px",
+                          fontWeight: 500,
+                          color: point.outcome === "Win" ? "#22A55B" : C.accent
+                        }}>
+                          {point.outcome}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          ))}
-        </div>
-
-        <div
-          style={{
-            textAlign: "center",
-            marginBottom: "16px",
-          }}
-        >
-          <span
-            style={{
-              fontSize: "11px",
-              fontWeight: 500,
-              letterSpacing: "0.06em",
-              textTransform: "uppercase",
-              color: C.textTertiary,
-            }}
-          >
-            Target
-          </span>
-        </div>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            gap: "12px",
-            marginBottom: agentMode ? "24px" : "0",
-          }}
-        >
-          {getTargetDisplay()
-            .split(" ")
-            .map((char, i) => (
-              <div
-                key={i}
-                style={{
-                  width: "48px",
-                  height: "48px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  background: C.bg,
-                  borderRadius: "16px",
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: "18px",
-                    fontWeight: 500,
-                    color: C.textTertiary,
-                  }}
-                >
-                  {char}
-                </span>
+            {agentMode && (
+              <div style={{ textAlign: "center", fontSize: "12px", color: C.textTertiary, marginTop: "16px" }}>
+                Analyzing pattern...
               </div>
-            ))}
-        </div>
+            )}
+          </>
+        )}
 
-        {agentMode && (
-          <div
-            style={{
-              textAlign: "center",
-              fontSize: "12px",
-              color: C.textTertiary,
-            }}
-          >
-            Transfer learning agent
-          </div>
+        {gamePhase === 2 && (
+          <>
+            <p style={{ fontSize: "13px", color: C.textTertiary, margin: "0 0 16px 0" }}>
+              New domain, same structure. Predict each outcome.
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              {phase2Data.map((point, i) => {
+                const isActive = i === currentPredictionIndex;
+                const isPredicted = point.prediction !== undefined;
+                const isCorrect = isPredicted && point.prediction === point.outcome;
+
+                return (
+                  <div
+                    key={i}
+                    style={{
+                      ...card,
+                      padding: "16px",
+                      opacity: isPredicted ? 0.6 : 1,
+                      borderColor: isActive ? C.accent : C.border,
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div style={{ display: "flex", gap: "32px" }}>
+                        <div>
+                          <div style={{ fontSize: "11px", fontWeight: 500, letterSpacing: "0.06em", textTransform: "uppercase", color: C.textTertiary, marginBottom: "4px" }}>
+                            {labels.featureA}
+                          </div>
+                          <div style={{ fontSize: "18px", fontWeight: 500, color: C.textPrimary }}>
+                            {point.featureA}
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: "11px", fontWeight: 500, letterSpacing: "0.06em", textTransform: "uppercase", color: C.textTertiary, marginBottom: "4px" }}>
+                            {labels.featureB}
+                          </div>
+                          <div style={{ fontSize: "18px", fontWeight: 500, color: C.textSecondary }}>
+                            {point.featureB}
+                          </div>
+                        </div>
+                      </div>
+
+                      {isPredicted ? (
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <span style={{
+                            fontSize: "13px",
+                            fontWeight: 500,
+                            color: isCorrect ? "#22A55B" : C.accent
+                          }}>
+                            {point.prediction}
+                          </span>
+                          {isCorrect ? (
+                            <Check size={16} strokeWidth={2} color="#22A55B" />
+                          ) : (
+                            <X size={16} strokeWidth={2} color={C.accent} />
+                          )}
+                        </div>
+                      ) : isActive && !agentMode ? (
+                        <div style={{ display: "flex", gap: "8px" }}>
+                          <button
+                            onClick={() => makePrediction("Win")}
+                            style={{
+                              ...ghostButton,
+                              height: "36px",
+                              padding: "0 16px",
+                              fontSize: "13px",
+                            }}
+                          >
+                            Win
+                          </button>
+                          <button
+                            onClick={() => makePrediction("Loss")}
+                            style={{
+                              ...ghostButton,
+                              height: "36px",
+                              padding: "0 16px",
+                              fontSize: "13px",
+                            }}
+                          >
+                            Loss
+                          </button>
+                        </div>
+                      ) : isActive && agentMode ? (
+                        <span style={{ fontSize: "13px", color: C.textTertiary }}>
+                          Predicting...
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: "13px", color: C.textTertiary }}>?</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {agentMode && (
+              <div style={{ textAlign: "center", fontSize: "12px", color: C.textTertiary, marginTop: "16px" }}>
+                Applying learned pattern
+              </div>
+            )}
+          </>
         )}
       </Shell>
     );
   }
 
   // Reveal phase
+  const finalCorrect = phase2Data.filter(d => d.prediction === d.outcome).length;
+  const finalEfficiency = Math.round((finalCorrect / phase2Data.length) * 100);
+
   return (
     <Shell env="The Transfer">
       <div
@@ -469,17 +521,23 @@ export default function TransferPage() {
           marginBottom: "16px",
         }}
       >
-        <MetricCard label="Phase 1" value={phase1Moves.toString()} />
-        <MetricCard label="Phase 2" value={phase2Moves.toString()} />
-        <MetricCard label="Efficiency" value={`${efficiency}%`} />
+        <MetricCard label="Correct" value={`${finalCorrect}/${phase2Data.length}`} />
+        <MetricCard label="Threshold" value={threshold.toString()} />
+        <MetricCard label="Efficiency" value={`${finalEfficiency}%`} />
       </div>
 
-      <div style={{ fontSize: "13px", color: improvement >= 0 ? "#4ADE80" : C.accent, marginBottom: "16px" }}>
-        {improvement > 0 ? "Pattern recognized — improved in phase 2." : improvement === 0 ? "Consistent across phases." : "Same structure harder to see with different labels."}
+      <div style={{ fontSize: "13px", color: finalEfficiency === 100 ? "#22A55B" : finalEfficiency >= 50 ? C.textSecondary : C.accent, marginBottom: "16px" }}>
+        {finalEfficiency === 100
+          ? "Pattern fully transferred to new domain."
+          : finalEfficiency >= 75
+            ? "Strong transfer, minor errors in application."
+            : finalEfficiency >= 50
+              ? "Partial transfer. The rule was: first feature above threshold predicts success."
+              : "Transfer failed. Look for what consistently predicts outcomes."}
       </div>
 
       <LessonCard term="In the real world">
-        A company that succeeds in one market wants to expand to another. The surface details change — different customers, regulations, competitors — but the underlying structure often transfers. Agents that recognize deep patterns can accelerate market expansion.
+        A company that succeeds in one market wants to expand to another. The surface details change but the underlying structure transfers. Agents that recognize deep patterns can accelerate market expansion.
       </LessonCard>
 
       {demoMode && (

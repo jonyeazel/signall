@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-background: #0E0E10;
-  --color-foreground: #E8E8E3;
+  --color-background: #F5F3EF;
+  --color-foreground: #191919;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -16,15 +16,15 @@ html {
 }
 
 body {
-  background: #08080A;
-  color: #E8E8E3;
+  background: #ECEAE4;
+  color: #191919;
   font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 ::selection {
-  background: rgba(224, 90, 0, 0.25);
+  background: rgba(224, 90, 0, 0.2);
 }
 
 /* --- Expanded card overlay --- */
@@ -42,7 +42,7 @@ body {
 .card-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.35);
   z-index: 99;
   opacity: 0;
   pointer-events: none;
@@ -74,9 +74,9 @@ body {
   100% { left: 100%; opacity: 0; }
 }
 
-/* --- Docs drawer --- */
+/* --- Drawers --- */
 
-.docs-drawer {
+.docs-drawer, .train-drawer {
   position: fixed;
   top: 12px;
   right: -440px;
@@ -86,7 +86,7 @@ body {
   transition: right 300ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.docs-drawer-open {
+.docs-drawer-open, .train-drawer-open {
   right: 12px;
 }
 

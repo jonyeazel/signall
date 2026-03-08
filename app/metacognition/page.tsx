@@ -6,170 +6,186 @@ import { C, card, buttonStyle, ghostButton, saveScore, isDemoMode, getNextDemoPa
 import { ArrowRight, RotateCcw, Play } from "lucide-react";
 
 type Phase = "intro" | "playing" | "reveal";
-type ConfidenceLevel = 25 | 50 | 75 | 100;
+type BetSize = 10 | 25 | 50 | 100;
+type Prediction = "above" | "below";
 
-interface Scenario {
-  question: string;
-  options: string[];
-  correctIndex: number;
-  difficulty: "easy" | "medium" | "hard" | "guess";
+interface Round {
+  sequence: number[];
+  threshold: number;
+  actualValue: number;
+  trend: "up" | "down" | "flat" | "volatile";
+  label: string;
 }
 
 interface RoundResult {
-  scenario: Scenario;
-  confidence: ConfidenceLevel;
-  selectedIndex: number;
+  round: Round;
+  prediction: Prediction;
+  betPercent: BetSize;
+  betAmount: number;
   correct: boolean;
-  points: number;
+  pnl: number;
 }
 
-function shuffleArray<T>(array: T[]): T[] {
-  const shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
-}
+const STARTING_BANKROLL = 1000;
+const TOTAL_ROUNDS = 8;
 
-function generateScenarios(): Scenario[] {
-  const templates: Array<{
-    question: string;
-    options: string[];
-    correctIndex: number;
-    difficulty: "easy" | "medium" | "hard" | "guess";
-  }> = [
-    {
-      question: "What comes next: 3, 6, 12, 24, ?",
-      options: ["48", "36", "30", "28"],
-      correctIndex: 0,
-      difficulty: "easy",
-    },
-    {
-      question:
-        "Component C fails. Pipeline: A → B → C → D. Which others fail?",
-      options: ["D only", "B and D", "All downstream", "None"],
-      correctIndex: 0,
-      difficulty: "easy",
-    },
-    {
-      question:
-        "Source X sampled twice: 7.2, 3.1. Source Y once: 5.5. Which is likely better?",
-      options: ["X", "Y", "Equal", "Not enough data"],
-      correctIndex: 3,
-      difficulty: "hard",
-    },
-    {
-      question:
-        "Budget: 30. Item A: 20 cost, 4 value. Item B: 15 cost, 3 value. Item C: 18 cost, 5 value. Best purchase?",
-      options: ["A", "B", "C", "B and then save"],
-      correctIndex: 2,
-      difficulty: "medium",
-    },
-    {
-      question:
-        "Partner rejected a fair deal, accepted one favoring them. Their strategy is likely:",
-      options: ["Greedy", "Fair", "Random", "Generous"],
-      correctIndex: 0,
-      difficulty: "medium",
-    },
-    {
-      question: "What comes next: 2, 6, 12, 20, 30, ?",
-      options: ["42", "40", "36", "44"],
-      correctIndex: 0,
-      difficulty: "medium",
-    },
-    {
-      question:
-        "You see 3 cells ahead. Path A is clear. Path B has a wall at cell 2. Which is better?",
-      options: ["A", "B", "Same", "Need more info"],
-      correctIndex: 0,
-      difficulty: "easy",
-    },
-    {
-      question:
-        "Values: 3.1, 4.2, 2.5. Pattern suggests gradual change. Next value likely:",
-      options: ["3.0", "8.5", "2.0", "Similar to previous"],
-      correctIndex: 3,
-      difficulty: "hard",
-    },
-    {
-      question: "Fibonacci: 1, 1, 2, 3, 5, 8, ?",
-      options: ["13", "11", "10", "12"],
-      correctIndex: 0,
-      difficulty: "easy",
-    },
-    {
-      question:
-        "You have 10 tests to find 1 broken component among 100. Best strategy?",
-      options: ["Test randomly", "Binary search", "Test sequentially", "Test in groups of 10"],
-      correctIndex: 1,
-      difficulty: "medium",
-    },
-    {
-      question: "A coin landed heads 7 times in a row. Probability of heads next flip?",
-      options: ["Lower than 50%", "Higher than 50%", "Exactly 50%", "Cannot determine"],
-      correctIndex: 2,
-      difficulty: "medium",
-    },
-    {
-      question:
-        "You optimized for metric A, but metric B dropped. This is likely:",
-      options: ["A bug", "A tradeoff", "Random noise", "Measurement error"],
-      correctIndex: 1,
-      difficulty: "hard",
-    },
-  ];
-
-  // Shuffle and pick 8
-  const shuffled = shuffleArray(templates);
-  return shuffled.slice(0, 8).map((t) => {
-    // Shuffle options but track correct answer
-    const correctAnswer = t.options[t.correctIndex];
-    const shuffledOptions = shuffleArray(t.options);
-    const newCorrectIndex = shuffledOptions.indexOf(correctAnswer);
-    return {
-      question: t.question,
-      options: shuffledOptions,
-      correctIndex: newCorrectIndex,
-      difficulty: t.difficulty,
-    };
-  });
-}
-
-const CONFIDENCE_LABELS: Record<ConfidenceLevel, string> = {
-  25: "Low",
-  50: "Medium",
-  75: "High",
-  100: "Certain",
+const BET_LABELS: Record<BetSize, string> = {
+  10: "10%",
+  25: "25%",
+  50: "50%",
+  100: "All in",
 };
 
-// --- Calibrated reasoning agent ---
+const DATA_LABELS = [
+  "Sales last 3 days",
+  "Active users (past hours)",
+  "Revenue this week ($K)",
+  "Conversion rate (%)",
+  "Support tickets",
+  "API latency (ms)",
+  "Inventory units",
+  "Email open rate (%)",
+];
 
-function getAgentConfidence(difficulty: "easy" | "medium" | "hard" | "guess"): ConfidenceLevel {
-  switch (difficulty) {
-    case "easy":
-      return 100;
-    case "medium":
-      return 75;
-    case "hard":
-      return 50;
-    case "guess":
-      return 25;
+function generateRound(roundIndex: number): Round {
+  const label = DATA_LABELS[roundIndex % DATA_LABELS.length];
+  const seqLength = 3 + Math.floor(Math.random() * 3); // 3-5 values
+  const sequence: number[] = [];
+
+  // Random trend type
+  const trendTypes: ("up" | "down" | "flat" | "volatile")[] = ["up", "down", "flat", "volatile"];
+  const trend = trendTypes[Math.floor(Math.random() * trendTypes.length)];
+
+  // Starting value based on label type
+  let baseValue: number;
+  let scale: number;
+
+  if (label.includes("%")) {
+    baseValue = 10 + Math.random() * 60; // 10-70%
+    scale = 5;
+  } else if (label.includes("ms")) {
+    baseValue = 50 + Math.random() * 150; // 50-200ms
+    scale = 15;
+  } else if (label.includes("$K")) {
+    baseValue = 100 + Math.random() * 400; // 100-500K
+    scale = 30;
+  } else {
+    baseValue = 50 + Math.random() * 200; // 50-250
+    scale = 20;
   }
+
+  let current = baseValue;
+
+  for (let i = 0; i < seqLength; i++) {
+    sequence.push(Math.round(current));
+
+    switch (trend) {
+      case "up":
+        current += scale * (0.3 + Math.random() * 0.7);
+        break;
+      case "down":
+        current -= scale * (0.3 + Math.random() * 0.7);
+        break;
+      case "flat":
+        current += scale * (Math.random() - 0.5) * 0.3;
+        break;
+      case "volatile":
+        current += scale * (Math.random() - 0.5) * 2;
+        break;
+    }
+    current = Math.max(1, current); // Keep positive
+  }
+
+  // Generate next value following the trend
+  let nextValue: number;
+  switch (trend) {
+    case "up":
+      nextValue = current + scale * (0.3 + Math.random() * 0.7);
+      break;
+    case "down":
+      nextValue = current - scale * (0.3 + Math.random() * 0.7);
+      break;
+    case "flat":
+      nextValue = current + scale * (Math.random() - 0.5) * 0.5;
+      break;
+    case "volatile":
+      nextValue = current + scale * (Math.random() - 0.5) * 2.5;
+      break;
+  }
+  nextValue = Math.max(1, Math.round(nextValue));
+
+  // Set threshold near the last value
+  const lastValue = sequence[sequence.length - 1];
+  const thresholdOffset = scale * (0.2 + Math.random() * 0.3) * (Math.random() > 0.5 ? 1 : -1);
+  const threshold = Math.round(lastValue + thresholdOffset);
+
+  return {
+    sequence,
+    threshold,
+    actualValue: nextValue,
+    trend,
+    label,
+  };
+}
+
+function generateRounds(): Round[] {
+  return Array.from({ length: TOTAL_ROUNDS }, (_, i) => generateRound(i));
+}
+
+// --- Agent reasoning ---
+
+function getAgentPrediction(round: Round): { prediction: Prediction; confidence: BetSize } {
+  const seq = round.sequence;
+  const last = seq[seq.length - 1];
+  const threshold = round.threshold;
+
+  // Calculate trend direction
+  let upMoves = 0;
+  let downMoves = 0;
+  for (let i = 1; i < seq.length; i++) {
+    if (seq[i] > seq[i - 1]) upMoves++;
+    else if (seq[i] < seq[i - 1]) downMoves++;
+  }
+
+  // Calculate average change
+  const changes = seq.slice(1).map((v, i) => v - seq[i]);
+  const avgChange = changes.reduce((a, b) => a + b, 0) / changes.length;
+
+  // Predict next value based on trend
+  const predictedNext = last + avgChange;
+
+  // Determine prediction
+  const prediction: Prediction = predictedNext > threshold ? "above" : "below";
+
+  // Determine confidence based on trend clarity
+  const trendStrength = Math.abs(upMoves - downMoves) / (seq.length - 1);
+  const changeConsistency = Math.abs(avgChange) / (Math.abs(last - seq[0]) / seq.length + 1);
+
+  let confidence: BetSize;
+  if (trendStrength > 0.8 && changeConsistency > 0.5) {
+    confidence = 100;
+  } else if (trendStrength > 0.5) {
+    confidence = 50;
+  } else if (trendStrength > 0.3) {
+    confidence = 25;
+  } else {
+    confidence = 10;
+  }
+
+  return { prediction, confidence };
 }
 
 export default function MetaPage() {
   const [phase, setPhase] = useState<Phase>("intro");
-  const [scenarios, setScenarios] = useState<Scenario[]>([]);
+  const [rounds, setRounds] = useState<Round[]>([]);
   const [currentRound, setCurrentRound] = useState(0);
-  const [selectedConfidence, setSelectedConfidence] =
-    useState<ConfidenceLevel | null>(null);
+  const [bankroll, setBankroll] = useState(STARTING_BANKROLL);
+  const [selectedPrediction, setSelectedPrediction] = useState<Prediction | null>(null);
+  const [selectedBet, setSelectedBet] = useState<BetSize | null>(null);
   const [results, setResults] = useState<RoundResult[]>([]);
   const [showingResult, setShowingResult] = useState(false);
   const [lastResult, setLastResult] = useState<RoundResult | null>(null);
   const [agentMode, setAgentMode] = useState(false);
-  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [demoMode, setDemoMode] = useState(false);
   const [agentEmbed, setAgentEmbed] = useState(false);
   const agentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -208,102 +224,59 @@ export default function MetaPage() {
     }
   }, [demoMode, phase]);
 
-  const totalPoints = useMemo(() => {
-    return results.reduce((sum, r) => sum + r.points, 0);
+  const finalScore = useMemo(() => {
+    return Math.round((bankroll / STARTING_BANKROLL) * 100);
+  }, [bankroll]);
+
+  const winRate = useMemo(() => {
+    if (results.length === 0) return 0;
+    const wins = results.filter((r) => r.correct).length;
+    return Math.round((wins / results.length) * 100);
   }, [results]);
 
-  const accuracy = useMemo(() => {
+  const avgBetSize = useMemo(() => {
     if (results.length === 0) return 0;
-    const correct = results.filter((r) => r.correct).length;
-    return Math.round((correct / results.length) * 100);
-  }, [results]);
-
-  const calibration = useMemo(() => {
-    if (results.length === 0) return 0;
-    // Group by confidence level and check actual accuracy
-    const groups: Record<ConfidenceLevel, { total: number; correct: number }> = {
-      25: { total: 0, correct: 0 },
-      50: { total: 0, correct: 0 },
-      75: { total: 0, correct: 0 },
-      100: { total: 0, correct: 0 },
-    };
-    results.forEach((r) => {
-      groups[r.confidence].total++;
-      if (r.correct) groups[r.confidence].correct++;
-    });
-    // Calculate calibration error
-    let totalError = 0;
-    let counted = 0;
-    (Object.keys(groups) as unknown as ConfidenceLevel[]).forEach((conf) => {
-      const g = groups[conf];
-      if (g.total > 0) {
-        const actualAcc = g.correct / g.total;
-        const expectedAcc = conf / 100;
-        totalError += Math.abs(actualAcc - expectedAcc);
-        counted++;
-      }
-    });
-    if (counted === 0) return 100;
-    const avgError = totalError / counted;
-    return Math.round((1 - avgError) * 100);
+    const total = results.reduce((sum, r) => sum + r.betPercent, 0);
+    return Math.round(total / results.length);
   }, [results]);
 
   // Agent auto-play
   useEffect(() => {
     if (!agentMode || phase !== "playing" || showingResult) return;
-    if (currentRound >= scenarios.length) return;
+    if (currentRound >= rounds.length) return;
 
-    const scenario = scenarios[currentRound];
+    const round = rounds[currentRound];
+    const { prediction, confidence } = getAgentPrediction(round);
 
     agentTimerRef.current = setTimeout(() => {
-      // Agent sets confidence based on difficulty
-      const confidence = getAgentConfidence(scenario.difficulty);
-      setSelectedConfidence(confidence);
+      setSelectedPrediction(prediction);
 
-      // Brief pause, then select the correct answer
       setTimeout(() => {
-        const answerIndex = scenario.correctIndex;
-        setSelectedAnswer(answerIndex);
+        setSelectedBet(confidence);
 
-        // Brief pause to show selection, then submit
         setTimeout(() => {
-          const correct = answerIndex === scenario.correctIndex;
-          const points = correct
-            ? confidence
-            : -Math.round(confidence / 2);
-
-          const result: RoundResult = {
-            scenario,
-            confidence,
-            selectedIndex: answerIndex,
-            correct,
-            points,
-          };
-
-          setLastResult(result);
-          setResults((prev) => [...prev, result]);
-          setShowingResult(true);
-          setSelectedAnswer(null);
-        }, 200);
-      }, 300);
-    }, 400);
+          submitBet(prediction, confidence);
+        }, 300);
+      }, 400);
+    }, 500);
 
     return () => {
       if (agentTimerRef.current) clearTimeout(agentTimerRef.current);
     };
-  }, [agentMode, phase, showingResult, currentRound, scenarios]);
+  }, [agentMode, phase, showingResult, currentRound, rounds]);
 
   // Agent auto-advance from result screen
   useEffect(() => {
     if (!agentMode || phase !== "playing" || !showingResult) return;
 
     agentTimerRef.current = setTimeout(() => {
-      if (currentRound >= 7) {
-        saveScore("meta", Math.round(Math.max(0, (totalPoints + (lastResult?.points || 0)) / 800 * 100)));
+      if (currentRound >= TOTAL_ROUNDS - 1) {
+        saveScore("meta", finalScore);
         setPhase("reveal");
       } else {
         setCurrentRound((c) => c + 1);
-        setSelectedConfidence(null);
+        setSelectedPrediction(null);
+        setSelectedBet(null);
         setShowingResult(false);
         setLastResult(null);
       }
@@ -312,58 +285,65 @@ export default function MetaPage() {
     return () => {
       if (agentTimerRef.current) clearTimeout(agentTimerRef.current);
     };
-  }, [agentMode, phase, showingResult, currentRound, totalPoints, lastResult]);
+  }, [agentMode, phase, showingResult, currentRound, finalScore]);
 
   const handleBegin = useCallback((withAgent: boolean = false) => {
-    setScenarios(generateScenarios());
+    setRounds(generateRounds());
     setCurrentRound(0);
-    setSelectedConfidence(null);
+    setBankroll(STARTING_BANKROLL);
+    setSelectedPrediction(null);
+    setSelectedBet(null);
     setResults([]);
     setShowingResult(false);
     setLastResult(null);
     setAgentMode(withAgent);
-    setSelectedAnswer(null);
     setPhase("playing");
   }, []);
 
-  const selectAnswer = useCallback(
-    (answerIndex: number) => {
-      if (agentMode) return;
-      if (selectedConfidence === null) return;
-
-      const scenario = scenarios[currentRound];
-      const correct = answerIndex === scenario.correctIndex;
-      const points = correct
-        ? selectedConfidence
-        : -Math.round(selectedConfidence / 2);
+  const submitBet = useCallback(
+    (prediction: Prediction, betPercent: BetSize) => {
+      const round = rounds[currentRound];
+      const betAmount = Math.round((bankroll * betPercent) / 100);
+      const isAbove = round.actualValue > round.threshold;
+      const correct = (prediction === "above" && isAbove) || (prediction === "below" && !isAbove);
+      const pnl = correct ? betAmount : -betAmount;
 
       const result: RoundResult = {
-        scenario,
-        confidence: selectedConfidence,
-        selectedIndex: answerIndex,
+        round,
+        prediction,
+        betPercent,
+        betAmount,
         correct,
-        points,
+        pnl,
       };
 
       setLastResult(result);
       setResults((prev) => [...prev, result]);
+      setBankroll((b) => Math.max(0, b + pnl));
       setShowingResult(true);
     },
-    [selectedConfidence, scenarios, currentRound, agentMode]
+    [rounds, currentRound, bankroll]
   );
+
+  const handleSubmit = useCallback(() => {
+    if (agentMode) return;
+    if (selectedPrediction === null || selectedBet === null) return;
+    submitBet(selectedPrediction, selectedBet);
+  }, [selectedPrediction, selectedBet, agentMode, submitBet]);
 
   const nextRound = useCallback(() => {
     if (agentMode) return;
-    if (currentRound >= 7) {
-      saveScore("meta", Math.round(Math.max(0, (totalPoints + (lastResult?.points || 0)) / 800 * 100)));
+    if (currentRound >= TOTAL_ROUNDS - 1 || bankroll <= 0) {
+      saveScore("meta", finalScore);
       setPhase("reveal");
     } else {
       setCurrentRound((c) => c + 1);
-      setSelectedConfidence(null);
+      setSelectedPrediction(null);
+      setSelectedBet(null);
       setShowingResult(false);
       setLastResult(null);
     }
-  }, [currentRound, totalPoints, lastResult, agentMode]);
+  }, [currentRound, bankroll, finalScore, agentMode]);
 
   if (phase === "intro") {
     return (
@@ -378,9 +358,7 @@ export default function MetaPage() {
               marginBottom: "24px",
             }}
           >
-            Eight rounds. Each presents a quick decision scenario. Before
-            answering, predict your confidence. Scoring rewards both accuracy
-            and calibration.
+            Eight rounds. Starting bankroll: 1,000 points. Each round shows partial data — predict whether the next value will be above or below a threshold, then size your bet based on confidence.
           </p>
           <p
             style={{
@@ -391,9 +369,7 @@ export default function MetaPage() {
               marginBottom: "24px",
             }}
           >
-            Correct answers earn points equal to your confidence level. Wrong
-            answers cost half your confidence level. Know when you know and when
-            you don't.
+            Correct bets add to your bankroll. Wrong bets subtract. Bet big when you see a clear trend. Bet small when the data is noisy. The goal: grow your capital.
           </p>
           <p
             style={{
@@ -404,7 +380,7 @@ export default function MetaPage() {
               marginBottom: "32px",
             }}
           >
-            Perfect score: 800 points (all correct at "Certain").
+            Score = final bankroll / starting bankroll (efficiency %).
           </p>
           <div style={{ display: "flex", gap: "8px" }}>
             <button style={buttonStyle} onClick={() => handleBegin(false)}>
@@ -422,7 +398,7 @@ export default function MetaPage() {
   }
 
   if (phase === "playing") {
-    const scenario = scenarios[currentRound];
+    const round = rounds[currentRound];
 
     if (showingResult && lastResult) {
       return (
@@ -439,10 +415,10 @@ export default function MetaPage() {
               {agentMode && (
                 <span style={{ color: C.accent, marginRight: "8px" }}>Agent</span>
               )}
-              Round {currentRound + 1} / 8
+              Round {currentRound + 1} / {TOTAL_ROUNDS}
             </span>
-            <span style={{ fontSize: "13px", color: C.textTertiary }}>
-              Total: {totalPoints} pts
+            <span style={{ fontSize: "15px", fontWeight: 500, color: C.textPrimary }}>
+              {bankroll.toLocaleString()} pts
             </span>
           </div>
 
@@ -466,7 +442,7 @@ export default function MetaPage() {
                 margin: "0 auto 16px",
               }}
             >
-              <span style={{ fontSize: "24px", color: lastResult.correct ? "#4ADE80" : "#E05A00" }}>
+              <span style={{ fontSize: "24px", color: lastResult.correct ? "#22A55B" : "#E05A00" }}>
                 {lastResult.correct ? "+" : "−"}
               </span>
             </div>
@@ -474,65 +450,31 @@ export default function MetaPage() {
               style={{
                 fontSize: "32px",
                 fontWeight: 600,
-                color: lastResult.correct ? "#4ADE80" : C.accent,
+                color: lastResult.correct ? "#22A55B" : C.accent,
                 marginBottom: "8px",
               }}
             >
-              {lastResult.points > 0 ? "+" : ""}
-              {lastResult.points} pts
+              {lastResult.pnl > 0 ? "+" : ""}
+              {lastResult.pnl.toLocaleString()} pts
             </div>
             <div style={{ fontSize: "14px", color: C.textSecondary }}>
-              {lastResult.correct
-                ? `Correct at ${CONFIDENCE_LABELS[lastResult.confidence]} confidence`
-                : `Incorrect at ${CONFIDENCE_LABELS[lastResult.confidence]} confidence`}
+              Actual value: {lastResult.round.actualValue} — {lastResult.round.actualValue > lastResult.round.threshold ? "above" : "below"} {lastResult.round.threshold}
             </div>
           </div>
 
           <div style={{ ...card, padding: "24px", marginBottom: "24px" }}>
-            <div
-              style={{
-                fontSize: "13px",
-                color: C.textTertiary,
-                marginBottom: "12px",
-              }}
-            >
-              {scenario.question}
+            <div style={{ fontSize: "13px", color: C.textTertiary, marginBottom: "12px" }}>
+              {lastResult.round.label}: {lastResult.round.sequence.join(", ")}
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              {scenario.options.map((opt, i) => {
-                const isCorrect = i === scenario.correctIndex;
-                const isSelected = i === lastResult.selectedIndex;
-                let bg: string = C.surface;
-                let borderColor: string = C.border;
-                if (isCorrect) {
-                  bg = "rgba(74, 222, 128, 0.1)";
-                  borderColor = "#4ADE80";
-                } else if (isSelected) {
-                  bg = "rgba(224, 90, 0, 0.1)";
-                  borderColor = "#E05A00";
-                }
-                return (
-                  <div
-                    key={i}
-                    style={{
-                      padding: "12px 16px",
-                      background: bg,
-                      border: `1px solid ${borderColor}`,
-                      borderRadius: "16px",
-                      fontSize: "14px",
-                      color: C.textPrimary,
-                    }}
-                  >
-                    {opt}
-                  </div>
-                );
-              })}
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px", color: C.textSecondary }}>
+              <span>You bet: {lastResult.prediction.toUpperCase()} {lastResult.round.threshold}</span>
+              <span>Stake: {BET_LABELS[lastResult.betPercent]} ({lastResult.betAmount.toLocaleString()} pts)</span>
             </div>
           </div>
 
           {!agentMode && (
             <button style={buttonStyle} onClick={nextRound}>
-              {currentRound >= 7 ? "See Results" : "Next Round"}
+              {currentRound >= TOTAL_ROUNDS - 1 || bankroll <= 0 ? "See Results" : "Next Round"}
               <ArrowRight size={16} strokeWidth={2} />
             </button>
           )}
@@ -545,12 +487,14 @@ export default function MetaPage() {
                 color: C.textTertiary,
               }}
             >
-              Calibrated reasoning agent
+              Trend analysis agent
             </div>
           )}
         </Shell>
       );
     }
+
+    const betAmount = selectedBet ? Math.round((bankroll * selectedBet) / 100) : 0;
 
     return (
       <Shell env="The Meta">
@@ -566,24 +510,50 @@ export default function MetaPage() {
             {agentMode && (
               <span style={{ color: C.accent, marginRight: "8px" }}>Agent</span>
             )}
-            Round {currentRound + 1} / 8
+            Round {currentRound + 1} / {TOTAL_ROUNDS}
           </span>
-          <span style={{ fontSize: "13px", color: C.textTertiary }}>
-            Total: {totalPoints} pts
+          <span style={{ fontSize: "15px", fontWeight: 500, color: C.textPrimary }}>
+            {bankroll.toLocaleString()} pts
           </span>
         </div>
 
         <div style={{ ...card, padding: "32px", marginBottom: "24px" }}>
-          <p
+          <div style={{ fontSize: "13px", color: C.textTertiary, marginBottom: "16px" }}>
+            {round.label}
+          </div>
+          <div
             style={{
-              fontSize: "15px",
-              lineHeight: 1.7,
-              color: C.textPrimary,
-              margin: 0,
+              display: "flex",
+              gap: "16px",
+              justifyContent: "center",
+              marginBottom: "24px",
             }}
           >
-            {scenario.question}
-          </p>
+            {round.sequence.map((val, i) => (
+              <div
+                key={i}
+                style={{
+                  fontSize: "24px",
+                  fontWeight: 500,
+                  color: C.textPrimary,
+                }}
+              >
+                {val}
+              </div>
+            ))}
+            <div
+              style={{
+                fontSize: "24px",
+                fontWeight: 500,
+                color: C.textTertiary,
+              }}
+            >
+              ?
+            </div>
+          </div>
+          <div style={{ fontSize: "15px", color: C.textSecondary, textAlign: "center" }}>
+            Will the next value be above or below <span style={{ fontWeight: 500, color: C.textPrimary }}>{round.threshold}</span>?
+          </div>
         </div>
 
         <div style={{ marginBottom: "24px" }}>
@@ -597,35 +567,35 @@ export default function MetaPage() {
               marginBottom: "12px",
             }}
           >
-            Your Confidence
+            Prediction
           </div>
           <div style={{ display: "flex", gap: "8px" }}>
-            {([25, 50, 75, 100] as ConfidenceLevel[]).map((level) => (
+            {(["above", "below"] as Prediction[]).map((pred) => (
               <button
-                key={level}
-                onClick={() => !agentMode && setSelectedConfidence(level)}
+                key={pred}
+                onClick={() => !agentMode && setSelectedPrediction(pred)}
                 disabled={agentMode}
                 style={{
                   flex: 1,
                   height: "44px",
-                  background:
-                    selectedConfidence === level ? C.accent : C.surface,
-                  color: selectedConfidence === level ? "#FFFFFF" : C.textSecondary,
-                  border: `1px solid ${selectedConfidence === level ? C.accent : C.border}`,
+                  background: selectedPrediction === pred ? C.accent : C.surface,
+                  color: selectedPrediction === pred ? "#FFFFFF" : C.textSecondary,
+                  border: `1px solid ${selectedPrediction === pred ? C.accent : C.border}`,
                   borderRadius: "16px",
                   fontSize: "13px",
                   fontWeight: 500,
                   fontFamily: "inherit",
                   cursor: agentMode ? "default" : "pointer",
+                  textTransform: "capitalize",
                 }}
               >
-                {CONFIDENCE_LABELS[level]}
+                {pred} {round.threshold}
               </button>
             ))}
           </div>
         </div>
 
-        <div>
+        <div style={{ marginBottom: "24px" }}>
           <div
             style={{
               fontSize: "11px",
@@ -634,46 +604,51 @@ export default function MetaPage() {
               textTransform: "uppercase",
               color: C.textTertiary,
               marginBottom: "12px",
-              opacity: selectedConfidence === null ? 0.5 : 1,
+              opacity: selectedPrediction === null ? 0.5 : 1,
             }}
           >
-            Your Answer
+            Bet Size
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: agentMode ? "24px" : "0" }}>
-            {scenario.options.map((opt, i) => (
+          <div style={{ display: "flex", gap: "8px" }}>
+            {([10, 25, 50, 100] as BetSize[]).map((bet) => (
               <button
-                key={i}
-                onClick={() => selectAnswer(i)}
-                disabled={selectedConfidence === null || agentMode}
+                key={bet}
+                onClick={() => !agentMode && selectedPrediction && setSelectedBet(bet)}
+                disabled={agentMode || selectedPrediction === null}
                 style={{
-                  padding: "16px",
-                  background: selectedAnswer === i ? C.accent : C.surface,
-                  border: `1px solid ${selectedAnswer === i ? C.accent : C.border}`,
+                  flex: 1,
+                  height: "44px",
+                  background: selectedBet === bet ? C.accent : C.surface,
+                  color: selectedBet === bet ? "#FFFFFF" : C.textSecondary,
+                  border: `1px solid ${selectedBet === bet ? C.accent : C.border}`,
                   borderRadius: "16px",
-                  fontSize: "14px",
-                  color: selectedAnswer === i ? "#FFFFFF" : C.textPrimary,
-                  textAlign: "left",
+                  fontSize: "13px",
+                  fontWeight: 500,
                   fontFamily: "inherit",
-                  cursor: (selectedConfidence === null || agentMode) ? "not-allowed" : "pointer",
-                  opacity: selectedConfidence === null ? 0.5 : 1,
-                  transition: "border-color 150ms ease-out",
-                }}
-                onMouseEnter={(e) => {
-                  if (selectedConfidence !== null && !agentMode && selectedAnswer !== i) {
-                    e.currentTarget.style.borderColor = C.borderActive;
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (selectedAnswer !== i) {
-                    e.currentTarget.style.borderColor = C.border;
-                  }
+                  cursor: (agentMode || selectedPrediction === null) ? "not-allowed" : "pointer",
+                  opacity: selectedPrediction === null ? 0.5 : 1,
                 }}
               >
-                {opt}
+                {BET_LABELS[bet]}
               </button>
             ))}
           </div>
         </div>
+
+        {!agentMode && (
+          <button
+            style={{
+              ...buttonStyle,
+              opacity: (selectedPrediction === null || selectedBet === null) ? 0.5 : 1,
+              cursor: (selectedPrediction === null || selectedBet === null) ? "not-allowed" : "pointer",
+            }}
+            onClick={handleSubmit}
+            disabled={selectedPrediction === null || selectedBet === null}
+          >
+            {selectedBet ? `Bet ${betAmount.toLocaleString()} pts` : "Place Bet"}
+            <ArrowRight size={16} strokeWidth={2} />
+          </button>
+        )}
 
         {agentMode && (
           <div
@@ -683,7 +658,7 @@ export default function MetaPage() {
               color: C.textTertiary,
             }}
           >
-            Calibrated reasoning agent
+            Trend analysis agent
           </div>
         )}
       </Shell>
@@ -701,17 +676,17 @@ export default function MetaPage() {
           marginBottom: "16px",
         }}
       >
-        <MetricCard label="Points" value={totalPoints.toString()} />
-        <MetricCard label="Accuracy" value={`${accuracy}%`} />
-        <MetricCard label="Calibration" value={`${calibration}%`} />
+        <MetricCard label="Efficiency" value={`${finalScore}%`} />
+        <MetricCard label="Win Rate" value={`${winRate}%`} />
+        <MetricCard label="Avg Bet" value={`${avgBetSize}%`} />
       </div>
 
       <div style={{ fontSize: "13px", color: C.textSecondary, marginBottom: "16px" }}>
-        {calibration >= 80 ? "Well-calibrated — confidence matched accuracy." : calibration >= 60 ? "Moderate calibration — some over/underconfidence." : "Poor calibration — confidence didn't match performance."}
+        {finalScore >= 150 ? "Exceptional returns — strong trend reading and bet sizing." : finalScore >= 100 ? "Capital preserved. Room for more aggressive conviction plays." : finalScore >= 50 ? "Drawdown occurred. Review bet sizing on uncertain signals." : "Significant losses. Consider smaller bets when trends are unclear."}
       </div>
 
       <LessonCard term="In the real world">
-        Risk management is metacognition applied to capital. Knowing when you're confident enough to deploy resources — and when to hedge — is the difference between profitable autonomy and catastrophic failure. Every autonomous economic agent needs calibrated self-assessment.
+        Every trading desk, insurance underwriter, and venture fund runs on calibrated confidence. Betting big when you're right and small when you're uncertain is the difference between profit and ruin.
       </LessonCard>
 
       {demoMode && (

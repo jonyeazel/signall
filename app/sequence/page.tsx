@@ -371,6 +371,9 @@ export default function SequencePage() {
               <span style={{ color: C.accent, marginRight: "8px" }}>Agent</span>
             )}
             Round {currentRound + 1} of 8
+            <span style={{ marginLeft: "8px", color: C.textTertiary }}>
+              {currentRound < 2 ? "Easy" : currentRound < 5 ? "Medium" : "Hard"}
+            </span>
           </span>
           <span style={{ fontSize: "13px", color: C.textPrimary, fontWeight: 500 }}>
             Score: {score}
@@ -436,7 +439,7 @@ export default function SequencePage() {
 
             if (showResult) {
               if (choice === round.answer) {
-                borderColor = "#4ADE80";
+                borderColor = "#22A55B";
                 bg = "rgba(74, 222, 128, 0.1)";
               } else if (choice === selected && choice !== round.answer) {
                 borderColor = "#E05A00";

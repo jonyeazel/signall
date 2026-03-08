@@ -415,24 +415,42 @@ export default function MapNavPage() {
               const visible = isVisible({ x, y }, position);
               const isGoal = x === GRID_SIZE - 1 && y === GRID_SIZE - 1;
               const canClick = isAdjacent({ x, y }, position) && cell !== "wall";
+              const cellKey = `${x},${y}`;
+              const wasExplored = explored.has(cellKey);
+              const wasVisited = path.some(p => p.x === x && p.y === y);
 
-              let bg: string = C.border;
-              let border: string = `1px solid ${C.border}`;
+              // Procedural terrain variation for revealed cells
+              const terrainVariant = (x * 7 + y * 13) % 5;
+              const terrainShades = ["#FFFFFF", "#FDFCFB", "#FAF9F7", "#F8F7F4", "#F5F4F1"];
+
+              let bg: string;
+              let border: string;
+              let boxShadow: string = "none";
 
               if (isCurrent) {
                 bg = C.accent;
                 border = `1px solid ${C.accent}`;
+                boxShadow = `0 0 12px rgba(224, 90, 0, 0.4)`;
               } else if (visible) {
                 if (cell === "wall") {
-                  bg = C.textPrimary;
-                  border = `1px solid ${C.textPrimary}`;
+                  bg = "#C8C4BC";
+                  border = `1px solid #B8B4AC`;
                 } else {
-                  bg = C.surface;
+                  // Revealed empty cell with terrain variation
+                  bg = terrainShades[terrainVariant];
                   border = `1px solid ${C.border}`;
                   if (isGoal) {
                     border = `2px solid ${C.accent}`;
                   }
                 }
+              } else if (wasExplored) {
+                // Previously explored but no longer visible - slightly lighter than hidden
+                bg = "#E8E5DF";
+                border = `1px solid #DCD9D3`;
+              } else {
+                // Fully hidden cells
+                bg = "#DDD9D2";
+                border = `1px solid #D3CFC8`;
               }
 
               return (
@@ -450,8 +468,24 @@ export default function MapNavPage() {
                     padding: 0,
                     transition: "background 150ms ease-out",
                     fontFamily: "inherit",
+                    boxShadow,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
                   }}
-                />
+                >
+                  {/* Path trace dot for visited cells */}
+                  {wasVisited && !isCurrent && visible && (
+                    <div
+                      style={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: "50%",
+                        background: "rgba(224, 90, 0, 0.25)",
+                      }}
+                    />
+                  )}
+                </button>
               );
             })
           )}

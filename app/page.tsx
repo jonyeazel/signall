@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
-import { Play, X, Copy, Check, ExternalLink, ChevronRight } from "lucide-react";
+import { useRef } from "react";
+import { Play, X, Copy, Check, ExternalLink, ChevronRight, Square, Activity } from "lucide-react";
 import {
   C as darkC,
   ENVIRONMENTS,
@@ -60,7 +61,24 @@ export default function Home() {
   const [playingMode, setPlayingMode] = useState<"play" | "agent" | null>(null);
   const [copied, setCopied] = useState(false);
   const [docsOpen, setDocsOpen] = useState(false);
+  const [trainOpen, setTrainOpen] = useState(false);
   const [tryResult, setTryResult] = useState<Record<string, string>>({});
+
+  // --- Training drawer state ---
+  type HFEpisode = { episode: number; efficiency: number; reward: number };
+  type HFLog = { total_episodes: number; total_steps: number; sessions: number; best_efficiency: number; avg_recent_efficiency: number; uptime_seconds: number; recent_episodes: HFEpisode[] };
+  type TrainResult = { episode: number; totalReward: number; efficiency: number };
+  type TrainAgent = { estimates: number[]; pullCounts: number[]; totalRewards: number[]; epsilon: number };
+
+  const [hfLog, setHfLog] = useState<HFLog | null>(null);
+  const [hfStatus, setHfStatus] = useState<"loading" | "live" | "offline">("loading");
+  const [trainRunning, setTrainRunning] = useState(false);
+  const [trainResults, setTrainResults] = useState<TrainResult[]>([]);
+  const [trainAgent, setTrainAgent] = useState<TrainAgent>({ estimates: Array(6).fill(0), pullCounts: Array(6).fill(0), totalRewards: Array(6).fill(0), epsilon: 1.0 });
+  const [trainMeans] = useState(() => { const m = [3.2, 5.8, 7.1, 4.5, 6.3, 2.9]; for (let i = m.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [m[i], m[j]] = [m[j], m[i]]; } return m; });
+  const [trainVariances] = useState(() => Array.from({ length: 6 }, () => 1.5 + Math.random() * 2));
+  const trainRunRef = useRef(false);
+  const trainAgentRef = useRef<TrainAgent>({ estimates: Array(6).fill(0), pullCounts: Array(6).fill(0), totalRewards: Array(6).fill(0), epsilon: 1.0 });
   const [tryLoading, setTryLoading] = useState<string | null>(null);
 
   const tryEndpoint = useCallback(async (id: string, method: string, path: string, body?: object) => {
@@ -98,7 +116,7 @@ export default function Home() {
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { closeExpanded(); setDocsOpen(false); }
+      if (e.key === "Escape") { closeExpanded(); setDocsOpen(false); setTrainOpen(false); }
       if (expandedCard === null && !e.metaKey && !e.ctrlKey) {
         const num = e.key === "0" ? 10 : parseInt(e.key);
         if (num >= 1 && num <= 10) setExpandedCard(num - 1);
@@ -107,6 +125,51 @@ export default function Home() {
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
   }, [expandedCard, closeExpanded]);
+
+  // HuggingFace polling
+  useEffect(() => {
+    async function fetchHF() {
+      try {
+        const r = await fetch(`${API_URL}/training-log`);
+        if (r.ok) { setHfLog(await r.json()); setHfStatus("live"); } else setHfStatus("offline");
+      } catch { setHfStatus("offline"); }
+    }
+    fetchHF();
+    const iv = setInterval(fetchHF, 8000);
+    return () => clearInterval(iv);
+  }, []);
+
+  // Local training loop
+  const startTrain = useCallback(() => {
+    const fresh = { estimates: Array(6).fill(0), pullCounts: Array(6).fill(0), totalRewards: Array(6).fill(0), epsilon: 1.0 };
+    trainAgentRef.current = fresh;
+    setTrainAgent(fresh);
+    setTrainResults([]);
+    setTrainRunning(true);
+    trainRunRef.current = true;
+  }, []);
+
+  const stopTrain = useCallback(() => { setTrainRunning(false); trainRunRef.current = false; }, []);
+
+  useEffect(() => {
+    if (!trainRunning) return;
+    let ep = 0;
+    const step = () => {
+      if (!trainRunRef.current || ep >= 80) { setTrainRunning(false); trainRunRef.current = false; return; }
+      const a = { ...trainAgentRef.current, estimates: [...trainAgentRef.current.estimates], pullCounts: [...trainAgentRef.current.pullCounts], totalRewards: [...trainAgentRef.current.totalRewards], epsilon: Math.max(0.05, 1.0 - ep * 0.02) };
+      let reward = 0;
+      for (let r = 0; r < 25; r++) {
+        const choice = Math.random() < a.epsilon ? Math.floor(Math.random() * 6) : a.estimates.indexOf(Math.max(...a.estimates));
+        let u1 = 0, u2 = 0; while (u1 === 0) u1 = Math.random(); while (u2 === 0) u2 = Math.random();
+        const val = trainMeans[choice] + Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2) * Math.sqrt(trainVariances[choice]);
+        reward += val; a.pullCounts[choice]++; a.totalRewards[choice] += val; a.estimates[choice] = a.totalRewards[choice] / a.pullCounts[choice];
+      }
+      trainAgentRef.current = a; setTrainAgent({ ...a });
+      setTrainResults(prev => [...prev, { episode: ep + 1, totalReward: reward, efficiency: Math.round((reward / (Math.max(...trainMeans) * 25)) * 100) }]);
+      ep++; setTimeout(step, 60);
+    };
+    step();
+  }, [trainRunning, trainMeans, trainVariances]);
 
   const completedCount = ENVIRONMENTS.filter((e) => scores[e.id]).length;
   const avgEfficiency = completedCount > 0
@@ -145,18 +208,18 @@ export default function Home() {
           const embedUrl = `${xEnv.path}?embed=true${playingMode === "agent" ? "&agent=true" : ""}`;
           return (
             <div className="slide-card-expanded">
-              <div style={{ width: "100%", height: "100%", background: darkC.bg, borderRadius: "24px", border: `1px solid ${GOLD_DIM}`, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 24px", borderBottom: `1px solid ${darkC.border}`, flexShrink: 0 }}>
+              <div style={{ width: "100%", height: "100%", background: t.bg, borderRadius: "24px", border: `1px solid ${GOLD_DIM}`, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 24px", borderBottom: `1px solid ${t.border}`, flexShrink: 0 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                     <Avatar index={expandedCard} />
-                    <span style={{ fontSize: "13px", fontWeight: 600, color: darkC.textPrimary }}>{xEnv.name}</span>
+                    <span style={{ fontSize: "13px", fontWeight: 600, color: t.textPrimary }}>{xEnv.name}</span>
                     <span style={{ fontSize: "10px", color: GOLD, letterSpacing: "0.04em", textTransform: "uppercase" }}>{xGroup?.label}</span>
                   </div>
                   <div style={{ display: "flex", gap: "8px" }}>
-                    <button onClick={() => setPlayingMode(playingMode === "agent" ? "play" : "agent")} style={{ height: "28px", padding: "0 12px", borderRadius: "8px", border: `1px solid ${darkC.border}`, background: "transparent", color: darkC.textSecondary, fontSize: "11px", fontWeight: 500 }}>
+                    <button onClick={() => setPlayingMode(playingMode === "agent" ? "play" : "agent")} style={{ height: "28px", padding: "0 12px", borderRadius: "8px", border: `1px solid ${t.border}`, background: "transparent", color: t.textSecondary, fontSize: "11px", fontWeight: 500 }}>
                       {playingMode === "agent" ? "Switch to Play" : "Switch to Agent"}
                     </button>
-                    <button onClick={closeExpanded} style={{ background: "none", border: "none", color: darkC.textTertiary, padding: "4px" }}>
+                    <button onClick={closeExpanded} style={{ background: "none", border: "none", color: t.textTertiary, padding: "4px" }}>
                       <X size={18} strokeWidth={1.5} />
                     </button>
                   </div>
@@ -263,7 +326,7 @@ export default function Home() {
                     display: "flex",
                     flexDirection: "column",
                     cursor: "pointer",
-                    minHeight: "130px",
+                    minHeight: "110px",
                     position: "relative",
                   }}
                 >
@@ -275,12 +338,8 @@ export default function Home() {
                       <div style={{ fontSize: "9px", color: GOLD, letterSpacing: "0.04em", textTransform: "uppercase" }}>{group?.label}</div>
                     </div>
                   </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "3px", marginTop: "10px", flex: 1 }}>
-                    {env.useCases.map((uc, j) => (
-                      <div key={j} style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "10px", color: t.textTertiary, lineHeight: 1.3 }}>
-                        <span style={{ color: GOLD, fontSize: "4px", flexShrink: 0 }}>●</span>{uc}
-                      </div>
-                    ))}
+                  <div style={{ fontSize: "10px", color: t.textTertiary, lineHeight: 1.4, marginTop: "8px", flex: 1 }}>
+                    {env.capability}
                   </div>
                   <div style={{ display: "flex", alignItems: "baseline", gap: "8px", marginTop: "8px" }}>
                     <div style={{ fontSize: "18px", fontWeight: 600, color: t.accent, letterSpacing: "-0.02em" }}>{envScore?.best ?? 0}%</div>
@@ -346,7 +405,7 @@ export default function Home() {
 
           {/* Docs button */}
           <button
-            onClick={() => setDocsOpen((d) => !d)}
+            onClick={() => { setDocsOpen((d) => !d); setTrainOpen(false); }}
             style={{
               display: "flex", alignItems: "center", gap: "4px",
               height: "36px", padding: "0 12px", borderRadius: "10px",
@@ -357,6 +416,22 @@ export default function Home() {
             }}
           >
             Docs
+          </button>
+
+          {/* Train button */}
+          <button
+            onClick={() => { setTrainOpen((d) => !d); setDocsOpen(false); }}
+            style={{
+              display: "flex", alignItems: "center", gap: "4px",
+              height: "36px", padding: "0 12px", borderRadius: "10px",
+              background: trainOpen ? t.accent : t.surface,
+              border: `1px solid ${trainOpen ? t.accent : t.border}`,
+              color: trainOpen ? "#fff" : t.textSecondary,
+              fontSize: "11px", fontWeight: 500, flexShrink: 0,
+            }}
+          >
+            <Activity size={12} strokeWidth={1.5} />
+            Train
           </button>
 
           <div style={{ width: "1px", height: "20px", background: GOLD_DIM, margin: "0 6px", flexShrink: 0 }} />
@@ -553,6 +628,149 @@ async with GenericEnvClient(
         print(result.reward)`}
               </pre>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* --- Training Drawer --- */}
+      <div className={`train-drawer ${trainOpen ? "train-drawer-open" : ""}`}>
+        <div style={{ height: "100%", background: t.surface, borderRadius: "20px", border: `1px solid ${GOLD_DIM}`, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          {/* Header */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: `1px solid ${t.border}`, flexShrink: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <div style={{ width: "5px", height: "5px", borderRadius: "50%", background: hfStatus === "live" ? "#22A55B" : hfStatus === "loading" ? t.textTertiary : t.accent }} />
+              <span style={{ fontSize: "13px", fontWeight: 600, color: t.textPrimary }}>Training</span>
+              <span style={{ fontSize: "10px", color: t.textTertiary }}>
+                {hfStatus === "live" ? "HuggingFace connected" : hfStatus === "loading" ? "connecting..." : "offline"}
+              </span>
+            </div>
+            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+              {!trainRunning ? (
+                <button onClick={startTrain} style={{ display: "flex", alignItems: "center", gap: "4px", height: "28px", padding: "0 10px", borderRadius: "8px", background: t.accent, color: "#fff", border: "none", fontSize: "10px", fontWeight: 600 }}>
+                  <Play size={10} strokeWidth={2} /> Train
+                </button>
+              ) : (
+                <button onClick={stopTrain} style={{ display: "flex", alignItems: "center", gap: "4px", height: "28px", padding: "0 10px", borderRadius: "8px", background: "transparent", color: t.textSecondary, border: `1px solid ${t.border}`, fontSize: "10px", fontWeight: 600 }}>
+                  <Square size={10} strokeWidth={2} /> Stop
+                </button>
+              )}
+              <button onClick={() => setTrainOpen(false)} style={{ background: "none", border: "none", color: t.textTertiary, padding: "4px" }}>
+                <X size={16} strokeWidth={1.5} />
+              </button>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div style={{ flex: 1, overflow: "auto", padding: "16px 20px" }}>
+            {/* Stats */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "6px", marginBottom: "16px" }}>
+              {[
+                { label: "Episodes", value: hfLog && !trainRunning ? hfLog.total_episodes : trainResults.length },
+                { label: "Steps", value: hfLog && !trainRunning ? hfLog.total_steps : trainResults.length * 25 },
+                { label: "Best", value: `${hfLog && !trainRunning ? hfLog.best_efficiency : (trainResults.length > 0 ? Math.max(...trainResults.map(r => r.efficiency)) : 0)}%`, accent: true },
+                { label: "Avg", value: `${hfLog && !trainRunning ? hfLog.avg_recent_efficiency : (trainResults.length >= 5 ? Math.round(trainResults.slice(-5).reduce((s, r) => s + r.efficiency, 0) / 5) : (trainResults[trainResults.length - 1]?.efficiency ?? 0))}%` },
+              ].map((s, i) => (
+                <div key={i} style={{ background: t.bg, border: `1px solid ${t.border}`, borderRadius: "10px", padding: "10px 12px" }}>
+                  <div style={{ fontSize: "8px", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: t.textTertiary, marginBottom: "4px" }}>{s.label}</div>
+                  <div style={{ fontSize: "18px", fontWeight: 600, color: s.accent ? t.accent : t.textPrimary, letterSpacing: "-0.02em" }}>{s.value}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Chart */}
+            {(() => {
+              const hfEff = hfLog?.recent_episodes.map(e => e.efficiency) ?? [];
+              const localEff = trainResults.map(r => r.efficiency);
+              const showLoc = trainRunning || (trainResults.length > 0 && hfEff.length === 0);
+              const data = showLoc ? localEff : hfEff;
+              const label = showLoc ? "Local simulation" : "HuggingFace (live)";
+
+              if (data.length === 0) return (
+                <div style={{ background: t.bg, border: `1px solid ${t.border}`, borderRadius: "10px", padding: "32px 16px", textAlign: "center", color: t.textTertiary, fontSize: "12px", marginBottom: "16px" }}>
+                  Press Train or run train_agent.py
+                </div>
+              );
+
+              const w = 380, h = 100, pl = 28, pr = 8, pt = 4, pb = 16, cw = w - pl - pr, ch = h - pt - pb;
+              const points = data.map((eff, i) => `${pl + (i / Math.max(data.length - 1, 1)) * cw},${pt + ch - (Math.min(eff, 100) / 100) * ch}`);
+              const avg: string[] = [];
+              for (let i = 0; i < data.length; i++) {
+                const sl = data.slice(Math.max(0, i - 4), i + 1);
+                const a = sl.reduce((s, v) => s + v, 0) / sl.length;
+                avg.push(`${pl + (i / Math.max(data.length - 1, 1)) * cw},${pt + ch - (Math.min(a, 100) / 100) * ch}`);
+              }
+
+              return (
+                <div style={{ background: t.bg, border: `1px solid ${t.border}`, borderRadius: "10px", padding: "12px 14px", marginBottom: "16px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                    <span style={{ fontSize: "8px", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: t.textTertiary }}>Learning Curve</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                      <div style={{ width: "4px", height: "4px", borderRadius: "50%", background: showLoc ? t.textTertiary : "#22A55B" }} />
+                      <span style={{ fontSize: "8px", color: t.textTertiary }}>{label}</span>
+                    </div>
+                  </div>
+                  <svg viewBox={`0 0 ${w} ${h}`} style={{ width: "100%", height: "auto" }}>
+                    {[0, 50, 100].map(v => { const y = pt + ch - (v / 100) * ch; return <g key={v}><line x1={pl} y1={y} x2={w - pr} y2={y} stroke={t.border} strokeWidth={0.5} /><text x={pl - 4} y={y + 3} textAnchor="end" fill={t.textTertiary} fontSize={7}>{v}</text></g>; })}
+                    <polyline points={points.join(" ")} fill="none" stroke={t.accent} strokeWidth={1} opacity={0.2} />
+                    {avg.length > 1 && <polyline points={avg.join(" ")} fill="none" stroke={t.accent} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />}
+                  </svg>
+                </div>
+              );
+            })()}
+
+            {/* Episode history */}
+            <div style={{ marginBottom: "16px" }}>
+              <div style={{ fontSize: "8px", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: t.textTertiary, marginBottom: "8px" }}>Recent Episodes</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+                {(() => {
+                  const hfEps = hfLog?.recent_episodes ?? [];
+                  const showLoc = trainRunning || (trainResults.length > 0 && hfEps.length === 0);
+                  const eps = showLoc ? trainResults.slice(-8).reverse() : hfEps.slice(-8).reverse();
+                  if (eps.length === 0) return <div style={{ fontSize: "11px", color: t.textTertiary, padding: "8px 0" }}>No episodes yet</div>;
+                  return eps.map((ep, i) => {
+                    const eff = "efficiency" in ep ? ep.efficiency : 0;
+                    const epNum = "episode" in ep ? ep.episode : i;
+                    return (
+                      <div key={i} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "3px 0" }}>
+                        <span style={{ fontSize: "9px", color: t.textTertiary, width: "20px", flexShrink: 0 }}>{epNum}</span>
+                        <div style={{ flex: 1, height: "4px", background: t.border, borderRadius: "2px", overflow: "hidden" }}>
+                          <div style={{ width: `${Math.min(eff, 100)}%`, height: "100%", background: t.accent, borderRadius: "2px" }} />
+                        </div>
+                        <span style={{ fontSize: "10px", fontWeight: 500, color: t.textPrimary, width: "30px", textAlign: "right", flexShrink: 0 }}>{eff}%</span>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+            </div>
+
+            {/* Agent estimates (when local training) */}
+            {trainResults.length > 0 && (
+              <div>
+                <div style={{ fontSize: "8px", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: t.textTertiary, marginBottom: "8px" }}>Agent Estimates</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  {trainMeans.map((trueMean, i) => {
+                    const est = trainAgent.estimates[i];
+                    const isBest = i === trainMeans.indexOf(Math.max(...trainMeans));
+                    return (
+                      <div key={i} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        <span style={{ fontSize: "9px", fontWeight: 600, color: isBest ? t.accent : t.textTertiary, width: "10px" }}>{String.fromCharCode(65 + i)}</span>
+                        <div style={{ flex: 1, position: "relative", height: "8px" }}>
+                          <div style={{ position: "absolute", top: 0, left: 0, height: "100%", width: `${Math.min(100, trueMean / 10 * 100)}%`, background: t.border, borderRadius: "2px" }} />
+                          <div style={{ position: "absolute", top: 0, left: 0, height: "100%", width: `${Math.min(100, est / 10 * 100)}%`, background: isBest ? t.accent : t.textTertiary, borderRadius: "2px", opacity: 0.7 }} />
+                        </div>
+                        <span style={{ fontSize: "8px", color: t.textSecondary, width: "36px", textAlign: "right" }}>
+                          {trainAgent.pullCounts[i] > 0 ? est.toFixed(1) : "—"}/{trueMean.toFixed(1)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                  <div style={{ fontSize: "8px", color: t.textTertiary, marginTop: "2px" }}>
+                    {trainAgent.pullCounts.reduce((a, b) => a + b, 0)} pulls · ε={trainAgent.epsilon.toFixed(2)}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

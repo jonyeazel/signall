@@ -467,7 +467,7 @@ export default function TowerPage() {
                 style={{
                   fontSize: "24px",
                   fontWeight: 600,
-                  color: isCompleted ? "#4ADE80" : isFailed ? "#E05A00" : C.textPrimary,
+                  color: isCompleted ? "#22A55B" : isFailed ? "#E05A00" : C.textPrimary,
                   marginBottom: "8px",
                 }}
               >

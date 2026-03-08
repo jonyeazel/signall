@@ -450,7 +450,7 @@ export default function SignalPage() {
                 borderRadius: "16px",
                 color: v.isSpike
                   ? v.alertedCorrectly
-                    ? "#4ADE80"
+                    ? "#22A55B"
                     : "#E05A00"
                   : C.textTertiary,
                 flexShrink: 0,
@@ -517,7 +517,7 @@ export default function SignalPage() {
           <div style={{ fontSize: "11px", color: C.textTertiary, marginBottom: "4px" }}>
             Correct
           </div>
-          <div style={{ fontSize: "18px", fontWeight: 600, color: "#4ADE80" }}>
+          <div style={{ fontSize: "18px", fontWeight: 600, color: "#22A55B" }}>
             {correctAlerts}
           </div>
         </div>

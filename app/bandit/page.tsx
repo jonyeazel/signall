@@ -446,8 +446,8 @@ export default function BanditPage() {
                 <div
                   key={i}
                   style={{
-                    width: "22px",
-                    height: "22px",
+                    width: "28px",
+                    height: "28px",
                     borderRadius: "16px",
                     background: C.accent,
                     opacity: 0.2 + normalizedReward * 0.8,

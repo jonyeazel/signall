@@ -301,6 +301,9 @@ export default function AuctionPage() {
               <span style={{ color: C.accent, marginRight: "8px" }}>Agent</span>
             )}
             Item {currentIndex + 1} of 8
+            <span style={{ marginLeft: "8px", color: C.textTertiary }}>
+              {8 - currentIndex - 1} left
+            </span>
           </span>
           <span
             style={{

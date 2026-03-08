@@ -668,7 +668,7 @@ export default function NegotiationPage() {
               textAlign: "center",
               fontSize: "14px",
               fontWeight: 500,
-              color: want > 0 ? "#4ADE80" : C.textTertiary,
+              color: want > 0 ? "#22A55B" : C.textTertiary,
             }}
           >
             {want}
@@ -730,14 +730,14 @@ export default function NegotiationPage() {
           }}
         >
           {lastResponse === "accepted" ? (
-            <Check size={18} strokeWidth={2} color="#4ADE80" />
+            <Check size={18} strokeWidth={2} color="#22A55B" />
           ) : (
             <X size={18} strokeWidth={2} color="#E05A00" />
           )}
           <span
             style={{
               fontSize: "14px",
-              color: lastResponse === "accepted" ? "#4ADE80" : "#E05A00",
+              color: lastResponse === "accepted" ? "#22A55B" : "#E05A00",
             }}
           >
             Trade {lastResponse}
@@ -894,7 +894,7 @@ export default function NegotiationPage() {
                 {h.want.iron}I, {h.want.crystal}C, {h.want.gold}G
               </span>
               {h.accepted ? (
-                <Check size={16} strokeWidth={2} color="#4ADE80" />
+                <Check size={16} strokeWidth={2} color="#22A55B" />
               ) : (
                 <X size={16} strokeWidth={2} color="#E05A00" />
               )}
