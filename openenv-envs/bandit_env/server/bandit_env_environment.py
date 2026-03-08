@@ -1,23 +1,81 @@
-# Copyright (c) Meta Platforms, Inc. and affiliates.
-# All rights reserved.
-#
-# This source code is licensed under the BSD-style license found in the
-# LICENSE file in the root directory of this source tree.
-
 """
 Bandit Environment Implementation.
 
 Multi-armed bandit with 6 arms. Each arm has a hidden mean reward.
 The agent must learn which arm yields the highest expected reward.
+Includes a global training log for tracking agent performance.
 """
 
 import random
+import time
 from uuid import uuid4
 
 from models import BanditAction, BanditObservation
 from openenv.core.env_server.interfaces import Environment
 from openenv.core.env_server.types import State
 
+
+# --- Global training log (persists across sessions) ---
+
+class TrainingLog:
+    """Tracks all training activity across all agent sessions."""
+
+    def __init__(self):
+        self.total_episodes = 0
+        self.total_steps = 0
+        self.sessions = 0
+        self.start_time = time.time()
+        self.recent_episodes: list[dict] = []  # last 50 episodes
+        self.best_efficiency = 0.0
+
+    def log_episode(self, total_reward: float, steps: int, best_possible: float):
+        self.total_episodes += 1
+        efficiency = round((total_reward / max(best_possible, 1)) * 100)
+        self.best_efficiency = max(self.best_efficiency, efficiency)
+
+        entry = {
+            "episode": self.total_episodes,
+            "reward": round(total_reward, 1),
+            "efficiency": efficiency,
+            "steps": steps,
+            "timestamp": time.time(),
+        }
+
+        self.recent_episodes.append(entry)
+        if len(self.recent_episodes) > 50:
+            self.recent_episodes = self.recent_episodes[-50:]
+
+    def log_step(self):
+        self.total_steps += 1
+
+    def log_session(self):
+        self.sessions += 1
+
+    def summary(self) -> dict:
+        uptime = time.time() - self.start_time
+        recent = self.recent_episodes[-10:] if self.recent_episodes else []
+        avg_recent = (
+            round(sum(e["efficiency"] for e in recent) / len(recent))
+            if recent
+            else 0
+        )
+
+        return {
+            "total_episodes": self.total_episodes,
+            "total_steps": self.total_steps,
+            "sessions": self.sessions,
+            "best_efficiency": self.best_efficiency,
+            "avg_recent_efficiency": avg_recent,
+            "uptime_seconds": round(uptime),
+            "recent_episodes": recent,
+        }
+
+
+# Single global instance
+training_log = TrainingLog()
+
+
+# --- Environment ---
 
 class BanditEnvironment(Environment):
     """
@@ -41,13 +99,15 @@ class BanditEnvironment(Environment):
         self._total_score: float = 0.0
         self._last_reward: float = 0.0
         self._last_source_id: int = 0
+        training_log.log_session()
 
     def reset(self) -> BanditObservation:
-        """
-        Reset the environment.
+        """Reset the environment. Shuffles arm means."""
+        # Log previous episode if it had steps
+        if self._state.step_count > 0:
+            best_possible = max(self._arm_means) * self.TOTAL_ROUNDS if self._arm_means else 1
+            training_log.log_episode(self._total_score, self._state.step_count, best_possible)
 
-        Shuffles the arm means and returns initial observation.
-        """
         self._state = State(episode_id=str(uuid4()), step_count=0)
         self._arm_means = self.BASE_MEANS.copy()
         random.shuffle(self._arm_means)
@@ -65,16 +125,9 @@ class BanditEnvironment(Environment):
         )
 
     def step(self, action: BanditAction) -> BanditObservation:  # type: ignore[override]
-        """
-        Execute a step by pulling the selected arm.
-
-        Args:
-            action: BanditAction with source_id indicating which arm to pull
-
-        Returns:
-            BanditObservation with the sampled reward
-        """
+        """Execute a step by pulling the selected arm."""
         self._state.step_count += 1
+        training_log.log_step()
 
         arm_id = action.source_id
         mean = self._arm_means[arm_id]
@@ -85,6 +138,11 @@ class BanditEnvironment(Environment):
         self._last_source_id = arm_id
 
         done = self._state.step_count >= self.TOTAL_ROUNDS
+
+        # Log episode on completion
+        if done:
+            best_possible = max(self._arm_means) * self.TOTAL_ROUNDS
+            training_log.log_episode(self._total_score, self._state.step_count, best_possible)
 
         return BanditObservation(
             reward=reward,
