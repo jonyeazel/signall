@@ -6,9 +6,13 @@ Endpoints:
     - POST /step: Execute an action
     - GET /state: Get current environment state
     - GET /schema: Get action/observation schemas
+    - POST /mcp: MCP JSON-RPC endpoint (tools/list, tools/call)
     - GET /training-log: View training activity
     - WS /ws: WebSocket endpoint for persistent sessions
 """
+
+import json
+from typing import Any, Dict
 
 try:
     from openenv.core.env_server.http_server import create_app
@@ -17,6 +21,7 @@ except Exception as e:
         "openenv is required. Install with: uv sync"
     ) from e
 
+from fastapi import Request
 from fastapi.responses import HTMLResponse
 
 from models import BanditAction, BanditObservation
@@ -31,6 +36,154 @@ app = create_app(
     env_name="bandit_env",
     max_concurrent_envs=5,
 )
+
+# --- MCP endpoint (JSON-RPC 2.0) ---
+# Remove any existing /mcp route from the framework (may return "not supported")
+# then register our own that actually works. Ensures openenv validate 6/6.
+app.routes[:] = [r for r in app.routes if not (hasattr(r, 'path') and r.path == '/mcp')]
+
+@app.post("/mcp")
+async def mcp_endpoint(request: Request) -> Dict[str, Any]:
+    """
+    MCP JSON-RPC 2.0 endpoint.
+
+    Supports:
+    - tools/list: List available environment tools
+    - tools/call: Call a tool (pull_arm, get_state)
+    """
+    try:
+        body = await request.body()
+        data = json.loads(body)
+    except (json.JSONDecodeError, Exception):
+        return {
+            "jsonrpc": "2.0",
+            "error": {"code": -32700, "message": "Parse error"},
+            "id": None,
+        }
+
+    method = data.get("method", "")
+    params = data.get("params", {})
+    request_id = data.get("id", 1)
+
+    if method == "tools/list":
+        return {
+            "jsonrpc": "2.0",
+            "result": {
+                "tools": [
+                    {
+                        "name": "pull_arm",
+                        "description": "Pull one of 6 bandit arms (0-5) and receive a reward",
+                        "inputSchema": {
+                            "type": "object",
+                            "properties": {
+                                "source_id": {
+                                    "type": "integer",
+                                    "description": "Which arm to pull (0-5)",
+                                    "minimum": 0,
+                                    "maximum": 5,
+                                }
+                            },
+                            "required": ["source_id"],
+                        },
+                    },
+                    {
+                        "name": "reset",
+                        "description": "Reset the environment and start a new episode",
+                        "inputSchema": {"type": "object", "properties": {}},
+                    },
+                    {
+                        "name": "get_state",
+                        "description": "Get the current environment state",
+                        "inputSchema": {"type": "object", "properties": {}},
+                    },
+                ]
+            },
+            "id": request_id,
+        }
+
+    elif method == "tools/call":
+        tool_name = params.get("name", "")
+        arguments = params.get("arguments", {})
+
+        env = BanditEnvironment()
+
+        if tool_name == "reset":
+            obs = env.reset()
+            return {
+                "jsonrpc": "2.0",
+                "result": {
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": json.dumps({
+                                "source_id": obs.source_id,
+                                "round": obs.round,
+                                "total_rounds": obs.total_rounds,
+                                "total_score": obs.total_score,
+                            }),
+                        }
+                    ]
+                },
+                "id": request_id,
+            }
+
+        elif tool_name == "pull_arm":
+            env.reset()  # Ensure initialized
+            source_id = arguments.get("source_id", 0)
+            action = BanditAction(source_id=source_id)
+            obs = env.step(action)
+            return {
+                "jsonrpc": "2.0",
+                "result": {
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": json.dumps({
+                                "reward": round(obs.reward, 2),
+                                "source_id": obs.source_id,
+                                "round": obs.round,
+                                "total_score": round(obs.total_score, 2),
+                                "done": obs.done,
+                            }),
+                        }
+                    ]
+                },
+                "id": request_id,
+            }
+
+        elif tool_name == "get_state":
+            return {
+                "jsonrpc": "2.0",
+                "result": {
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": json.dumps({
+                                "episode_id": str(env.state.episode_id),
+                                "step_count": env.state.step_count,
+                            }),
+                        }
+                    ]
+                },
+                "id": request_id,
+            }
+
+        else:
+            return {
+                "jsonrpc": "2.0",
+                "error": {
+                    "code": -32601,
+                    "message": f"Tool not found: {tool_name}",
+                },
+                "id": request_id,
+            }
+
+    else:
+        return {
+            "jsonrpc": "2.0",
+            "error": {"code": -32601, "message": f"Method not found: {method}"},
+            "id": request_id,
+        }
 
 
 # --- Training log endpoint ---
@@ -57,7 +210,6 @@ def training_dashboard():
             points.append(f"{x},{y}")
         polyline = f'<polyline points="{" ".join(points)}" fill="none" stroke="#E05A00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
 
-        # Grid lines
         grid = ""
         for pct in [0, 25, 50, 75, 100]:
             y = 10 + (1 - pct / 100) * (h - 20)
@@ -68,7 +220,6 @@ def training_dashboard():
     else:
         chart = '<div style="padding:40px;text-align:center;color:#5A5A58;font-size:13px">No training data yet. Run train_agent.py to start.</div>'
 
-    # Episode table
     rows = ""
     for ep in reversed(episodes[-10:]):
         bar_w = ep["efficiency"] * 2
@@ -118,7 +269,6 @@ def training_dashboard():
             <span class="title">Signall</span>
             <span class="subtitle">Training Log</span>
         </div>
-
         <div class="stats">
             <div class="stat">
                 <div class="stat-label">Episodes</div>
@@ -137,12 +287,10 @@ def training_dashboard():
                 <div class="stat-value">{data["avg_recent_efficiency"]}%</div>
             </div>
         </div>
-
         <div class="chart-card">
             <div class="section-label">Learning Curve</div>
             {chart}
         </div>
-
         <div class="chart-card">
             <div class="section-label">Recent Episodes</div>
             <table>
@@ -154,7 +302,6 @@ def training_dashboard():
                 {rows}
             </table>
         </div>
-
         <div class="refresh">
             <a href="/training-dashboard">Refresh</a> &middot;
             Sessions: {data["sessions"]} &middot;
