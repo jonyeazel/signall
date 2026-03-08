@@ -661,117 +661,148 @@ async with GenericEnvClient(
           </div>
 
           {/* Content */}
-          <div style={{ flex: 1, overflow: "auto", padding: "16px 20px" }}>
-            {/* Stats */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "6px", marginBottom: "16px" }}>
-              {[
-                { label: "Episodes", value: hfLog && !trainRunning ? hfLog.total_episodes : trainResults.length },
-                { label: "Steps", value: hfLog && !trainRunning ? hfLog.total_steps : trainResults.length * 25 },
-                { label: "Best", value: `${hfLog && !trainRunning ? hfLog.best_efficiency : (trainResults.length > 0 ? Math.max(...trainResults.map(r => r.efficiency)) : 0)}%`, accent: true },
-                { label: "Avg", value: `${hfLog && !trainRunning ? hfLog.avg_recent_efficiency : (trainResults.length >= 5 ? Math.round(trainResults.slice(-5).reduce((s, r) => s + r.efficiency, 0) / 5) : (trainResults[trainResults.length - 1]?.efficiency ?? 0))}%` },
-              ].map((s, i) => (
-                <div key={i} style={{ background: t.bg, border: `1px solid ${t.border}`, borderRadius: "10px", padding: "10px 12px" }}>
-                  <div style={{ fontSize: "8px", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: t.textTertiary, marginBottom: "4px" }}>{s.label}</div>
-                  <div style={{ fontSize: "18px", fontWeight: 600, color: s.accent ? t.accent : t.textPrimary, letterSpacing: "-0.02em" }}>{s.value}</div>
+          {(() => {
+            // Compute all metrics once
+            const isLive = hfLog && !trainRunning;
+            const episodes = isLive ? hfLog.total_episodes : trainResults.length;
+            const steps = isLive ? hfLog.total_steps : trainResults.length * 25;
+            const bestEff = isLive ? hfLog.best_efficiency : (trainResults.length > 0 ? Math.max(...trainResults.map(r => r.efficiency)) : 0);
+            const avgEff = isLive ? hfLog.avg_recent_efficiency : (trainResults.length >= 5 ? Math.round(trainResults.slice(-5).reduce((s, r) => s + r.efficiency, 0) / 5) : (trainResults[trainResults.length - 1]?.efficiency ?? 0));
+            const totalPulls = trainAgent.pullCounts.reduce((a, b) => a + b, 0);
+            const epsilon = trainAgent.epsilon;
+            const bestArmIdx = trainMeans.indexOf(Math.max(...trainMeans));
+            const bestArmEst = trainAgent.estimates[bestArmIdx];
+            const bestArmTrue = trainMeans[bestArmIdx];
+            const convergenceGap = bestArmEst > 0 ? Math.abs(bestArmEst - bestArmTrue) : bestArmTrue;
+            const exploitRate = totalPulls > 0 ? Math.round((trainAgent.pullCounts[bestArmIdx] / totalPulls) * 100) : 0;
+
+            // Chart data
+            const hfEff = hfLog?.recent_episodes.map(e => e.efficiency) ?? [];
+            const localEff = trainResults.map(r => r.efficiency);
+            const showLoc = trainRunning || (trainResults.length > 0 && hfEff.length === 0);
+            const chartData = showLoc ? localEff : hfEff;
+            const chartLabel = showLoc ? "Local" : "HuggingFace";
+
+            // Episode data
+            const hfEps = hfLog?.recent_episodes ?? [];
+            const episodeList = showLoc ? trainResults.slice(-6).reverse() : hfEps.slice(-6).reverse();
+
+            const mc = (label: string, value: string | number, desc: string, isAccent?: boolean) => (
+              <div style={{ background: t.bg, border: `1px solid ${t.border}`, borderRadius: "10px", padding: "10px 12px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "2px" }}>
+                  <div style={{ fontSize: "8px", fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase", color: t.textTertiary }}>{label}</div>
                 </div>
-              ))}
-            </div>
+                <div style={{ fontSize: "20px", fontWeight: 600, color: isAccent ? t.accent : t.textPrimary, letterSpacing: "-0.02em", lineHeight: 1.1, marginBottom: "4px" }}>{value}</div>
+                <div style={{ fontSize: "9px", color: t.textTertiary, lineHeight: 1.3 }}>{desc}</div>
+              </div>
+            );
 
-            {/* Chart */}
-            {(() => {
-              const hfEff = hfLog?.recent_episodes.map(e => e.efficiency) ?? [];
-              const localEff = trainResults.map(r => r.efficiency);
-              const showLoc = trainRunning || (trainResults.length > 0 && hfEff.length === 0);
-              const data = showLoc ? localEff : hfEff;
-              const label = showLoc ? "Local simulation" : "HuggingFace (live)";
-
-              if (data.length === 0) return (
-                <div style={{ background: t.bg, border: `1px solid ${t.border}`, borderRadius: "10px", padding: "32px 16px", textAlign: "center", color: t.textTertiary, fontSize: "12px", marginBottom: "16px" }}>
-                  Press Train or run train_agent.py
+            return (
+              <div style={{ flex: 1, overflow: "auto", padding: "16px 20px" }}>
+                {/* Primary metrics — 2x2 grid */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", marginBottom: "12px" }}>
+                  {mc("Episodes", episodes, "Complete training runs")}
+                  {mc("Best Score", `${bestEff}%`, "Highest single-episode efficiency", true)}
+                  {mc("Avg Recent", `${avgEff}%`, "Moving average of last 5 runs")}
+                  {mc("Total Steps", steps.toLocaleString(), "Individual decisions the agent made")}
                 </div>
-              );
 
-              const w = 380, h = 100, pl = 28, pr = 8, pt = 4, pb = 16, cw = w - pl - pr, ch = h - pt - pb;
-              const points = data.map((eff, i) => `${pl + (i / Math.max(data.length - 1, 1)) * cw},${pt + ch - (Math.min(eff, 100) / 100) * ch}`);
-              const avg: string[] = [];
-              for (let i = 0; i < data.length; i++) {
-                const sl = data.slice(Math.max(0, i - 4), i + 1);
-                const a = sl.reduce((s, v) => s + v, 0) / sl.length;
-                avg.push(`${pl + (i / Math.max(data.length - 1, 1)) * cw},${pt + ch - (Math.min(a, 100) / 100) * ch}`);
-              }
+                {/* Agent intelligence metrics — 2x2 grid */}
+                {totalPulls > 0 && (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", marginBottom: "12px" }}>
+                    {mc("Exploit Rate", `${exploitRate}%`, "How often agent picks its best option")}
+                    {mc("Convergence", convergenceGap < 0.5 ? "Locked" : `Δ${convergenceGap.toFixed(1)}`, convergenceGap < 0.5 ? "Agent found the true best arm" : "Gap between estimate and reality")}
+                    {mc("Epsilon", epsilon.toFixed(2), epsilon > 0.5 ? "Still exploring broadly" : epsilon > 0.1 ? "Narrowing down choices" : "Committed to best option")}
+                    {mc("Sessions", isLive ? `${hfLog.sessions}` : "1", "Unique agents that have connected")}
+                  </div>
+                )}
 
-              return (
-                <div style={{ background: t.bg, border: `1px solid ${t.border}`, borderRadius: "10px", padding: "12px 14px", marginBottom: "16px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
-                    <span style={{ fontSize: "8px", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: t.textTertiary }}>Learning Curve</span>
-                    <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                      <div style={{ width: "4px", height: "4px", borderRadius: "50%", background: showLoc ? t.textTertiary : "#22A55B" }} />
-                      <span style={{ fontSize: "8px", color: t.textTertiary }}>{label}</span>
+                {/* Learning curve */}
+                {chartData.length > 0 ? (
+                  <div style={{ background: t.bg, border: `1px solid ${t.border}`, borderRadius: "10px", padding: "12px 14px", marginBottom: "12px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                      <span style={{ fontSize: "8px", fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase", color: t.textTertiary }}>Learning Curve</span>
+                      <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                        <div style={{ width: "4px", height: "4px", borderRadius: "50%", background: showLoc ? t.textTertiary : "#22A55B" }} />
+                        <span style={{ fontSize: "8px", color: t.textTertiary }}>{chartLabel}</span>
+                      </div>
+                    </div>
+                    {(() => {
+                      const w = 380, h = 90, pl = 28, pr = 8, pt = 4, pb = 14, cw = w - pl - pr, ch = h - pt - pb;
+                      const pts = chartData.map((eff, i) => `${pl + (i / Math.max(chartData.length - 1, 1)) * cw},${pt + ch - (Math.min(eff, 100) / 100) * ch}`);
+                      const avg: string[] = [];
+                      for (let i = 0; i < chartData.length; i++) {
+                        const sl = chartData.slice(Math.max(0, i - 4), i + 1);
+                        avg.push(`${pl + (i / Math.max(chartData.length - 1, 1)) * cw},${pt + ch - (Math.min(sl.reduce((s, v) => s + v, 0) / sl.length, 100) / 100) * ch}`);
+                      }
+                      return (
+                        <svg viewBox={`0 0 ${w} ${h}`} style={{ width: "100%", height: "auto" }}>
+                          {[0, 50, 100].map(v => { const y = pt + ch - (v / 100) * ch; return <g key={v}><line x1={pl} y1={y} x2={w - pr} y2={y} stroke={t.border} strokeWidth={0.5} /><text x={pl - 4} y={y + 3} textAnchor="end" fill={t.textTertiary} fontSize={7}>{v}</text></g>; })}
+                          <polyline points={pts.join(" ")} fill="none" stroke={t.accent} strokeWidth={1} opacity={0.2} />
+                          {avg.length > 1 && <polyline points={avg.join(" ")} fill="none" stroke={t.accent} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />}
+                        </svg>
+                      );
+                    })()}
+                  </div>
+                ) : (
+                  <div style={{ background: t.bg, border: `1px solid ${t.border}`, borderRadius: "10px", padding: "24px 16px", textAlign: "center", color: t.textTertiary, fontSize: "11px", marginBottom: "12px" }}>
+                    Press Train or run <span style={{ fontFamily: "var(--font-mono)", color: t.textSecondary }}>train_agent.py</span>
+                  </div>
+                )}
+
+                {/* Agent knowledge — arm estimates */}
+                {totalPulls > 0 && (
+                  <div style={{ background: t.bg, border: `1px solid ${t.border}`, borderRadius: "10px", padding: "12px 14px", marginBottom: "12px" }}>
+                    <div style={{ fontSize: "8px", fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase", color: t.textTertiary, marginBottom: "8px" }}>
+                      What the agent learned
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                      {trainMeans.map((trueMean, i) => {
+                        const est = trainAgent.estimates[i];
+                        const isBest = i === bestArmIdx;
+                        const pulls = trainAgent.pullCounts[i];
+                        return (
+                          <div key={i} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                            <span style={{ fontSize: "9px", fontWeight: 600, color: isBest ? t.accent : t.textTertiary, width: "10px" }}>{String.fromCharCode(65 + i)}</span>
+                            <div style={{ flex: 1, position: "relative", height: "8px" }}>
+                              <div style={{ position: "absolute", top: 0, left: 0, height: "100%", width: `${Math.min(100, trueMean / 10 * 100)}%`, background: t.border, borderRadius: "2px" }} />
+                              <div style={{ position: "absolute", top: 0, left: 0, height: "100%", width: `${Math.min(100, est / 10 * 100)}%`, background: isBest ? t.accent : t.textTertiary, borderRadius: "2px", opacity: 0.7 }} />
+                            </div>
+                            <span style={{ fontSize: "8px", color: t.textSecondary, width: "48px", textAlign: "right" }}>
+                              {pulls > 0 ? est.toFixed(1) : "—"}/{trueMean.toFixed(1)}
+                            </span>
+                            <span style={{ fontSize: "7px", color: t.textTertiary, width: "24px", textAlign: "right" }}>
+                              {pulls}×
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
-                  <svg viewBox={`0 0 ${w} ${h}`} style={{ width: "100%", height: "auto" }}>
-                    {[0, 50, 100].map(v => { const y = pt + ch - (v / 100) * ch; return <g key={v}><line x1={pl} y1={y} x2={w - pr} y2={y} stroke={t.border} strokeWidth={0.5} /><text x={pl - 4} y={y + 3} textAnchor="end" fill={t.textTertiary} fontSize={7}>{v}</text></g>; })}
-                    <polyline points={points.join(" ")} fill="none" stroke={t.accent} strokeWidth={1} opacity={0.2} />
-                    {avg.length > 1 && <polyline points={avg.join(" ")} fill="none" stroke={t.accent} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />}
-                  </svg>
-                </div>
-              );
-            })()}
+                )}
 
-            {/* Episode history */}
-            <div style={{ marginBottom: "16px" }}>
-              <div style={{ fontSize: "8px", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: t.textTertiary, marginBottom: "8px" }}>Recent Episodes</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
-                {(() => {
-                  const hfEps = hfLog?.recent_episodes ?? [];
-                  const showLoc = trainRunning || (trainResults.length > 0 && hfEps.length === 0);
-                  const eps = showLoc ? trainResults.slice(-8).reverse() : hfEps.slice(-8).reverse();
-                  if (eps.length === 0) return <div style={{ fontSize: "11px", color: t.textTertiary, padding: "8px 0" }}>No episodes yet</div>;
-                  return eps.map((ep, i) => {
-                    const eff = "efficiency" in ep ? ep.efficiency : 0;
-                    const epNum = "episode" in ep ? ep.episode : i;
-                    return (
-                      <div key={i} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "3px 0" }}>
-                        <span style={{ fontSize: "9px", color: t.textTertiary, width: "20px", flexShrink: 0 }}>{epNum}</span>
-                        <div style={{ flex: 1, height: "4px", background: t.border, borderRadius: "2px", overflow: "hidden" }}>
-                          <div style={{ width: `${Math.min(eff, 100)}%`, height: "100%", background: t.accent, borderRadius: "2px" }} />
+                {/* Recent runs */}
+                {episodeList.length > 0 && (
+                  <div style={{ background: t.bg, border: `1px solid ${t.border}`, borderRadius: "10px", padding: "12px 14px" }}>
+                    <div style={{ fontSize: "8px", fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase", color: t.textTertiary, marginBottom: "6px" }}>Recent Runs</div>
+                    {episodeList.map((ep, i) => {
+                      const eff = "efficiency" in ep ? ep.efficiency : 0;
+                      const epNum = "episode" in ep ? ep.episode : i;
+                      return (
+                        <div key={i} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "3px 0" }}>
+                          <span style={{ fontSize: "9px", color: t.textTertiary, width: "18px", flexShrink: 0 }}>{epNum}</span>
+                          <div style={{ flex: 1, height: "4px", background: t.border, borderRadius: "2px", overflow: "hidden" }}>
+                            <div style={{ width: `${Math.min(eff, 100)}%`, height: "100%", background: t.accent, borderRadius: "2px" }} />
+                          </div>
+                          <span style={{ fontSize: "10px", fontWeight: 500, color: t.textPrimary, width: "28px", textAlign: "right", flexShrink: 0 }}>{eff}%</span>
                         </div>
-                        <span style={{ fontSize: "10px", fontWeight: 500, color: t.textPrimary, width: "30px", textAlign: "right", flexShrink: 0 }}>{eff}%</span>
-                      </div>
-                    );
-                  });
-                })()}
-              </div>
-            </div>
-
-            {/* Agent estimates (when local training) */}
-            {trainResults.length > 0 && (
-              <div>
-                <div style={{ fontSize: "8px", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: t.textTertiary, marginBottom: "8px" }}>Agent Estimates</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                  {trainMeans.map((trueMean, i) => {
-                    const est = trainAgent.estimates[i];
-                    const isBest = i === trainMeans.indexOf(Math.max(...trainMeans));
-                    return (
-                      <div key={i} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                        <span style={{ fontSize: "9px", fontWeight: 600, color: isBest ? t.accent : t.textTertiary, width: "10px" }}>{String.fromCharCode(65 + i)}</span>
-                        <div style={{ flex: 1, position: "relative", height: "8px" }}>
-                          <div style={{ position: "absolute", top: 0, left: 0, height: "100%", width: `${Math.min(100, trueMean / 10 * 100)}%`, background: t.border, borderRadius: "2px" }} />
-                          <div style={{ position: "absolute", top: 0, left: 0, height: "100%", width: `${Math.min(100, est / 10 * 100)}%`, background: isBest ? t.accent : t.textTertiary, borderRadius: "2px", opacity: 0.7 }} />
-                        </div>
-                        <span style={{ fontSize: "8px", color: t.textSecondary, width: "36px", textAlign: "right" }}>
-                          {trainAgent.pullCounts[i] > 0 ? est.toFixed(1) : "—"}/{trueMean.toFixed(1)}
-                        </span>
-                      </div>
-                    );
-                  })}
-                  <div style={{ fontSize: "8px", color: t.textTertiary, marginTop: "2px" }}>
-                    {trainAgent.pullCounts.reduce((a, b) => a + b, 0)} pulls · ε={trainAgent.epsilon.toFixed(2)}
+                      );
+                    })}
                   </div>
-                </div>
+                )}
               </div>
-            )}
-          </div>
+            );
+          })()}
         </div>
       </div>
     </>
