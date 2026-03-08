@@ -1,19 +1,124 @@
 @import "tailwindcss";
 
-:root {
-  --background: #18181b;
-  --foreground: #fafafa;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: #F5F3EF;
+  --color-foreground: #191919;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
+* {
+  box-sizing: border-box;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans), system-ui, sans-serif;
+  background: #0E0E10;
+  color: #E8E8E3;
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: rgba(224, 90, 0, 0.25);
+}
+
+/* --- Interactive cards --- */
+
+.env-card {
+  transition: border-color 150ms ease-out, box-shadow 150ms ease-out, transform 150ms ease-out;
+}
+
+.env-card:hover {
+  border-color: #3a3a3c;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transform: translateY(-1px);
+}
+
+.back-btn {
+  transition: border-color 150ms ease-out, color 150ms ease-out;
+}
+
+.back-btn:hover {
+  border-color: #3a3a3c;
+  color: #E8E8E3;
+}
+
+/* --- Slideshow card --- */
+
+.slide-card {
+  transition: all 400ms cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+}
+
+.slide-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.slide-card-expanded {
+  position: fixed;
+  z-index: 100;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 75vw;
+  height: 75vh;
+  transition: all 400ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* --- Overlay --- */
+
+.card-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 99;
+  opacity: 0;
+  transition: opacity 300ms ease-out;
+  pointer-events: none;
+}
+
+.card-overlay-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* --- Auto-cycle indicator --- */
+
+@keyframes cycle-progress {
+  from { width: 0%; }
+  to { width: 100%; }
+}
+
+.cycle-bar {
+  animation: cycle-progress 3s linear forwards;
+}
+
+/* --- Fade in --- */
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-up {
+  animation: fade-up 500ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+}
+
+/* --- Demo rail pulse --- */
+
+@keyframes rail-pulse {
+  0% { left: 0%; opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { left: 100%; opacity: 0; }
 }

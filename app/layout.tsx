@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "App",
-  description: "",
+  title: "Signall — Cognitive Primitives",
+  description: "OpenEnv Agentic Training. 10 RL environments for autonomous economic agents.",
 };
 
 export default function RootLayout({
