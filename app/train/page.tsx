@@ -3,7 +3,19 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { C, buttonStyle, ghostButton, card } from "../shared";
 import Link from "next/link";
-import { ArrowLeft, Play, Square } from "lucide-react";
+import { ArrowLeft, Play, Square, ExternalLink } from "lucide-react";
+
+const HF_SPACE = "https://jonyeazel-cognitive-primitives-bandit.hf.space";
+
+type HFLog = {
+  total_episodes: number;
+  total_steps: number;
+  sessions: number;
+  best_efficiency: number;
+  avg_recent_efficiency: number;
+  uptime_seconds: number;
+  recent_episodes: { episode: number; efficiency: number; reward: number }[];
+};
 
 const NUM_SOURCES = 6;
 const ROUNDS_PER_EPISODE = 25;
@@ -204,6 +216,29 @@ export default function TrainPage() {
     : lastResult?.efficiency ?? 0;
   const bestArmIndex = means.indexOf(Math.max(...means));
 
+  // Fetch live HuggingFace training data
+  const [hfLog, setHfLog] = useState<HFLog | null>(null);
+  const [hfStatus, setHfStatus] = useState<"loading" | "live" | "offline">("loading");
+
+  useEffect(() => {
+    async function fetchHF() {
+      try {
+        const res = await fetch(`${HF_SPACE}/training-log`);
+        if (res.ok) {
+          setHfLog(await res.json());
+          setHfStatus("live");
+        } else {
+          setHfStatus("offline");
+        }
+      } catch {
+        setHfStatus("offline");
+      }
+    }
+    fetchHF();
+    const interval = setInterval(fetchHF, 10000); // refresh every 10s
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div style={{ height: "100vh", display: "flex", flexDirection: "column", padding: "24px 32px 24px" }}>
       <div style={{ maxWidth: "640px", width: "100%", margin: "0 auto", flex: 1, display: "flex", flexDirection: "column" }}>
@@ -217,6 +252,54 @@ export default function TrainPage() {
             <span style={{ fontSize: "11px", color: C.border }}>/</span>
             <span style={{ fontSize: "11px", fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase", color: C.textTertiary }}>Live Training</span>
           </div>
+        </div>
+
+        {/* HuggingFace live stats */}
+        <div style={{
+          ...card,
+          padding: "14px 18px",
+          marginBottom: "16px",
+          flexShrink: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div style={{
+              width: "6px", height: "6px", borderRadius: "50%",
+              background: hfStatus === "live" ? "#4ADE80" : hfStatus === "loading" ? C.textTertiary : "#E05A00",
+            }} />
+            <span style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: C.textTertiary }}>
+              HuggingFace
+            </span>
+            {hfLog && hfStatus === "live" && (
+              <div style={{ display: "flex", gap: "16px", marginLeft: "8px" }}>
+                <span style={{ fontSize: "12px", color: C.textSecondary }}>
+                  <span style={{ fontWeight: 600, color: C.textPrimary }}>{hfLog.total_episodes}</span> episodes
+                </span>
+                <span style={{ fontSize: "12px", color: C.textSecondary }}>
+                  <span style={{ fontWeight: 600, color: C.textPrimary }}>{hfLog.total_steps}</span> steps
+                </span>
+                <span style={{ fontSize: "12px", color: C.textSecondary }}>
+                  best <span style={{ fontWeight: 600, color: C.accent }}>{hfLog.best_efficiency}%</span>
+                </span>
+              </div>
+            )}
+            {hfStatus === "loading" && (
+              <span style={{ fontSize: "11px", color: C.textTertiary }}>connecting...</span>
+            )}
+            {hfStatus === "offline" && (
+              <span style={{ fontSize: "11px", color: C.textTertiary }}>offline</span>
+            )}
+          </div>
+          <a
+            href={`${HF_SPACE}/training-dashboard`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "10px", color: C.textTertiary, textDecoration: "none" }}
+          >
+            Dashboard <ExternalLink size={10} strokeWidth={1.5} />
+          </a>
         </div>
 
         {/* Status + controls */}
