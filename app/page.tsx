@@ -744,7 +744,7 @@ export default function Home() {
               }}
             >
               <Activity size={12} strokeWidth={1.5} />
-              Train
+              Stats
             </button>
           )}
 

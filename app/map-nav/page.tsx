@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Shell, MetricCard, LessonCard } from "../shell";
+import { Shell, MetricCard, LessonCard, MiniChart } from "../shell";
 import { C, saveScore } from "../shared";
 
 type Phase = "intro" | "playing" | "reveal";
@@ -219,6 +219,7 @@ export default function MapNavPage() {
   const [path, setPath] = useState<Position[]>([]);
   const [gameOver, setGameOver] = useState(false);
   const [agentMode, setAgentMode] = useState(false);
+  const [chartData, setChartData] = useState<number[]>([]);
   const [explored, setExplored] = useState<Set<string>>(new Set());
   const agentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -294,6 +295,7 @@ export default function MapNavPage() {
         setMoves((m) => m + 1);
         setPath((p) => [...p, nextPos]);
         setExplored((prev) => new Set([...prev, `${nextPos.x},${nextPos.y}`]));
+        setChartData(prev => [...prev, (GRID_SIZE - 1 - nextPos.x) + (GRID_SIZE - 1 - nextPos.y)]);
 
         const newMoves = moves + 1;
         if (nextPos.x === GRID_SIZE - 1 && nextPos.y === GRID_SIZE - 1) {
@@ -456,6 +458,8 @@ export default function MapNavPage() {
         >
           BFS pathfinding agent
         </div>
+
+        <MiniChart data={chartData} totalSteps={20} yMin={0} yMax={14} />
       </Shell>
     );
   }

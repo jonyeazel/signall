@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
-import { Shell, MetricCard, LessonCard } from "../shell";
+import { Shell, MetricCard, LessonCard, MiniChart } from "../shell";
 import { C, buttonStyle, ghostButton, saveScore } from "../shared";
 import { Search, Target } from "lucide-react";
 
@@ -82,6 +82,7 @@ export default function RepairPage() {
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [agentMode, setAgentMode] = useState(false);
   const [selectedComponent, setSelectedComponent] = useState<number | null>(null);
+  const [chartData, setChartData] = useState<number[]>([]);
   const agentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Auto-start agent mode on mount
@@ -125,6 +126,7 @@ export default function RepairPage() {
           newStatuses[decision.index] = fails ? "fail" : "pass";
           setStatuses(newStatuses);
           setTestCount((c) => c + 1);
+          setChartData(prev => [...prev, newStatuses.filter(s => s === "untested").length]);
         } else {
           // Identify the component
           setIdentifiedIndex(decision.index);
@@ -436,6 +438,8 @@ export default function RepairPage() {
         >
           Binary search agent
         </div>
+
+        <MiniChart data={chartData} totalSteps={6} yMin={0} yMax={6} />
       </Shell>
     );
   }

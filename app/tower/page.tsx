@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
-import { Shell, MetricCard, LessonCard } from "../shell";
+import { Shell, MetricCard, LessonCard, MiniChart } from "../shell";
 import { C, card, buttonStyle, saveScore } from "../shared";
 import { Lock, Check, X } from "lucide-react";
 
@@ -152,6 +152,7 @@ export default function TowerPage() {
   const [agentMode, setAgentMode] = useState(false);
   const [selectedTask, setSelectedTask] = useState<string | null>(null);
   const [knownDeps, setKnownDeps] = useState<Map<string, Set<string>>>(new Map());
+  const [chartData, setChartData] = useState<number[]>([]);
   const agentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const completedCount = tasks.filter((t) => t.status === "completed").length;
@@ -184,6 +185,7 @@ export default function TowerPage() {
         );
 
         setTurns((t) => t + 1);
+        setChartData(prev => [...prev, unmetPrereqs.length === 0 ? completedCount + 1 : completedCount]);
 
         if (unmetPrereqs.length === 0) {
           setTasks((prev) =>
@@ -466,6 +468,8 @@ export default function TowerPage() {
       >
         Topological sort agent
       </div>
+
+      {isPlaying && <MiniChart data={chartData} totalSteps={12} yMin={0} yMax={6} />}
 
       {/* Discovered dependencies section - fixed height container, always rendered */}
       <div

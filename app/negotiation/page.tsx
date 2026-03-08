@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
-import { Shell, MetricCard, LessonCard } from "../shell";
+import { Shell, MetricCard, LessonCard, MiniChart } from "../shell";
 import { C, card, buttonStyle, saveScore } from "../shared";
 import { Check, X, ArrowRight } from "lucide-react";
 
@@ -242,6 +242,7 @@ export default function NegotiationPage() {
   const [history, setHistory] = useState<TradeHistory[]>([]);
   const [agentMode, setAgentMode] = useState(false);
   const [estimatedBotType, setEstimatedBotType] = useState<EstimatedBotType>("unknown");
+  const [chartData, setChartData] = useState<number[]>([]);
   const agentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Auto-start agent mode on mount
@@ -294,6 +295,11 @@ export default function NegotiationPage() {
         setLastResponse(accepted ? "accepted" : "rejected");
         setTradeGive({ iron: 0, crystal: 0, gold: 0 });
         setTradeWant({ iron: 0, crystal: 0, gold: 0 });
+
+        const currentResources = accepted
+          ? { iron: playerResources.iron - proposal.give.iron + proposal.want.iron, crystal: playerResources.crystal - proposal.give.crystal + proposal.want.crystal, gold: playerResources.gold - proposal.give.gold + proposal.want.gold }
+          : playerResources;
+        setChartData(prev => [...prev, calcValue(currentResources, PLAYER_VALUES)]);
 
         if (round >= 5) {
           const finalResources = accepted
@@ -815,6 +821,8 @@ export default function NegotiationPage() {
             </div>
           </div>
         </div>
+
+        {isPlaying && <MiniChart data={chartData} totalSteps={5} yMin={0} />}
 
         {/* REVEAL CONTENT */}
         <div style={{ display: isReveal ? "block" : "none" }}>

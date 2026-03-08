@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
-import { Shell, MetricCard, LessonCard } from "../shell";
+import { Shell, MetricCard, LessonCard, MiniChart } from "../shell";
 import { C, card, buttonStyle, saveScore } from "../shared";
 import { ArrowRight } from "lucide-react";
 
@@ -186,6 +186,7 @@ export default function MetaPage() {
   const [showingResult, setShowingResult] = useState(false);
   const [lastResult, setLastResult] = useState<RoundResult | null>(null);
   const [agentMode, setAgentMode] = useState(false);
+  const [chartData, setChartData] = useState<number[]>([]);
   const agentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Auto-start agent mode on mount
@@ -294,6 +295,7 @@ export default function MetaPage() {
       setLastResult(result);
       setResults((prev) => [...prev, result]);
       setBankroll((b) => Math.max(0, b + pnl));
+      setChartData(prev => [...prev, Math.max(0, bankroll + pnl)]);
       setShowingResult(true);
     },
     [rounds, currentRound, bankroll]
@@ -585,6 +587,8 @@ export default function MetaPage() {
             Trend analysis agent
           </div>
         </div>
+
+        <MiniChart data={chartData} totalSteps={8} yMin={0} />
       </Shell>
     );
   }

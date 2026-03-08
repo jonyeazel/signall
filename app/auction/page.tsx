@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Shell, MetricCard, LessonCard } from "../shell";
+import { Shell, MetricCard, LessonCard, MiniChart } from "../shell";
 import { C, card, buttonStyle, ghostButton, saveScore } from "../shared";
 
 type Phase = "intro" | "playing" | "reveal";
@@ -239,6 +239,7 @@ export default function AuctionPage() {
   const [optimalResult, setOptimalResult] = useState({ value: 0, indices: [] as number[] });
   const [agentMode, setAgentMode] = useState(false);
   const [agentDecision, setAgentDecision] = useState<"buy" | "pass" | null>(null);
+  const [chartData, setChartData] = useState<number[]>([]);
   const agentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const initGame = useCallback(() => {
@@ -309,6 +310,9 @@ export default function AuctionPage() {
         if (decision === "buy" && budget >= currentItem.cost) {
           setBudget((b) => b - currentItem.cost);
           setPurchased((p) => [...p, currentIndex]);
+          setChartData(prev => [...prev, purchased.reduce((s, i) => s + items[i].trueValue, 0) + currentItem.trueValue]);
+        } else {
+          setChartData(prev => [...prev, purchased.reduce((s, i) => s + items[i].trueValue, 0)]);
         }
 
         setAgentDecision(null);
@@ -526,6 +530,8 @@ export default function AuctionPage() {
           </div>
         </>
       )}
+
+      {phase === "playing" && <MiniChart data={chartData} totalSteps={8} yMin={0} />}
 
       {/* Reveal phase */}
       {phase === "reveal" && (

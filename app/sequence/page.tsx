@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Shell, MetricCard, LessonCard } from "../shell";
+import { Shell, MetricCard, LessonCard, MiniChart } from "../shell";
 import { C, card, saveScore } from "../shared";
 
 type Phase = "intro" | "playing" | "reveal";
@@ -204,6 +204,7 @@ export default function SequencePage() {
   const [selected, setSelected] = useState<number | null>(null);
   const [showResult, setShowResult] = useState(false);
   const [agentMode, setAgentMode] = useState(false);
+  const [chartData, setChartData] = useState<number[]>([]);
   const agentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const initGame = useCallback(() => {
@@ -213,6 +214,7 @@ export default function SequencePage() {
     setScore(0);
     setSelected(null);
     setShowResult(false);
+    setChartData([]);
   }, []);
 
   const handleBegin = useCallback((withAgent: boolean = false) => {
@@ -230,6 +232,7 @@ export default function SequencePage() {
     if (isCorrect) {
       setScore((s) => s + 1);
     }
+    setChartData(prev => [...prev, score + (isCorrect ? 1 : 0)]);
 
     setTimeout(() => {
       if (currentRound < 7) {
@@ -264,6 +267,7 @@ export default function SequencePage() {
         if (isCorrect) {
           setScore((s) => s + 1);
         }
+        setChartData(prev => [...prev, score + (isCorrect ? 1 : 0)]);
 
         setTimeout(() => {
           if (currentRound < 7) {
@@ -418,6 +422,8 @@ export default function SequencePage() {
             );
           })}
         </div>
+
+        <MiniChart data={chartData} totalSteps={8} yMin={0} yMax={8} />
 
         <div
           style={{

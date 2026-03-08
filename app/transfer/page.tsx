@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { Shell, MetricCard, LessonCard } from "../shell";
+import { Shell, MetricCard, LessonCard, MiniChart } from "../shell";
 import { C, card, saveScore } from "../shared";
 import { Check, X } from "lucide-react";
 
@@ -311,6 +311,7 @@ export default function TransferPage() {
   const [agentMode, setAgentMode] = useState(false);
   const [agentLearnedThreshold, setAgentLearnedThreshold] = useState<number | null>(null);
   const [showThresholdLine, setShowThresholdLine] = useState(false);
+  const [chartData, setChartData] = useState<number[]>([]);
   const agentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Auto-start agent mode on mount
@@ -403,6 +404,9 @@ export default function TransferPage() {
 
     const nextIndex = currentPredictionIndex + 1;
     setCurrentPredictionIndex(nextIndex);
+
+    const isCorrect = prediction === phase2Data[currentPredictionIndex].outcome;
+    setChartData(prev => [...prev, prev.reduce((s, v) => s + v, 0) + (isCorrect ? 1 : 0)]);
 
     // Check if all predictions made
     if (nextIndex >= phase2Data.length) {
@@ -531,6 +535,8 @@ export default function TransferPage() {
             </div>
           </div>
         </div>
+
+        <MiniChart data={chartData} totalSteps={phase2Data.length || 4} yMin={0} />
       </Shell>
     );
   }

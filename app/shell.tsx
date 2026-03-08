@@ -136,6 +136,59 @@ export function MetricCard({
   );
 }
 
+export function MiniChart({
+  data,
+  totalSteps,
+  yMin,
+  yMax,
+  label,
+}: {
+  data: number[];
+  totalSteps: number;
+  yMin?: number;
+  yMax?: number;
+  label?: string;
+}) {
+  if (data.length === 0) {
+    return (
+      <div style={{ height: "80px", background: C.surface, border: `1px solid ${C.border}`, borderRadius: "12px", padding: "8px 12px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <span style={{ color: C.textTertiary, fontSize: "11px" }}>{label || "Chart builds as the agent trains"}</span>
+      </div>
+    );
+  }
+
+  const lo = yMin ?? Math.min(...data);
+  const hi = yMax ?? Math.max(...data);
+  const range = hi - lo || 1;
+  const w = 520, h = 56, pl = 4, pr = 4, pt = 4, pb = 4;
+  const cw = w - pl - pr, ch = h - pt - pb;
+
+  const points = data.map((v, i) => ({
+    x: pl + (i / Math.max(totalSteps - 1, 1)) * cw,
+    y: pt + ch - ((Math.min(Math.max(v, lo), hi) - lo) / range) * ch,
+  }));
+  const polyline = points.map(p => `${p.x},${p.y}`).join(" ");
+  const last = points[points.length - 1];
+  const gridCount = 3;
+  const gridLines = Array.from({ length: gridCount }, (_, i) => lo + ((i + 1) / (gridCount + 1)) * range);
+
+  return (
+    <div style={{ height: "80px", background: C.surface, border: `1px solid ${C.border}`, borderRadius: "12px", padding: "8px 12px", overflow: "hidden" }}>
+      <svg viewBox={`0 0 ${w} ${h}`} style={{ width: "100%", height: "100%" }}>
+        {gridLines.map((v, i) => {
+          const y = pt + ch - ((v - lo) / range) * ch;
+          return <line key={i} x1={pl} y1={y} x2={w - pr} y2={y} stroke={C.border} strokeWidth={0.5} />;
+        })}
+        <polyline points={polyline} fill="none" stroke={C.accent} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+        {points.map((p, i) => (
+          <circle key={i} cx={p.x} cy={p.y} r={2.5} fill={C.accent} opacity={0.3} />
+        ))}
+        {last && <circle cx={last.x} cy={last.y} r={5} fill={C.accent} style={{ filter: `drop-shadow(0 0 4px ${C.accent})` }} />}
+      </svg>
+    </div>
+  );
+}
+
 export function LessonCard({
   term,
   children,

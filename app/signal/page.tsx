@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { Shell, MetricCard, LessonCard } from "../shell";
+import { Shell, MetricCard, LessonCard, MiniChart } from "../shell";
 import { C, card, saveScore } from "../shared";
 import { AlertCircle } from "lucide-react";
 
@@ -114,6 +114,7 @@ export default function SignalPage() {
   const [falseAlerts, setFalseAlerts] = useState(0);
   const [missedSpikes, setMissedSpikes] = useState(0);
   const [agentMode, setAgentMode] = useState(false);
+  const [perfData, setPerfData] = useState<number[]>([]);
   const agentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const chartRef = useRef<SVGSVGElement>(null);
   const [chartWidth, setChartWidth] = useState(CHART_WIDTH);
@@ -187,6 +188,7 @@ export default function SignalPage() {
         }
 
         setCurrentIndex(nextIndex);
+        setPerfData(prev => [...prev, newCorrect]);
 
         if (nextIndex >= stream.length - 1) {
           const finalEfficiency = Math.max(
@@ -648,6 +650,8 @@ export default function SignalPage() {
           <span>missed</span>
         </div>
       </div>
+
+      <MiniChart data={perfData} totalSteps={30} yMin={0} />
     </Shell>
   );
 }
