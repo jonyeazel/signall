@@ -1,6 +1,6 @@
 "use client";
 
-import { C, ENVIRONMENTS } from "./shared";
+import { C } from "./shared";
 import { useEffect, useState } from "react";
 
 function isEmbedMode(): boolean {
@@ -10,7 +10,6 @@ function isEmbedMode(): boolean {
 
 export function Shell({
   children,
-  env,
 }: {
   children: React.ReactNode;
   env?: string;
@@ -19,31 +18,56 @@ export function Shell({
   const [checked, setChecked] = useState(false);
 
   useEffect(() => {
-    const embed = isEmbedMode();
-    setEmbedMode(embed);
+    setEmbedMode(isEmbedMode());
     setChecked(true);
-
-    // Guard: if not embedded, redirect to homepage
-    if (!embed) {
-      window.location.href = "/";
-    }
   }, []);
 
-  // Don't render anything until we've checked — prevents flash
-  if (!checked || !embedMode) {
-    return null;
+  if (!checked) return null;
+
+  // Embedded: minimal wrapper for iframe
+  if (embedMode) {
+    return (
+      <div style={{
+        minHeight: "100vh",
+        background: C.bg,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "20px 24px",
+      }}>
+        <div style={{ maxWidth: "600px", width: "100%" }}>
+          {children}
+        </div>
+      </div>
+    );
   }
 
+  // Direct access: full-page layout with back link
   return (
     <div style={{
       minHeight: "100vh",
       background: C.bg,
       display: "flex",
+      flexDirection: "column",
       alignItems: "center",
-      justifyContent: "center",
-      padding: "20px 24px",
+      padding: "24px",
     }}>
-      <div style={{ maxWidth: "600px", width: "100%" }}>
+      <div style={{ width: "100%", maxWidth: "600px", marginBottom: "16px" }}>
+        <a
+          href="/"
+          style={{
+            fontSize: "13px",
+            color: C.textTertiary,
+            textDecoration: "none",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "6px",
+          }}
+        >
+          &larr; Signall
+        </a>
+      </div>
+      <div style={{ maxWidth: "600px", width: "100%", flex: 1 }}>
         {children}
       </div>
     </div>

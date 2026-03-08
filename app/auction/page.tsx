@@ -569,7 +569,7 @@ export default function AuctionPage() {
               <LessonCard term="What this teaches">
                 <ul style={{ margin: 0, paddingLeft: "16px", lineHeight: 1.8 }}>
                   <li>Spend limited budgets wisely</li>
-                  <li>Apparent value isn't always real value</li>
+                  <li>Apparent value isn&apos;t always real value</li>
                   <li>Every procurement decision is this game</li>
                 </ul>
               </LessonCard>

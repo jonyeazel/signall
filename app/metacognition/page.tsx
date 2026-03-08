@@ -613,7 +613,7 @@ export default function MetaPage() {
         <ul style={{ margin: 0, paddingLeft: "16px", display: "flex", flexDirection: "column", gap: "6px" }}>
           <li>Bet big when confident, small when unsure</li>
           <li>Overconfidence destroys returns</li>
-          <li>Knowing what you don't know is a skill</li>
+          <li>Knowing what you don&apos;t know is a skill</li>
         </ul>
       </LessonCard>
     </Shell>

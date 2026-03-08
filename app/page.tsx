@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { Play, X, Copy, Check, ExternalLink, ChevronRight, Square, Activity } from "lucide-react";
+import { Play, X, Copy, Check, ChevronRight, Square, Activity } from "lucide-react";
 import {
-  C as darkC,
   ENVIRONMENTS,
   ENV_GROUPS,
   getScores,
@@ -57,7 +56,6 @@ export default function Home() {
   const [scores, setScores] = useState<Record<string, EnvScore>>({});
   const [expandedCard, setExpandedCard] = useState<number | null>(null);
   const [expandedResult, setExpandedResult] = useState<{ efficiency: number } | null>(null);
-  const [playingMode, setPlayingMode] = useState<"play" | "agent" | null>(null);
   const [copied, setCopied] = useState(false);
   const [docsOpen, setDocsOpen] = useState(false);
   const [trainOpen, setTrainOpen] = useState(false);
@@ -122,7 +120,6 @@ export default function Home() {
   const closeExpanded = useCallback(() => {
     setExpandedCard(null);
     setExpandedResult(null);
-    setPlayingMode(null);
     setScores(getScores());
   }, []);
 
@@ -263,11 +260,6 @@ export default function Home() {
     };
     step();
   }, [trainRunning, trainMeans, trainVariances]);
-
-  const completedCount = ENVIRONMENTS.filter((e) => scores[e.id]).length;
-  const avgEfficiency = completedCount > 0
-    ? Math.round(Object.values(scores).reduce((s, v) => s + v.best, 0) / completedCount)
-    : 0;
 
   return (
     <>

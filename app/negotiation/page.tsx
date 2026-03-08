@@ -833,7 +833,7 @@ export default function NegotiationPage() {
 
           <div style={{ fontSize: "13px", color: C.textSecondary, marginBottom: "16px" }}>
             Bot was <span style={{ fontWeight: 500, color: C.textPrimary }}>{botProfile.name}</span> — {botProfile.name === "Fair" ? "accepts when both gain" : botProfile.name === "Greedy" ? "needs 2x your gain" : botProfile.name === "Generous" ? "accepts any gain" : "needs more than you"}. Values: I={botProfile.values.iron}, C={botProfile.values.crystal}, G={botProfile.values.gold}.
-            <span style={{ display: "block", fontSize: "12px", color: C.textTertiary, marginTop: "6px" }}>The agent had to figure out the counterpart's hidden strategy.</span>
+            <span style={{ display: "block", fontSize: "12px", color: C.textTertiary, marginTop: "6px" }}>The agent had to figure out the counterpart&apos;s hidden strategy.</span>
           </div>
 
           <LessonCard term="What this teaches">

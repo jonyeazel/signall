@@ -96,7 +96,7 @@ function runEpisode(agent: AgentState, episodeNum: number, means: number[], vari
   const a = { estimates: [...agent.estimates], pullCounts: [...agent.pullCounts], totalRewards: [...agent.totalRewards], epsilon: Math.max(0.05, 1.0 - episodeNum * 0.02) };
   let totalReward = 0;
   for (let round = 0; round < ROUNDS_PER_EPISODE; round++) {
-    let choice = Math.random() < a.epsilon ? Math.floor(Math.random() * NUM_SOURCES) : a.estimates.indexOf(Math.max(...a.estimates));
+    const choice = Math.random() < a.epsilon ? Math.floor(Math.random() * NUM_SOURCES) : a.estimates.indexOf(Math.max(...a.estimates));
     const reward = gaussianRandom(means[choice], variances[choice]);
     totalReward += reward;
     a.pullCounts[choice]++;

@@ -57,24 +57,6 @@ function computeOptimalScore(sources: SourceData[]): number {
   return bestMean * TOTAL_ROUNDS;
 }
 
-type BehaviorType = "Heavy exploiter" | "Heavy explorer" | "Balanced" | "Gradual settler";
-
-function analyzeBehavior(history: { sourceIndex: number; reward: number }[]): BehaviorType {
-  if (history.length < TOTAL_ROUNDS) return "Balanced";
-
-  const uniqueSources = new Set(history.map((h) => h.sourceIndex)).size;
-  const firstHalf = history.slice(0, Math.floor(TOTAL_ROUNDS / 2));
-  const secondHalf = history.slice(Math.floor(TOTAL_ROUNDS / 2));
-
-  const uniqueFirst = new Set(firstHalf.map((h) => h.sourceIndex)).size;
-  const uniqueSecond = new Set(secondHalf.map((h) => h.sourceIndex)).size;
-
-  if (uniqueSources <= 2) return "Heavy exploiter";
-  if (uniqueSources >= 5 && uniqueSecond >= 4) return "Heavy explorer";
-  if (uniqueFirst > uniqueSecond + 1) return "Gradual settler";
-  return "Balanced";
-}
-
 // --- Epsilon-greedy agent ---
 
 function epsilonGreedyChoice(
@@ -217,16 +199,11 @@ export default function BanditPage() {
     () => Math.round((game.totalScore / optimalScore) * 100),
     [game.totalScore, optimalScore]
   );
-  const behavior = useMemo(() => analyzeBehavior(game.history), [game.history]);
-
   const sortedSourcesForReveal = useMemo(() => {
     return game.sources
       .map((s, i) => ({ ...s, index: i, name: SOURCE_NAMES[i] }))
       .sort((a, b) => b.trueMean - a.trueMean);
   }, [game.sources]);
-
-  const maxMean = useMemo(() => Math.max(...BASE_MEANS), []);
-  const minMean = useMemo(() => Math.min(...BASE_MEANS), []);
 
   if (phase === "playing") {
     const progress = game.round / TOTAL_ROUNDS;

@@ -228,9 +228,9 @@ export default function SignalPage() {
   const handleNext = useCallback(() => {
     if (agentMode) return;
     if (currentIndex >= stream.length - 1) {
-      let finalCorrect = correctAlerts;
+      const finalCorrect = correctAlerts;
       let finalFalse = falseAlerts;
-      let finalMissed = missedSpikes;
+      const finalMissed = missedSpikes;
 
       if (alertActive === 1) {
         finalFalse++;

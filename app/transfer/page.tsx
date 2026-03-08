@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Shell, MetricCard, LessonCard } from "../shell";
 import { C, card, saveScore } from "../shared";
 import { Check, X } from "lucide-react";
