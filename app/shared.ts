@@ -104,6 +104,7 @@ export type EnvDef = {
   capability: string;
   path: string;
   station: string;
+  useCases: [string, string, string];
 };
 
 export type EnvGroup = {
@@ -115,26 +116,26 @@ export const ENV_GROUPS: EnvGroup[] = [
   {
     label: "Foundation",
     envs: [
-      { id: "bandit", name: "The Bandit", capability: "Portfolio allocation & market testing", path: "/bandit", station: "Embarcadero" },
-      { id: "sequence", name: "The Sequence", capability: "Trend prediction & time series", path: "/sequence", station: "Powell St" },
-      { id: "map", name: "The Map", capability: "Logistics & route optimization", path: "/map-nav", station: "Fog Basin" },
-      { id: "auction", name: "The Auction", capability: "Capital deployment & pricing", path: "/auction", station: "Montgomery" },
+      { id: "bandit", name: "The Bandit", capability: "Portfolio allocation & market testing", path: "/bandit", station: "Embarcadero", useCases: ["A/B test optimization at scale", "Ad spend across channels", "Product recommendation tuning"] },
+      { id: "sequence", name: "The Sequence", capability: "Trend prediction & time series", path: "/sequence", station: "Powell St", useCases: ["Sales demand forecasting", "Price trend prediction", "Inventory restocking signals"] },
+      { id: "map", name: "The Map", capability: "Logistics & route optimization", path: "/map-nav", station: "Fog Basin", useCases: ["Supply chain routing", "Delivery path optimization", "Market entry navigation"] },
+      { id: "auction", name: "The Auction", capability: "Capital deployment & pricing", path: "/auction", station: "Montgomery", useCases: ["Ad bidding budget allocation", "Procurement under constraints", "Portfolio investment sizing"] },
     ],
   },
   {
     label: "Reasoning",
     envs: [
-      { id: "tower", name: "The Tower", capability: "Project execution & task sequencing", path: "/tower", station: "Civic Center" },
-      { id: "signal", name: "The Signal", capability: "Fraud detection & anomaly recognition", path: "/signal", station: "Nob Hill" },
-      { id: "negotiation", name: "The Negotiation", capability: "Deal-making & counterparty modeling", path: "/negotiation", station: "Market St" },
-      { id: "repair", name: "The Repair", capability: "Root cause analysis & diagnostics", path: "/repair", station: "Mission" },
+      { id: "tower", name: "The Tower", capability: "Project execution & task sequencing", path: "/tower", station: "Civic Center", useCases: ["Product launch coordination", "CI/CD pipeline ordering", "Campaign task sequencing"] },
+      { id: "signal", name: "The Signal", capability: "Fraud detection & anomaly recognition", path: "/signal", station: "Nob Hill", useCases: ["Fraud transaction detection", "Analytics anomaly alerts", "Real vs bot traffic filtering"] },
+      { id: "negotiation", name: "The Negotiation", capability: "Deal-making & counterparty modeling", path: "/negotiation", station: "Market St", useCases: ["Vendor contract negotiation", "Dynamic pricing strategy", "Customer retention offers"] },
+      { id: "repair", name: "The Repair", capability: "Root cause analysis & diagnostics", path: "/repair", station: "Mission", useCases: ["Conversion funnel debugging", "Revenue drop diagnosis", "System outage triage"] },
     ],
   },
   {
     label: "Mastery",
     envs: [
-      { id: "transfer", name: "The Transfer", capability: "Market expansion & domain adaptation", path: "/transfer", station: "Twin Peaks" },
-      { id: "meta", name: "The Meta", capability: "Risk management & confidence calibration", path: "/metacognition", station: "Lands End" },
+      { id: "transfer", name: "The Transfer", capability: "Market expansion & domain adaptation", path: "/transfer", station: "Twin Peaks", useCases: ["New market expansion", "Cross-vertical strategy reuse", "Product line extension"] },
+      { id: "meta", name: "The Meta", capability: "Risk management & confidence calibration", path: "/metacognition", station: "Lands End", useCases: ["Risk-adjusted decision making", "When to escalate to humans", "Model confidence scoring"] },
     ],
   },
 ];

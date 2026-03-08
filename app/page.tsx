@@ -291,9 +291,14 @@ export default function Home() {
                 <h2 style={{ fontSize: "48px", fontWeight: 600, color: t.textPrimary, letterSpacing: "-0.03em", lineHeight: 1.1, margin: "0 0 16px 0" }}>
                   {xEnv.name}
                 </h2>
-                <p style={{ fontSize: "17px", lineHeight: 1.6, color: t.textSecondary, margin: "0 0 32px 0", maxWidth: "440px" }}>
-                  {xEnv.capability}
-                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "32px" }}>
+                  {xEnv.useCases.map((uc, j) => (
+                    <div key={j} style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "15px", color: t.textSecondary, lineHeight: 1.4 }}>
+                      <span style={{ color: GOLD, fontSize: "7px", flexShrink: 0 }}>●</span>
+                      {uc}
+                    </div>
+                  ))}
+                </div>
                 <div style={{ display: "flex", gap: "32px", marginBottom: "32px" }}>
                   <div>
                     <div style={{ fontSize: "36px", fontWeight: 600, color: t.accent, lineHeight: 1 }}>{xScore?.best ?? 0}%</div>
@@ -423,8 +428,13 @@ export default function Home() {
                           </div>
                         </div>
                       </div>
-                      <div style={{ fontSize: "10px", color: t.textTertiary, lineHeight: 1.4, marginTop: "10px", flex: 1 }}>
-                        {env.capability}
+                      <div style={{ marginTop: "10px", flex: 1, display: "flex", flexDirection: "column", gap: "3px" }}>
+                        {env.useCases.map((uc, j) => (
+                          <div key={j} style={{ fontSize: "10px", color: t.textTertiary, lineHeight: 1.3, display: "flex", alignItems: "baseline", gap: "5px" }}>
+                            <span style={{ color: GOLD, fontSize: "6px", flexShrink: 0, marginTop: "2px" }}>●</span>
+                            {uc}
+                          </div>
+                        ))}
                       </div>
                       <div style={{ display: "flex", alignItems: "baseline", gap: "8px", marginTop: "8px" }}>
                         <div style={{ fontSize: "18px", fontWeight: 600, color: t.accent, letterSpacing: "-0.02em" }}>{envScore?.best ?? 0}%</div>
@@ -499,10 +509,15 @@ export default function Home() {
                   <div style={{ fontSize: "140px", fontWeight: 700, color: isDark ? `${t.border}55` : `${t.border}88`, lineHeight: 0.85, letterSpacing: "-0.06em", marginBottom: "16px" }}>
                     {String(slideIndex + 1).padStart(2, "0")}
                   </div>
-                  <div style={{ fontSize: "28px", fontWeight: 600, color: t.textPrimary, letterSpacing: "-0.02em", lineHeight: 1.2, marginBottom: "8px" }}>
-                    {slideEnv.capability}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "12px" }}>
+                    {slideEnv.useCases.map((uc, j) => (
+                      <div key={j} style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "16px", color: t.textSecondary, lineHeight: 1.3 }}>
+                        <span style={{ color: GOLD, fontSize: "6px", flexShrink: 0 }}>●</span>
+                        {uc}
+                      </div>
+                    ))}
                   </div>
-                  <div style={{ display: "flex", gap: "24px", marginTop: "16px" }}>
+                  <div style={{ display: "flex", gap: "24px", marginTop: "8px" }}>
                     <div>
                       <span style={{ fontSize: "32px", fontWeight: 600, color: t.accent }}>{slideScore?.best ?? 0}%</span>
                       <span style={{ fontSize: "12px", color: t.textTertiary, marginLeft: "8px" }}>best</span>
