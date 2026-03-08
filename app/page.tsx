@@ -2,18 +2,41 @@
 
 import Link from "next/link";
 import { useEffect, useState, useCallback, useRef } from "react";
-import { Play, X, Zap, Activity } from "lucide-react";
 import {
-  C,
+  Play, X, Zap, Activity, Sun, Moon, LayoutGrid, Presentation,
+  ChevronLeft, ChevronRight,
+} from "lucide-react";
+import {
+  C as darkC,
   ENVIRONMENTS,
   ENV_GROUPS,
   getScores,
   type EnvScore,
-  buttonStyle,
 } from "./shared";
 
-// --- Avatar: numbered circle for each environment ---
-function Avatar({ index, done }: { index: number; done: boolean }) {
+// --- Dual palette ---
+
+const lightC = {
+  bg: "#F5F3EF",
+  surface: "#FFFFFF",
+  border: "#E4E0DA",
+  borderActive: "#C8C4BC",
+  textPrimary: "#191919",
+  textSecondary: "#6B6B68",
+  textTertiary: "#9B9B98",
+  accent: "#E05A00",
+  panelBg: "#ECEAE4",
+} as const;
+
+const darkPalette = {
+  ...darkC,
+  panelBg: "#08080A",
+} as const;
+
+type ViewMode = "grid" | "slideshow";
+
+// --- Avatar ---
+function Avatar({ index, done, t }: { index: number; done: boolean; t: { accent: string; border: string; textTertiary: string } }) {
   return (
     <div
       style={{
@@ -26,11 +49,10 @@ function Avatar({ index, done }: { index: number; done: boolean }) {
         fontSize: "11px",
         fontWeight: 600,
         letterSpacing: "-0.02em",
-        background: done ? C.accent : "transparent",
-        color: done ? "#fff" : C.textTertiary,
-        border: done ? "none" : `1.5px solid ${C.border}`,
+        background: done ? t.accent : "transparent",
+        color: done ? "#fff" : t.textTertiary,
+        border: done ? "none" : `1.5px solid ${t.border}`,
         flexShrink: 0,
-        transition: "all 200ms ease-out",
       }}
     >
       {String(index + 1).padStart(2, "0")}
@@ -42,6 +64,13 @@ export default function Home() {
   const [scores, setScores] = useState<Record<string, EnvScore>>({});
   const [expandedCard, setExpandedCard] = useState<number | null>(null);
   const [hoveredDock, setHoveredDock] = useState<number | null>(null);
+  const [isDark, setIsDark] = useState(true);
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [slideIndex, setSlideIndex] = useState(0);
+  const [cycleKey, setCycleKey] = useState(0);
+  const cycleRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const t = isDark ? darkPalette : lightC;
 
   useEffect(() => {
     setScores(getScores());
@@ -52,26 +81,82 @@ export default function Home() {
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       if (e.key === "Escape") setExpandedCard(null);
+      if (viewMode === "slideshow" && expandedCard === null) {
+        if (e.key === "ArrowRight") {
+          setSlideIndex((p) => (p + 1) % ENVIRONMENTS.length);
+          setCycleKey((k) => k + 1);
+        }
+        if (e.key === "ArrowLeft") {
+          setSlideIndex((p) => (p - 1 + ENVIRONMENTS.length) % ENVIRONMENTS.length);
+          setCycleKey((k) => k + 1);
+        }
+      }
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
-  }, []);
+  }, [viewMode, expandedCard]);
+
+  // Auto-cycle slideshow
+  useEffect(() => {
+    if (viewMode !== "slideshow" || expandedCard !== null) {
+      if (cycleRef.current) clearInterval(cycleRef.current);
+      return;
+    }
+    cycleRef.current = setInterval(() => {
+      setSlideIndex((p) => (p + 1) % ENVIRONMENTS.length);
+      setCycleKey((k) => k + 1);
+    }, 5000);
+    return () => {
+      if (cycleRef.current) clearInterval(cycleRef.current);
+    };
+  }, [viewMode, expandedCard]);
 
   const completedCount = ENVIRONMENTS.filter((e) => scores[e.id]).length;
   const totalRuns = Object.values(scores).reduce((s, v) => s + v.attempts, 0);
   const avgEfficiency =
     completedCount > 0
-      ? Math.round(
-          Object.values(scores).reduce((s, v) => s + v.best, 0) / completedCount
-        )
+      ? Math.round(Object.values(scores).reduce((s, v) => s + v.best, 0) / completedCount)
       : 0;
 
+  // Slideshow env
+  const slideEnv = ENVIRONMENTS[slideIndex];
+  const slideScore = scores[slideEnv?.id];
+  const slideGroup = ENV_GROUPS.find((g) => g.envs.includes(slideEnv));
+
+  // Toggle button style
+  const toggleBtn = (active: boolean): React.CSSProperties => ({
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "32px",
+    height: "32px",
+    borderRadius: "10px",
+    background: active ? `${t.accent}18` : "transparent",
+    border: "none",
+    color: active ? t.accent : t.textTertiary,
+    padding: 0,
+    transition: "all 150ms ease-out",
+  });
+
   return (
-    <div className="viewport-panel">
+    <div
+      style={{
+        position: "fixed",
+        inset: "12px",
+        background: t.bg,
+        borderRadius: "24px",
+        border: `1px solid ${isDark ? "#1E1E22" : t.border}`,
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+        transition: "background 300ms ease-out, border-color 300ms ease-out",
+      }}
+    >
       {/* Overlay */}
       <div
         className={`card-overlay ${expandedCard !== null ? "card-overlay-visible" : ""}`}
         onClick={closeExpanded}
+        style={{ background: isDark ? "rgba(0,0,0,0.7)" : "rgba(0,0,0,0.4)" }}
       />
 
       {/* Expanded card */}
@@ -86,9 +171,11 @@ export default function Home() {
                 style={{
                   width: "100%",
                   height: "100%",
-                  background: `linear-gradient(160deg, #1A1A1E 0%, ${C.surface} 50%, #161618 100%)`,
+                  background: isDark
+                    ? `linear-gradient(160deg, #1A1A1E 0%, ${t.surface} 50%, #161618 100%)`
+                    : `linear-gradient(160deg, #F8F6F2 0%, ${t.surface} 50%, #F0EDE8 100%)`,
                   borderRadius: "24px",
-                  border: `1px solid ${C.border}`,
+                  border: `1px solid ${t.border}`,
                   padding: "48px",
                   display: "flex",
                   flexDirection: "column",
@@ -97,91 +184,43 @@ export default function Home() {
               >
                 <button
                   onClick={closeExpanded}
-                  style={{
-                    position: "absolute",
-                    top: "20px",
-                    right: "20px",
-                    background: "none",
-                    border: "none",
-                    color: C.textTertiary,
-                    cursor: "pointer",
-                    padding: "8px",
-                  }}
+                  style={{ position: "absolute", top: "20px", right: "20px", background: "none", border: "none", color: t.textTertiary, cursor: "pointer", padding: "8px" }}
                 >
                   <X size={20} strokeWidth={1.5} />
                 </button>
 
-                {/* Avatar + title */}
                 <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "32px" }}>
-                  <Avatar index={expandedCard} done={!!xScore} />
+                  <Avatar index={expandedCard} done={!!xScore} t={t} />
                   <div>
-                    <div style={{ fontSize: "11px", fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase", color: C.accent }}>
-                      {xGroup?.label}
-                    </div>
-                    <div style={{ fontSize: "13px", color: C.textTertiary }}>{xEnv.station}</div>
+                    <div style={{ fontSize: "11px", fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase", color: t.accent }}>{xGroup?.label}</div>
+                    <div style={{ fontSize: "13px", color: t.textTertiary }}>{xEnv.station}</div>
                   </div>
                 </div>
 
                 <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                  <h2
-                    style={{
-                      fontSize: "48px",
-                      fontWeight: 600,
-                      color: C.textPrimary,
-                      letterSpacing: "-0.03em",
-                      lineHeight: 1.1,
-                      margin: "0 0 16px 0",
-                    }}
-                  >
+                  <h2 style={{ fontSize: "48px", fontWeight: 600, color: t.textPrimary, letterSpacing: "-0.03em", lineHeight: 1.1, margin: "0 0 16px 0" }}>
                     {xEnv.name}
                   </h2>
-                  <p
-                    style={{
-                      fontSize: "17px",
-                      lineHeight: 1.6,
-                      color: C.textSecondary,
-                      margin: "0 0 32px 0",
-                      maxWidth: "440px",
-                    }}
-                  >
+                  <p style={{ fontSize: "17px", lineHeight: 1.6, color: t.textSecondary, margin: "0 0 32px 0", maxWidth: "440px" }}>
                     {xEnv.capability}
                   </p>
-
                   {xScore && (
                     <div style={{ display: "flex", gap: "32px", marginBottom: "32px" }}>
                       <div>
-                        <div style={{ fontSize: "36px", fontWeight: 600, color: C.accent, lineHeight: 1 }}>
-                          {xScore.best}%
-                        </div>
-                        <div style={{ fontSize: "11px", color: C.textTertiary, marginTop: "6px" }}>best score</div>
+                        <div style={{ fontSize: "36px", fontWeight: 600, color: t.accent, lineHeight: 1 }}>{xScore.best}%</div>
+                        <div style={{ fontSize: "11px", color: t.textTertiary, marginTop: "6px" }}>best</div>
                       </div>
                       <div>
-                        <div style={{ fontSize: "36px", fontWeight: 600, color: C.textPrimary, lineHeight: 1 }}>
-                          {xScore.attempts}
-                        </div>
-                        <div style={{ fontSize: "11px", color: C.textTertiary, marginTop: "6px" }}>
-                          {xScore.attempts === 1 ? "run" : "runs"}
-                        </div>
+                        <div style={{ fontSize: "36px", fontWeight: 600, color: t.textPrimary, lineHeight: 1 }}>{xScore.attempts}</div>
+                        <div style={{ fontSize: "11px", color: t.textTertiary, marginTop: "6px" }}>{xScore.attempts === 1 ? "run" : "runs"}</div>
                       </div>
                     </div>
                   )}
-
                   <div style={{ display: "flex", gap: "12px" }}>
-                    <Link href={xEnv.path} style={{ ...buttonStyle, textDecoration: "none", height: "44px", padding: "0 24px" }}>
+                    <Link href={xEnv.path} style={{ display: "inline-flex", alignItems: "center", gap: "8px", height: "44px", padding: "0 24px", background: t.accent, color: "#fff", border: "none", borderRadius: "16px", fontSize: "13px", fontWeight: 500, textDecoration: "none", fontFamily: "inherit" }}>
                       Play
                     </Link>
-                    <Link
-                      href={`${xEnv.path}?demo=true`}
-                      style={{
-                        ...buttonStyle,
-                        textDecoration: "none",
-                        height: "44px",
-                        padding: "0 24px",
-                        background: "transparent",
-                        color: C.textSecondary,
-                        border: `1px solid ${C.border}`,
-                      }}
-                    >
+                    <Link href={`${xEnv.path}?demo=true`} style={{ display: "inline-flex", alignItems: "center", gap: "8px", height: "44px", padding: "0 24px", background: "transparent", color: t.textSecondary, border: `1px solid ${t.border}`, borderRadius: "16px", fontSize: "13px", fontWeight: 500, textDecoration: "none", fontFamily: "inherit" }}>
                       <Play size={13} strokeWidth={2} />
                       Watch agent
                     </Link>
@@ -192,223 +231,270 @@ export default function Home() {
           );
         })()}
 
-      {/* --- Main content area --- */}
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          padding: "24px 32px 0",
-          overflow: "hidden",
-        }}
-      >
+      {/* --- Main content --- */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "24px 32px 0", overflow: "hidden", transition: "color 300ms ease-out" }}>
         {/* Top bar */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: "24px",
-            flexShrink: 0,
-          }}
-        >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <span style={{ fontSize: "17px", fontWeight: 700, color: C.accent }}>
-              [~]
-            </span>
-            <span style={{ fontSize: "14px", fontWeight: 600, color: C.textPrimary, letterSpacing: "0.01em" }}>
-              Signall
-            </span>
-            <span style={{ fontSize: "10px", color: C.textTertiary, letterSpacing: "0.04em" }}>
-              cognition with rails
-            </span>
+            <span style={{ fontSize: "17px", fontWeight: 700, color: t.accent }}>[~]</span>
+            <span style={{ fontSize: "14px", fontWeight: 600, color: t.textPrimary }}>{" "}Signall</span>
+            <span style={{ fontSize: "10px", color: t.textTertiary, letterSpacing: "0.04em" }}>cognition with rails</span>
           </div>
 
-          {completedCount > 0 && (
-            <div style={{ display: "flex", gap: "16px", alignItems: "baseline" }}>
-              <span style={{ fontSize: "20px", fontWeight: 600, color: C.textPrimary }}>{avgEfficiency}%</span>
-              <span style={{ fontSize: "10px", color: C.textTertiary }}>{completedCount}/10</span>
-              <span style={{ fontSize: "10px", color: C.textTertiary }}>{totalRuns} runs</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            {/* View toggle */}
+            <div style={{ display: "flex", gap: "2px", background: isDark ? "#151517" : "#E8E5DF", borderRadius: "12px", padding: "3px" }}>
+              <button style={toggleBtn(viewMode === "grid")} onClick={() => setViewMode("grid")} title="Grid view">
+                <LayoutGrid size={14} strokeWidth={1.5} />
+              </button>
+              <button style={toggleBtn(viewMode === "slideshow")} onClick={() => setViewMode("slideshow")} title="Slideshow view">
+                <Presentation size={14} strokeWidth={1.5} />
+              </button>
             </div>
-          )}
+
+            {/* Theme toggle */}
+            <button
+              onClick={() => setIsDark((d) => !d)}
+              style={{ ...toggleBtn(false), width: "32px", height: "32px", color: t.textTertiary, background: isDark ? "#151517" : "#E8E5DF", borderRadius: "10px" }}
+              title={isDark ? "Light mode" : "Dark mode"}
+            >
+              {isDark ? <Sun size={14} strokeWidth={1.5} /> : <Moon size={14} strokeWidth={1.5} />}
+            </button>
+
+            {/* Stats */}
+            {completedCount > 0 && (
+              <div style={{ display: "flex", gap: "12px", alignItems: "baseline", marginLeft: "8px" }}>
+                <span style={{ fontSize: "18px", fontWeight: 600, color: t.textPrimary }}>{avgEfficiency}%</span>
+                <span style={{ fontSize: "10px", color: t.textTertiary }}>{completedCount}/10</span>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Center content — hero + cards */}
-        <div
-          style={{
-            flex: 1,
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            alignItems: "center",
-            gap: "32px",
-            minHeight: 0,
-          }}
-        >
-          {/* Hero text — centered */}
-          <div style={{ textAlign: "center", maxWidth: "560px" }}>
-            <h1
-              style={{
-                fontSize: "36px",
-                fontWeight: 600,
-                color: C.textPrimary,
-                letterSpacing: "-0.03em",
-                lineHeight: 1.15,
-                margin: "0 0 12px 0",
-              }}
-            >
-              Train agents on the primitives.
-              <br />
-              <span style={{ color: C.accent }}>The rest transfers.</span>
-            </h1>
-            <p
-              style={{
-                fontSize: "14px",
-                lineHeight: 1.6,
-                color: C.textTertiary,
-                margin: 0,
-              }}
-            >
-              10 cognitive environments. Every economic skill decomposes into them.
-            </p>
-          </div>
+        {/* Content area */}
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", gap: "28px", minHeight: 0 }}>
 
-          {/* Card grid — 5 columns */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(5, 1fr)",
-              gap: "10px",
-              width: "100%",
-              maxWidth: "900px",
-            }}
-          >
-            {ENVIRONMENTS.map((env, i) => {
-              const envScore = scores[env.id];
-              const hasDone = !!envScore;
-              const group = ENV_GROUPS.find((g) => g.envs.includes(env));
+          {/* ===== GRID VIEW ===== */}
+          {viewMode === "grid" && (
+            <>
+              <div style={{ textAlign: "center", maxWidth: "520px" }}>
+                <h1 style={{ fontSize: "34px", fontWeight: 600, color: t.textPrimary, letterSpacing: "-0.03em", lineHeight: 1.15, margin: "0 0 10px 0" }}>
+                  Train agents on the primitives.
+                  <br />
+                  <span style={{ color: t.accent }}>The rest transfers.</span>
+                </h1>
+                <p style={{ fontSize: "13px", lineHeight: 1.6, color: t.textTertiary, margin: 0 }}>
+                  10 cognitive environments. Every economic skill decomposes into them.
+                </p>
+              </div>
 
-              return (
-                <div
-                  key={env.id}
-                  className="env-card"
-                  onClick={() => setExpandedCard(i)}
-                  style={{
-                    background: C.surface,
-                    border: `1px solid ${C.border}`,
-                    borderRadius: "16px",
-                    padding: "14px",
-                    display: "flex",
-                    flexDirection: "column",
-                    cursor: "pointer",
-                    minHeight: "120px",
-                    position: "relative",
-                  }}
-                >
-                  {/* Avatar + name — top left */}
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "auto" }}>
-                    <Avatar index={i} done={hasDone} />
-                    <div style={{ minWidth: 0 }}>
-                      <div
-                        style={{
-                          fontSize: "12px",
-                          fontWeight: 600,
-                          color: C.textPrimary,
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                        }}
-                      >
-                        {env.name.replace("The ", "")}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "10px", width: "100%", maxWidth: "900px" }}>
+                {ENVIRONMENTS.map((env, i) => {
+                  const envScore = scores[env.id];
+                  const hasDone = !!envScore;
+                  const group = ENV_GROUPS.find((g) => g.envs.includes(env));
+                  return (
+                    <div
+                      key={env.id}
+                      className="env-card"
+                      onClick={() => setExpandedCard(i)}
+                      style={{
+                        background: t.surface,
+                        border: `1px solid ${t.border}`,
+                        borderRadius: "16px",
+                        padding: "14px",
+                        display: "flex",
+                        flexDirection: "column",
+                        cursor: "pointer",
+                        minHeight: "120px",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "auto" }}>
+                        <Avatar index={i} done={hasDone} t={t} />
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontSize: "12px", fontWeight: 600, color: t.textPrimary, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                            {env.name.replace("The ", "")}
+                          </div>
+                          <div style={{ fontSize: "9px", color: t.textTertiary, letterSpacing: "0.04em", textTransform: "uppercase" }}>
+                            {group?.label}
+                          </div>
+                        </div>
                       </div>
-                      <div
-                        style={{
-                          fontSize: "9px",
-                          color: C.textTertiary,
-                          letterSpacing: "0.04em",
-                          textTransform: "uppercase",
-                        }}
-                      >
-                        {group?.label}
+                      <div style={{ marginTop: "12px" }}>
+                        {hasDone ? (
+                          <div style={{ fontSize: "20px", fontWeight: 600, color: t.accent, letterSpacing: "-0.02em" }}>{envScore.best}%</div>
+                        ) : (
+                          <div style={{ fontSize: "11px", color: t.textTertiary }}>{env.station}</div>
+                        )}
                       </div>
                     </div>
-                  </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
 
-                  {/* Bottom: score or station */}
-                  <div style={{ marginTop: "12px" }}>
-                    {hasDone ? (
-                      <div style={{ fontSize: "20px", fontWeight: 600, color: C.accent, letterSpacing: "-0.02em" }}>
-                        {envScore.best}%
-                      </div>
-                    ) : (
-                      <div style={{ fontSize: "11px", color: C.textTertiary }}>
-                        {env.station}
-                      </div>
-                    )}
+          {/* ===== SLIDESHOW VIEW ===== */}
+          {viewMode === "slideshow" && (
+            <div style={{ display: "flex", alignItems: "center", gap: "24px", width: "100%", maxWidth: "1000px", flex: 1, minHeight: 0 }}>
+              {/* Left arrow */}
+              <button
+                onClick={() => {
+                  setSlideIndex((p) => (p - 1 + ENVIRONMENTS.length) % ENVIRONMENTS.length);
+                  setCycleKey((k) => k + 1);
+                }}
+                style={{
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: t.surface,
+                  border: `1px solid ${t.border}`,
+                  color: t.textSecondary,
+                  flexShrink: 0,
+                }}
+              >
+                <ChevronLeft size={18} strokeWidth={1.5} />
+              </button>
+
+              {/* Card */}
+              <Link
+                href={slideEnv.path}
+                key={`slide-${slideIndex}`}
+                className="card-content-fade"
+                style={{
+                  flex: 1,
+                  height: "100%",
+                  background: isDark
+                    ? `linear-gradient(160deg, #1A1A1E 0%, ${t.surface} 40%, #161618 100%)`
+                    : `linear-gradient(160deg, #F8F6F2 0%, ${t.surface} 40%, #F0EDE8 100%)`,
+                  borderRadius: "20px",
+                  border: `1px solid ${t.border}`,
+                  padding: "40px 48px",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                  position: "relative",
+                  overflow: "hidden",
+                  textDecoration: "none",
+                  color: "inherit",
+                }}
+              >
+                {/* Avatar + title — top left */}
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                  <Avatar index={slideIndex} done={!!slideScore} t={t} />
+                  <div>
+                    <div style={{ fontSize: "12px", fontWeight: 600, color: t.textPrimary }}>
+                      {slideEnv.name}
+                    </div>
+                    <div style={{ fontSize: "10px", color: t.textTertiary, letterSpacing: "0.04em", textTransform: "uppercase" }}>
+                      {slideGroup?.label} &middot; {slideEnv.station}
+                    </div>
                   </div>
                 </div>
-              );
-            })}
-          </div>
+
+                {/* Center content */}
+                <div>
+                  {/* Watermark number */}
+                  <div style={{ fontSize: "140px", fontWeight: 700, color: isDark ? `${t.border}55` : `${t.border}88`, lineHeight: 0.85, letterSpacing: "-0.06em", marginBottom: "16px" }}>
+                    {String(slideIndex + 1).padStart(2, "0")}
+                  </div>
+
+                  <div style={{ fontSize: "28px", fontWeight: 600, color: t.textPrimary, letterSpacing: "-0.02em", lineHeight: 1.2, marginBottom: "8px" }}>
+                    {slideEnv.capability}
+                  </div>
+
+                  {slideScore && (
+                    <div style={{ display: "flex", gap: "24px", marginTop: "16px" }}>
+                      <div>
+                        <span style={{ fontSize: "32px", fontWeight: 600, color: t.accent }}>{slideScore.best}%</span>
+                        <span style={{ fontSize: "12px", color: t.textTertiary, marginLeft: "8px" }}>best</span>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: "32px", fontWeight: 600, color: t.textPrimary }}>{slideScore.attempts}</span>
+                        <span style={{ fontSize: "12px", color: t.textTertiary, marginLeft: "8px" }}>{slideScore.attempts === 1 ? "run" : "runs"}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Progress bar */}
+                <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "3px", borderRadius: "0 0 20px 20px", overflow: "hidden" }}>
+                  <div key={`c-${cycleKey}`} style={{ height: "100%", background: t.accent, animation: "cycle-progress 5s linear forwards" }} />
+                </div>
+              </Link>
+
+              {/* Right arrow */}
+              <button
+                onClick={() => {
+                  setSlideIndex((p) => (p + 1) % ENVIRONMENTS.length);
+                  setCycleKey((k) => k + 1);
+                }}
+                style={{
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: t.surface,
+                  border: `1px solid ${t.border}`,
+                  color: t.textSecondary,
+                  flexShrink: 0,
+                }}
+              >
+                <ChevronRight size={18} strokeWidth={1.5} />
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
       {/* --- Command Center Dock --- */}
-      <div
-        style={{
-          flexShrink: 0,
-          padding: "0 32px 20px",
-          display: "flex",
-          justifyContent: "center",
-        }}
-      >
+      <div style={{ flexShrink: 0, padding: "0 32px 20px", display: "flex", justifyContent: "center" }}>
         <div
           style={{
             display: "flex",
             alignItems: "center",
             gap: "4px",
-            background: "#151517",
-            border: `1px solid ${C.border}`,
+            background: isDark ? "#151517" : "#E8E5DF",
+            border: `1px solid ${t.border}`,
             borderRadius: "20px",
             padding: "6px 8px",
             maxWidth: "720px",
             width: "100%",
+            transition: "background 300ms ease-out, border-color 300ms ease-out",
           }}
         >
-          {/* Logo pill */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              padding: "0 12px",
-              height: "36px",
-              borderRadius: "14px",
-              background: C.surface,
-              flexShrink: 0,
-            }}
-          >
-            <span style={{ fontSize: "13px", fontWeight: 700, color: C.accent }}>[~]</span>
-            <span style={{ fontSize: "11px", fontWeight: 600, color: C.textSecondary }}>Signall</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "0 12px", height: "36px", borderRadius: "14px", background: t.surface, flexShrink: 0 }}>
+            <span style={{ fontSize: "13px", fontWeight: 700, color: t.accent }}>[~]</span>
+            <span style={{ fontSize: "11px", fontWeight: 600, color: t.textSecondary }}>Signall</span>
           </div>
 
-          {/* Divider */}
-          <div style={{ width: "1px", height: "20px", background: C.border, margin: "0 4px", flexShrink: 0 }} />
+          <div style={{ width: "1px", height: "20px", background: t.border, margin: "0 4px", flexShrink: 0 }} />
 
-          {/* Environment nodes */}
           <div style={{ display: "flex", gap: "2px", flex: 1, justifyContent: "center" }}>
             {ENVIRONMENTS.map((env, i) => {
               const hasDone = !!scores[env.id];
               const isHovered = hoveredDock === i;
+              const isSlideActive = viewMode === "slideshow" && i === slideIndex;
 
               return (
                 <button
                   key={env.id}
-                  className={`dock-item ${isHovered ? "dock-item-active" : ""}`}
-                  onClick={() => setExpandedCard(i)}
+                  className="dock-item"
+                  onClick={() => {
+                    if (viewMode === "slideshow") {
+                      setSlideIndex(i);
+                      setCycleKey((k) => k + 1);
+                    } else {
+                      setExpandedCard(i);
+                    }
+                  }}
                   onMouseEnter={() => setHoveredDock(i)}
                   onMouseLeave={() => setHoveredDock(null)}
-                  title={`${env.name} — ${env.station}`}
                   style={{
                     width: "36px",
                     height: "36px",
@@ -416,24 +502,23 @@ export default function Home() {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    background: hasDone ? "rgba(224, 90, 0, 0.08)" : "transparent",
-                    border: "none",
+                    background: isSlideActive ? `${t.accent}20` : hasDone ? `${t.accent}10` : "transparent",
+                    border: isSlideActive ? `1px solid ${t.accent}40` : "none",
                     padding: 0,
                     position: "relative",
                   }}
                 >
                   <div
                     style={{
-                      width: hasDone ? "8px" : "5px",
-                      height: hasDone ? "8px" : "5px",
+                      width: isSlideActive ? "10px" : hasDone ? "8px" : "5px",
+                      height: isSlideActive ? "10px" : hasDone ? "8px" : "5px",
                       borderRadius: "50%",
-                      background: hasDone ? C.accent : C.textTertiary,
+                      background: isSlideActive || hasDone ? t.accent : t.textTertiary,
+                      boxShadow: isSlideActive ? `0 0 10px ${t.accent}` : hasDone ? `0 0 4px ${t.accent}` : "none",
                       transition: "all 150ms ease-out",
-                      boxShadow: hasDone ? `0 0 6px ${C.accent}` : "none",
                     }}
                   />
 
-                  {/* Tooltip on hover */}
                   {isHovered && (
                     <div
                       style={{
@@ -443,19 +528,20 @@ export default function Home() {
                         transform: "translateX(-50%)",
                         marginBottom: "8px",
                         padding: "6px 10px",
-                        background: C.surface,
-                        border: `1px solid ${C.border}`,
+                        background: t.surface,
+                        border: `1px solid ${t.border}`,
                         borderRadius: "8px",
                         fontSize: "10px",
                         fontWeight: 500,
-                        color: C.textPrimary,
+                        color: t.textPrimary,
                         whiteSpace: "nowrap",
                         pointerEvents: "none",
                         zIndex: 50,
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
                       }}
                     >
                       {env.name.replace("The ", "")}
-                      <span style={{ color: C.textTertiary, marginLeft: "6px" }}>{env.station}</span>
+                      <span style={{ color: t.textTertiary, marginLeft: "6px" }}>{env.station}</span>
                     </div>
                   )}
                 </button>
@@ -463,50 +549,14 @@ export default function Home() {
             })}
           </div>
 
-          {/* Divider */}
-          <div style={{ width: "1px", height: "20px", background: C.border, margin: "0 4px", flexShrink: 0 }} />
+          <div style={{ width: "1px", height: "20px", background: t.border, margin: "0 4px", flexShrink: 0 }} />
 
-          {/* Action buttons */}
-          <Link
-            href="/bandit?demo=true"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "5px",
-              height: "36px",
-              padding: "0 14px",
-              borderRadius: "14px",
-              background: C.accent,
-              color: "#fff",
-              fontSize: "11px",
-              fontWeight: 600,
-              textDecoration: "none",
-              flexShrink: 0,
-              letterSpacing: "0.01em",
-            }}
-          >
+          <Link href="/bandit?demo=true" style={{ display: "flex", alignItems: "center", gap: "5px", height: "36px", padding: "0 14px", borderRadius: "14px", background: t.accent, color: "#fff", fontSize: "11px", fontWeight: 600, textDecoration: "none", flexShrink: 0 }}>
             <Zap size={12} strokeWidth={2} />
             Demo
           </Link>
 
-          <Link
-            href="/train"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "5px",
-              height: "36px",
-              padding: "0 14px",
-              borderRadius: "14px",
-              background: C.surface,
-              color: C.textSecondary,
-              fontSize: "11px",
-              fontWeight: 600,
-              textDecoration: "none",
-              flexShrink: 0,
-              letterSpacing: "0.01em",
-            }}
-          >
+          <Link href="/train" style={{ display: "flex", alignItems: "center", gap: "5px", height: "36px", padding: "0 14px", borderRadius: "14px", background: t.surface, color: t.textSecondary, fontSize: "11px", fontWeight: 600, textDecoration: "none", flexShrink: 0 }}>
             <Activity size={12} strokeWidth={2} />
             Train
           </Link>
