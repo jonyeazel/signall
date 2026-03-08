@@ -220,11 +220,18 @@ export function Shell({
   // Find the env id from the env name prop
   const envDef = env ? ENVIRONMENTS.find((e) => e.name === env || e.id === env) : null;
 
-  // Embed mode: minimal wrapper, no header, no back button
+  // Embed mode: centered content, no header, no back button
   if (embedMode) {
     return (
-      <div style={{ padding: "20px 24px", minHeight: "100vh", background: C.bg }}>
-        <div style={{ maxWidth: "600px", margin: "0 auto" }}>
+      <div style={{
+        minHeight: "100vh",
+        background: C.bg,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "20px 24px",
+      }}>
+        <div style={{ maxWidth: "600px", width: "100%" }}>
           {children}
         </div>
       </div>
@@ -235,14 +242,18 @@ export function Shell({
     <div
       style={{
         minHeight: "100vh",
-        padding: demoMode ? "96px 32px 96px" : "32px 32px 96px",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: demoMode ? "96px 32px 48px" : "32px 32px 48px",
       }}
     >
       {demoMode && envDef && <DemoRail currentEnvId={envDef.id} />}
       <div
         style={{
           maxWidth: "640px",
-          margin: "0 auto",
+          width: "100%",
         }}
       >
         <div
