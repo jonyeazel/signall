@@ -446,14 +446,14 @@ export default function MetaPage() {
                 width: "48px",
                 height: "48px",
                 borderRadius: "16px",
-                background: lastResult.correct ? "#E8F5E9" : "#FFEBEE",
+                background: lastResult.correct ? "rgba(74, 222, 128, 0.1)" : "rgba(224, 90, 0, 0.1)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 margin: "0 auto 16px",
               }}
             >
-              <span style={{ fontSize: "24px", color: lastResult.correct ? "#4CAF50" : "#E05A00" }}>
+              <span style={{ fontSize: "24px", color: lastResult.correct ? "#4ADE80" : "#E05A00" }}>
                 {lastResult.correct ? "+" : "−"}
               </span>
             </div>
@@ -461,7 +461,7 @@ export default function MetaPage() {
               style={{
                 fontSize: "32px",
                 fontWeight: 600,
-                color: lastResult.correct ? "#4CAF50" : C.accent,
+                color: lastResult.correct ? "#4ADE80" : C.accent,
                 marginBottom: "8px",
               }}
             >
@@ -492,10 +492,10 @@ export default function MetaPage() {
                 let bg: string = C.surface;
                 let borderColor: string = C.border;
                 if (isCorrect) {
-                  bg = "#E8F5E9";
-                  borderColor = "#4CAF50";
+                  bg = "rgba(74, 222, 128, 0.1)";
+                  borderColor = "#4ADE80";
                 } else if (isSelected) {
-                  bg = "#FFEBEE";
+                  bg = "rgba(224, 90, 0, 0.1)";
                   borderColor = "#E05A00";
                 }
                 return (

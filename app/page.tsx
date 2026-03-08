@@ -152,28 +152,35 @@ export default function Home() {
       })()}
 
       {/* Main content — single viewport */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "40px 48px 0" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "32px 48px 0" }}>
         {/* Top bar: logo + stats */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "auto" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <span style={{ fontSize: "16px", fontWeight: 600, color: C.accent }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <span style={{ fontSize: "18px", fontWeight: 700, color: C.accent, letterSpacing: "-0.02em" }}>
               [~]
             </span>
-            <span style={{ fontSize: "14px", fontWeight: 600, color: C.textPrimary, letterSpacing: "0.01em" }}>
-              Signall
-            </span>
-            <span style={{ fontSize: "11px", color: C.textTertiary, marginLeft: "2px" }}>
-              &middot;
-            </span>
-            <span style={{ fontSize: "11px", fontStyle: "italic", color: C.textTertiary }}>
-              cognition with rails
-            </span>
+            <div>
+              <div style={{ display: "flex", alignItems: "baseline", gap: "8px" }}>
+                <span style={{ fontSize: "15px", fontWeight: 600, color: C.textPrimary, letterSpacing: "0.01em" }}>
+                  Signall
+                </span>
+                <span style={{ fontSize: "10px", color: C.textTertiary, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                  OpenEnv Agentic Training
+                </span>
+              </div>
+              <div style={{ fontSize: "11px", fontStyle: "italic", color: C.textTertiary, marginTop: "1px", letterSpacing: "0.02em" }}>
+                cognition with rails
+              </div>
+            </div>
           </div>
 
           {completedCount > 0 && (
-            <div style={{ display: "flex", gap: "16px", alignItems: "baseline" }}>
-              <span style={{ fontSize: "20px", fontWeight: 600, color: C.textPrimary }}>{avgEfficiency}%</span>
-              <span style={{ fontSize: "11px", color: C.textTertiary }}>{completedCount}/10</span>
+            <div style={{ display: "flex", gap: "20px", alignItems: "baseline" }}>
+              <div style={{ textAlign: "right" }}>
+                <span style={{ fontSize: "24px", fontWeight: 600, color: C.textPrimary, letterSpacing: "-0.02em" }}>{avgEfficiency}%</span>
+                <span style={{ fontSize: "10px", color: C.textTertiary, marginLeft: "4px" }}>avg</span>
+              </div>
+              <span style={{ fontSize: "10px", color: C.textTertiary }}>{completedCount}/10 complete</span>
             </div>
           )}
         </div>
@@ -182,13 +189,13 @@ export default function Home() {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "64px", alignItems: "center", flex: 1 }}>
           {/* Left */}
           <div>
-            <h1 style={{ fontSize: "38px", fontWeight: 600, color: C.textPrimary, letterSpacing: "-0.03em", lineHeight: 1.15, margin: "0 0 16px 0" }}>
+            <h1 style={{ fontSize: "40px", fontWeight: 600, color: C.textPrimary, letterSpacing: "-0.03em", lineHeight: 1.12, margin: "0 0 20px 0" }}>
               The training ground for<br />
               <span style={{ color: C.accent }}>autonomous agents</span>
             </h1>
-            <p style={{ fontSize: "15px", lineHeight: 1.7, color: C.textSecondary, margin: "0 0 28px 0", maxWidth: "380px" }}>
-              10 cognitive primitives that compose into every economic skill.
-              An agent that masters these can operate in any market.
+            <p style={{ fontSize: "15px", lineHeight: 1.7, color: C.textSecondary, margin: "0 0 32px 0", maxWidth: "360px" }}>
+              10 cognitive primitives. Every economic skill decomposes into them.
+              Master the building blocks — the rest transfers.
             </p>
             <div style={{ display: "flex", gap: "10px" }}>
               <Link href="/bandit?demo=true" style={{ ...buttonStyle, textDecoration: "none", height: "44px", padding: "0 24px", fontSize: "13px" }}>
@@ -211,7 +218,7 @@ export default function Home() {
               style={{
                 width: "300px",
                 aspectRatio: "4/5",
-                background: C.surface,
+                background: `linear-gradient(160deg, #222226 0%, ${C.surface} 40%, #18181C 100%)`,
                 borderRadius: "20px",
                 border: `1px solid ${C.border}`,
                 padding: "32px",
@@ -221,34 +228,38 @@ export default function Home() {
                 cursor: "pointer",
                 position: "relative",
                 overflow: "hidden",
-                transition: "border-color 150ms ease-out, box-shadow 150ms ease-out",
+                transition: "border-color 200ms ease-out, box-shadow 200ms ease-out",
+                boxShadow: "0 12px 48px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(224, 90, 0, 0.04)",
               }}
               className="env-card"
             >
-              {/* Number */}
-              <div style={{ fontSize: "56px", fontWeight: 700, color: C.border, lineHeight: 0.9, letterSpacing: "-0.04em" }}>
-                {String(activeCard + 1).padStart(2, "0")}
-              </div>
+              {/* Content with fade transition */}
+              <div key={`card-${activeCard}`} className="card-content-fade" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", height: "100%" }}>
+                {/* Number */}
+                <div style={{ fontSize: "56px", fontWeight: 700, color: `${C.border}88`, lineHeight: 0.9, letterSpacing: "-0.04em" }}>
+                  {String(activeCard + 1).padStart(2, "0")}
+                </div>
 
-              {/* Content */}
-              <div>
-                <div style={{ fontSize: "10px", fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase", color: C.accent, marginBottom: "6px" }}>
-                  {group?.label} &middot; {env.station}
-                </div>
-                <div style={{ fontSize: "20px", fontWeight: 600, color: C.textPrimary, letterSpacing: "-0.02em", marginBottom: "4px" }}>
-                  {env.name}
-                </div>
-                <div style={{ fontSize: "13px", color: C.textSecondary, lineHeight: 1.4 }}>
-                  {env.capability}
-                </div>
-                {score && (
-                  <div style={{ marginTop: "12px", fontSize: "22px", fontWeight: 600, color: C.accent }}>
-                    {score.best}%
+                {/* Content */}
+                <div>
+                  <div style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: C.accent, marginBottom: "8px" }}>
+                    {group?.label} &middot; {env.station}
                   </div>
-                )}
+                  <div style={{ fontSize: "20px", fontWeight: 600, color: C.textPrimary, letterSpacing: "-0.02em", marginBottom: "6px" }}>
+                    {env.name}
+                  </div>
+                  <div style={{ fontSize: "13px", color: C.textSecondary, lineHeight: 1.5 }}>
+                    {env.capability}
+                  </div>
+                  {score && (
+                    <div style={{ marginTop: "14px", fontSize: "24px", fontWeight: 600, color: C.accent, letterSpacing: "-0.02em" }}>
+                      {score.best}%
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {/* Progress arc — bottom edge */}
+              {/* Progress bar — bottom edge, respects card radius */}
               <div
                 style={{
                   position: "absolute",
@@ -256,7 +267,8 @@ export default function Home() {
                   left: 0,
                   right: 0,
                   height: "3px",
-                  background: `${C.border}`,
+                  borderRadius: "0 0 20px 20px",
+                  overflow: "hidden",
                 }}
               >
                 <div
@@ -264,7 +276,6 @@ export default function Home() {
                   style={{
                     height: "100%",
                     background: C.accent,
-                    borderRadius: "0 2px 0 0",
                     animation: "cycle-progress 4s linear forwards",
                   }}
                 />
@@ -275,16 +286,18 @@ export default function Home() {
       </div>
 
       {/* Bottom rail — anchored to viewport bottom */}
-      <div style={{ padding: "0 48px 32px", flexShrink: 0 }}>
+      <div style={{ padding: "0 64px 32px", flexShrink: 0 }}>
         <div style={{ position: "relative", height: "48px" }}>
           {/* Track */}
-          <div style={{ position: "absolute", top: "12px", left: 0, right: 0, height: "2px", background: C.border }} />
+          <div style={{ position: "absolute", top: "12px", left: "3%", right: "3%", height: "2px", background: C.border }} />
 
           {/* Stations */}
           {ENVIRONMENTS.map((e, i) => {
             const isActive = i === activeCard;
             const hasScore = !!scores[e.id];
-            const left = `${(i / (ENVIRONMENTS.length - 1)) * 100}%`;
+            // Inset first/last stations to prevent label clipping
+            const rawPercent = (i / (ENVIRONMENTS.length - 1)) * 100;
+            const left = `${3 + (rawPercent / 100) * 94}%`;
 
             return (
               <button
@@ -320,11 +333,12 @@ export default function Home() {
                 <div
                   style={{
                     marginTop: "4px",
-                    fontSize: isActive ? "8px" : "7px",
-                    fontWeight: isActive ? 600 : 400,
+                    fontSize: isActive ? "9px" : "8px",
+                    fontWeight: isActive ? 600 : 500,
                     color: isActive ? C.accent : C.textTertiary,
                     whiteSpace: "nowrap",
                     transition: "all 200ms ease-out",
+                    letterSpacing: "0.02em",
                   }}
                 >
                   {e.station}

@@ -461,7 +461,7 @@ export default function TransferPage() {
         <MetricCard label="Efficiency" value={`${efficiency}%`} />
       </div>
 
-      <div style={{ fontSize: "13px", color: improvement >= 0 ? "#2E7D32" : C.accent, marginBottom: "16px" }}>
+      <div style={{ fontSize: "13px", color: improvement >= 0 ? "#4ADE80" : C.accent, marginBottom: "16px" }}>
         {improvement > 0 ? "Pattern recognized — improved in phase 2." : improvement === 0 ? "Consistent across phases." : "Same structure harder to see with different labels."}
       </div>
 

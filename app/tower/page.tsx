@@ -423,11 +423,11 @@ export default function TowerPage() {
           let bgColor: string = C.surface;
           let borderColor: string = C.border;
           if (isCompleted) {
-            bgColor = "#E8F5E9";
-            borderColor = "#A5D6A7";
+            bgColor = "rgba(74, 222, 128, 0.1)";
+            borderColor = "#2A5A3A";
           } else if (isFailed) {
-            bgColor = "#FFEBEE";
-            borderColor = "#EF9A9A";
+            bgColor = "rgba(224, 90, 0, 0.1)";
+            borderColor = "#5A3A2A";
           } else if (isSelected) {
             borderColor = C.accent;
           }
@@ -454,7 +454,7 @@ export default function TowerPage() {
                 style={{
                   fontSize: "24px",
                   fontWeight: 600,
-                  color: isCompleted ? "#2E7D32" : isFailed ? "#C62828" : C.textPrimary,
+                  color: isCompleted ? "#4ADE80" : isFailed ? "#E05A00" : C.textPrimary,
                   marginBottom: "8px",
                 }}
               >

@@ -423,11 +423,11 @@ export default function SequencePage() {
 
             if (showResult) {
               if (choice === round.answer) {
-                borderColor = "#22C55E";
-                bg = "#F0FDF4";
+                borderColor = "#4ADE80";
+                bg = "rgba(74, 222, 128, 0.1)";
               } else if (choice === selected && choice !== round.answer) {
-                borderColor = "#EF4444";
-                bg = "#FEF2F2";
+                borderColor = "#E05A00";
+                bg = "rgba(224, 90, 0, 0.1)";
               }
             } else if (agentMode && choice === selected) {
               borderColor = C.accent;

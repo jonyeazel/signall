@@ -273,7 +273,7 @@ export default function RepairPage() {
             const status = statuses[index];
             const isSelected = selectedComponent === index;
             let borderLeftColor: string = C.border;
-            if (status === "pass") borderLeftColor = "#4CAF50";
+            if (status === "pass") borderLeftColor = "#4ADE80";
             if (status === "fail") borderLeftColor = "#E05A00";
             if (isSelected) borderLeftColor = C.accent;
 
@@ -309,7 +309,7 @@ export default function RepairPage() {
                       letterSpacing: "0.05em",
                       color:
                         status === "pass"
-                          ? "#4CAF50"
+                          ? "#4ADE80"
                           : status === "fail"
                           ? "#E05A00"
                           : C.textTertiary,
@@ -434,9 +434,9 @@ export default function RepairPage() {
         {COMPONENTS.map((comp, index) => {
           const isBroken = index === brokenIndex;
           const isDownstream = index > brokenIndex;
-          let bg = "#E8F5E9";
-          let color = "#2E7D32";
-          if (isBroken) { bg = "#FFEBEE"; color = "#C62828"; }
+          let bg = "rgba(74, 222, 128, 0.1)";
+          let color = "#4ADE80";
+          if (isBroken) { bg = "rgba(224, 90, 0, 0.1)"; color = "#E05A00"; }
           if (isDownstream) { bg = C.surface; color = C.textTertiary; }
 
           return (
@@ -465,7 +465,7 @@ export default function RepairPage() {
         })}
       </div>
 
-      <div style={{ fontSize: "13px", color: isCorrect ? "#2E7D32" : C.accent, textAlign: "center", marginBottom: "16px" }}>
+      <div style={{ fontSize: "13px", color: isCorrect ? "#4ADE80" : C.accent, textAlign: "center", marginBottom: "16px" }}>
         {isCorrect ? `Correct — ${COMPONENTS[brokenIndex]} was broken.` : `Incorrect — ${COMPONENTS[brokenIndex]} was broken, not ${COMPONENTS[identifiedIndex!]}.`}
       </div>
 

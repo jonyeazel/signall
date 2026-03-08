@@ -244,43 +244,42 @@ export function Shell({
               justifyContent: "center",
               width: "36px",
               height: "36px",
-              borderRadius: "16px",
+              borderRadius: "12px",
               border: `1px solid ${C.border}`,
               background: C.surface,
               color: C.textTertiary,
               textDecoration: "none",
             }}
           >
-            <ArrowLeft size={16} strokeWidth={1.5} />
+            <ArrowLeft size={15} strokeWidth={1.5} />
           </Link>
           {env && (
-            <div style={{ display: "flex", alignItems: "baseline", gap: "8px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <span
                 style={{
-                  fontSize: "11px",
-                  fontWeight: 500,
-                  letterSpacing: "0.08em",
-                  textTransform: "uppercase",
+                  fontSize: "13px",
+                  fontWeight: 700,
                   color: C.accent,
+                  letterSpacing: "-0.02em",
                 }}
               >
-                Signall
+                [~]
               </span>
               <span
                 style={{
                   fontSize: "11px",
-                  color: C.border,
+                  color: C.textTertiary,
                 }}
               >
                 /
               </span>
               <span
                 style={{
-                  fontSize: "11px",
+                  fontSize: "12px",
                   fontWeight: 500,
-                  letterSpacing: "0.08em",
+                  letterSpacing: "0.04em",
                   textTransform: "uppercase",
-                  color: C.textTertiary,
+                  color: C.textSecondary,
                 }}
               >
                 {env}
@@ -306,7 +305,7 @@ export function MetricCard({
   return (
     <div
       style={{
-        background: C.surface,
+        background: `linear-gradient(160deg, #222226 0%, ${C.surface} 100%)`,
         border: `1px solid ${C.border}`,
         borderRadius: "16px",
         padding: "20px 24px",
@@ -314,12 +313,12 @@ export function MetricCard({
     >
       <div
         style={{
-          fontSize: "11px",
-          fontWeight: 500,
-          letterSpacing: "0.06em",
+          fontSize: "9px",
+          fontWeight: 600,
+          letterSpacing: "0.08em",
           textTransform: "uppercase",
           color: C.textTertiary,
-          marginBottom: "10px",
+          marginBottom: "12px",
         }}
       >
         {label}
@@ -352,16 +351,16 @@ export function LessonCard({
         background: C.surface,
         border: `1px solid ${C.border}`,
         borderRadius: "16px",
-        padding: "24px 24px 24px 22px",
+        padding: "20px 24px 20px 20px",
         borderLeft: `3px solid ${C.accent}`,
       }}
     >
       <div
         style={{
-          fontSize: "13px",
+          fontSize: "12px",
           fontWeight: 600,
           color: C.accent,
-          marginBottom: "10px",
+          marginBottom: "8px",
           letterSpacing: "0.01em",
         }}
       >
@@ -369,8 +368,8 @@ export function LessonCard({
       </div>
       <p
         style={{
-          fontSize: "14px",
-          lineHeight: 1.7,
+          fontSize: "13px",
+          lineHeight: 1.65,
           color: C.textSecondary,
           margin: 0,
         }}

@@ -387,7 +387,7 @@ export default function SignalPage() {
           style={{
             fontSize: "64px",
             fontWeight: 600,
-            color: currentValue.value >= 8 ? "#C62828" : C.textPrimary,
+            color: currentValue.value >= 8 ? "#E05A00" : C.textPrimary,
             letterSpacing: "-0.02em",
             lineHeight: 1,
           }}
@@ -430,15 +430,15 @@ export default function SignalPage() {
                 fontSize: "13px",
                 background: v.isSpike
                   ? v.alertedCorrectly
-                    ? "#E8F5E9"
-                    : "#FFEBEE"
+                    ? "rgba(74, 222, 128, 0.1)"
+                    : "rgba(224, 90, 0, 0.1)"
                   : C.surface,
                 border: `1px solid ${C.border}`,
                 borderRadius: "16px",
                 color: v.isSpike
                   ? v.alertedCorrectly
-                    ? "#2E7D32"
-                    : "#C62828"
+                    ? "#4ADE80"
+                    : "#E05A00"
                   : C.textTertiary,
                 flexShrink: 0,
               }}
@@ -504,7 +504,7 @@ export default function SignalPage() {
           <div style={{ fontSize: "11px", color: C.textTertiary, marginBottom: "4px" }}>
             Correct
           </div>
-          <div style={{ fontSize: "18px", fontWeight: 600, color: "#2E7D32" }}>
+          <div style={{ fontSize: "18px", fontWeight: 600, color: "#4ADE80" }}>
             {correctAlerts}
           </div>
         </div>
@@ -520,7 +520,7 @@ export default function SignalPage() {
           <div style={{ fontSize: "11px", color: C.textTertiary, marginBottom: "4px" }}>
             Missed
           </div>
-          <div style={{ fontSize: "18px", fontWeight: 600, color: "#C62828" }}>
+          <div style={{ fontSize: "18px", fontWeight: 600, color: "#E05A00" }}>
             {missedSpikes}
           </div>
         </div>
