@@ -698,7 +698,7 @@ async with GenericEnvClient(
             return (
               <div style={{ flex: 1, overflow: "auto", padding: "16px 20px" }}>
                 {/* Primary metrics — 2x2 grid */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", marginBottom: "12px" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "12px" }}>
                   {mc("Episodes", episodes, "Complete training runs")}
                   {mc("Best Score", `${bestEff}%`, "Highest single-episode efficiency", true)}
                   {mc("Avg Recent", `${avgEff}%`, "Moving average of last 5 runs")}
@@ -707,7 +707,7 @@ async with GenericEnvClient(
 
                 {/* Agent intelligence metrics — 2x2 grid */}
                 {totalPulls > 0 && (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", marginBottom: "12px" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "12px" }}>
                     {mc("Exploit Rate", `${exploitRate}%`, "How often agent picks its best option")}
                     {mc("Convergence", convergenceGap < 0.5 ? "Locked" : `Δ${convergenceGap.toFixed(1)}`, convergenceGap < 0.5 ? "Agent found the true best arm" : "Gap between estimate and reality")}
                     {mc("Epsilon", epsilon.toFixed(2), epsilon > 0.5 ? "Still exploring broadly" : epsilon > 0.1 ? "Narrowing down choices" : "Committed to best option")}
