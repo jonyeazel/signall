@@ -753,8 +753,11 @@ async with GenericEnvClient(
                 {/* Agent knowledge — arm estimates */}
                 {totalPulls > 0 && (
                   <div style={{ background: t.bg, border: `1px solid ${t.border}`, borderRadius: "10px", padding: "12px 14px", marginBottom: "12px" }}>
-                    <div style={{ fontSize: "8px", fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase", color: t.textTertiary, marginBottom: "8px" }}>
-                      What the agent learned
+                    <div style={{ fontSize: "8px", fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase", color: t.textTertiary, marginBottom: "4px" }}>
+                      Accuracy per option
+                    </div>
+                    <div style={{ fontSize: "9px", color: t.textTertiary, marginBottom: "8px", lineHeight: 1.4 }}>
+                      6 options exist. Each bar shows how close the agent&apos;s guess (dark) is to the real value (light). Closer = smarter.
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                       {trainMeans.map((trueMean, i) => {
@@ -784,7 +787,10 @@ async with GenericEnvClient(
                 {/* Recent runs */}
                 {episodeList.length > 0 && (
                   <div style={{ background: t.bg, border: `1px solid ${t.border}`, borderRadius: "10px", padding: "12px 14px" }}>
-                    <div style={{ fontSize: "8px", fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase", color: t.textTertiary, marginBottom: "6px" }}>Recent Runs</div>
+                    <div style={{ fontSize: "8px", fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase", color: t.textTertiary, marginBottom: "4px" }}>Score history</div>
+                    <div style={{ fontSize: "9px", color: t.textTertiary, marginBottom: "6px", lineHeight: 1.4 }}>
+                      Each bar is one complete game. Higher % = the agent made better decisions. A rising trend means it&apos;s learning.
+                    </div>
                     {episodeList.map((ep, i) => {
                       const eff = "efficiency" in ep ? ep.efficiency : 0;
                       const epNum = "episode" in ep ? ep.episode : i;
