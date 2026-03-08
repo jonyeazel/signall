@@ -1,51 +1,65 @@
-# Cognitive Primitives — OpenEnv Training Platform
+# [~] Signall — Cognitive Primitives
 
-General intelligence isn't one skill. It's the composition of fundamental cognitive capabilities. This platform isolates 10 of them into standalone RL environments, each conforming to the OpenEnv spec.
+> *cognition with rails*
 
-Train any agent on these primitives. An agent that masters all 10 can perform well on arbitrary novel tasks — because every complex task decomposes into some combination of these capabilities.
+**OpenEnv Agentic Training Platform** — 10 RL environments that isolate the cognitive primitives underlying every economic activity. Train any agent on the building blocks of intelligence. The skills transfer to anything.
 
-## The Curriculum
+Built for the [OpenEnv Hackathon SF](https://cerebralvalley.ai/e/openenv-hackathon-sf) — March 2026.
 
-### Foundation
-| # | Environment | Capability | What it trains |
+---
+
+## The Thesis
+
+Every business activity — trading, negotiating, allocating capital, detecting fraud, managing risk — decomposes into a small set of cognitive primitives. Current RL trains agents on final tasks. We train them on the building blocks.
+
+An agent that scores 90%+ across all 10 primitives has the cognitive foundation to operate autonomously in any economic context.
+
+## Line S — Embarcadero to Lands End
+
+| Station | Environment | Cognitive Primitive | Economic Application |
 |---|---|---|---|
-| 01 | **The Bandit** | Exploration vs exploitation | When to gather information vs act on it |
-| 02 | **The Sequence** | Pattern recognition | Extracting structure from observations |
-| 03 | **The Map** | Planning under uncertainty | Navigating with incomplete information |
-| 04 | **The Auction** | Resource allocation | Prioritizing under scarcity |
+| Embarcadero | The Bandit | Exploration vs exploitation | Portfolio allocation & market testing |
+| Powell St | The Sequence | Pattern recognition | Trend prediction & time series |
+| Fog Basin | The Map | Planning under uncertainty | Logistics & route optimization |
+| Montgomery | The Auction | Resource allocation | Capital deployment & pricing |
+| Civic Center | The Tower | Dependency resolution | Project execution & task sequencing |
+| Nob Hill | The Signal | Attention & filtering | Fraud detection & anomaly recognition |
+| Market St | The Negotiation | Theory of mind | Deal-making & counterparty modeling |
+| Mission | The Repair | Causal reasoning | Root cause analysis & diagnostics |
+| Twin Peaks | The Transfer | Analogical reasoning | Market expansion & domain adaptation |
+| Lands End | The Meta | Self-assessment | Risk management & confidence calibration |
 
-### Reasoning
-| # | Environment | Capability | What it trains |
-|---|---|---|---|
-| 05 | **The Tower** | Dependency resolution | Inferring structure from failures |
-| 06 | **The Signal** | Attention & filtering | Ignoring noise, focusing on what matters |
-| 07 | **The Negotiation** | Theory of mind | Modeling other agents' hidden strategies |
-| 08 | **The Repair** | Causal reasoning | Reasoning backwards from effects to causes |
+## What We Built
 
-### Mastery
-| # | Environment | Capability | What it trains |
-|---|---|---|---|
-| 09 | **The Transfer** | Analogical reasoning | Applying known structure to new domains |
-| 10 | **The Meta** | Self-assessment | Knowing what you know and what you don't |
+### 1. Ten OpenEnv-Spec Environments
+Each environment conforms to the OpenEnv specification: `reset()`, `step()`, `state()`. FastAPI over WebSocket. Docker-ready. Deployable to HuggingFace Spaces with `openenv push`.
 
-## Architecture
+### 2. Interactive Web Platform
+A Next.js presentation layer where humans can play each environment and watch AI agents train in real-time. Includes:
+- **Play mode** — play any environment manually
+- **Watch Agent mode** — observe a specialized AI agent solve each environment
+- **Run Full Demo** — auto-sequences through all 10 environments with AI agents
+- **Live Training** — real epsilon-greedy learning with live learning curve visualization
 
-**Web platform** — Interactive Next.js app where humans or agents play each environment. Intro → Play → Reveal with post-game analysis and lesson cards.
+### 3. Curriculum Structure
+The 10 environments aren't random — they form a structured curriculum: **Foundation** (4 environments) → **Reasoning** (4) → **Mastery** (2). Each phase builds on the cognitive skills trained in the previous phase.
 
-**OpenEnv Python API** — Each environment is a standalone OpenEnv package with `reset()`, `step()`, `state()`. FastAPI server over WebSocket. Docker-ready. Deployable to HuggingFace Spaces.
-
-**Agent demo** — Built-in epsilon-greedy agent that trains in real-time on The Bandit, visible in the web UI. Watch an AI learn exploration-exploitation in 15 seconds.
+### 4. Real Agent Training
+The `/train` page runs a real epsilon-greedy agent through 80 episodes, with:
+- Live learning curve (efficiency over episodes)
+- Epsilon decay from 1.0 → 0.05
+- Agent's learned estimates vs ground truth, updating in real time
+- The agent starts knowing nothing and converges on the optimal strategy
 
 ## Quick Start
 
 ### Web platform
 ```bash
-pnpm install
-pnpm dev
+pnpm install && pnpm dev
 # Open http://localhost:3000
 ```
 
-### OpenEnv environments
+### Run an environment server
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
 pip install git+https://github.com/meta-pytorch/OpenEnv
@@ -65,31 +79,53 @@ async with BanditEnv(base_url="http://localhost:8000") as client:
 
 ## Live on HuggingFace
 
-All 10 environments are deployed and running:
+All 10 environments are deployed:
 
-| # | Environment | Space |
-|---|---|---|
-| 01 | The Bandit | [cognitive-primitives-bandit](https://huggingface.co/spaces/jonyeazel/cognitive-primitives-bandit) |
-| 02 | The Sequence | [cognitive-primitives-sequence](https://huggingface.co/spaces/jonyeazel/cognitive-primitives-sequence) |
-| 03 | The Map | [cognitive-primitives-map](https://huggingface.co/spaces/jonyeazel/cognitive-primitives-map) |
-| 04 | The Auction | [cognitive-primitives-auction](https://huggingface.co/spaces/jonyeazel/cognitive-primitives-auction) |
-| 05 | The Tower | [cognitive-primitives-tower](https://huggingface.co/spaces/jonyeazel/cognitive-primitives-tower) |
-| 06 | The Signal | [cognitive-primitives-signal](https://huggingface.co/spaces/jonyeazel/cognitive-primitives-signal) |
-| 07 | The Negotiation | [cognitive-primitives-negotiation](https://huggingface.co/spaces/jonyeazel/cognitive-primitives-negotiation) |
-| 08 | The Repair | [cognitive-primitives-repair](https://huggingface.co/spaces/jonyeazel/cognitive-primitives-repair) |
-| 09 | The Transfer | [cognitive-primitives-transfer](https://huggingface.co/spaces/jonyeazel/cognitive-primitives-transfer) |
-| 10 | The Meta | [cognitive-primitives-meta](https://huggingface.co/spaces/jonyeazel/cognitive-primitives-meta) |
+- [cognitive-primitives-bandit](https://huggingface.co/spaces/jonyeazel/cognitive-primitives-bandit)
+- [cognitive-primitives-sequence](https://huggingface.co/spaces/jonyeazel/cognitive-primitives-sequence)
+- [cognitive-primitives-map](https://huggingface.co/spaces/jonyeazel/cognitive-primitives-map)
+- [cognitive-primitives-auction](https://huggingface.co/spaces/jonyeazel/cognitive-primitives-auction)
+- [cognitive-primitives-tower](https://huggingface.co/spaces/jonyeazel/cognitive-primitives-tower)
+- [cognitive-primitives-signal](https://huggingface.co/spaces/jonyeazel/cognitive-primitives-signal)
+- [cognitive-primitives-negotiation](https://huggingface.co/spaces/jonyeazel/cognitive-primitives-negotiation)
+- [cognitive-primitives-repair](https://huggingface.co/spaces/jonyeazel/cognitive-primitives-repair)
+- [cognitive-primitives-transfer](https://huggingface.co/spaces/jonyeazel/cognitive-primitives-transfer)
+- [cognitive-primitives-meta](https://huggingface.co/spaces/jonyeazel/cognitive-primitives-meta)
 
-## Why cognitive primitives?
+## Architecture
 
-Current RL training is task-specific. An agent trained on Wordle can't play Sudoku. An agent trained on web browsing can't debug code.
+```
+signall/
+├── app/                    # Next.js web platform
+│   ├── page.tsx            # Home — hero, slideshow, journey rail
+│   ├── train/page.tsx      # Live training dashboard
+│   ├── bandit/page.tsx     # Environment 01
+│   ├── sequence/page.tsx   # Environment 02
+│   ├── ...                 # Environments 03-10
+│   ├── shared.ts           # Palette, env definitions, score management
+│   └── shell.tsx           # Layout shell, DemoRail, MetricCard, LessonCard
+│
+└── openenv-envs/           # OpenEnv Python packages
+    ├── bandit_env/
+    │   ├── models.py       # Action/Observation Pydantic models
+    │   ├── client.py       # WebSocket client (EnvClient)
+    │   └── server/
+    │       ├── app.py              # FastAPI app (create_app)
+    │       ├── *_environment.py    # Environment logic (reset/step/state)
+    │       └── Dockerfile          # Docker deployment
+    ├── sequence_env/
+    ├── ...                 # 10 total environment packages
+    └── meta_env/
+```
 
-But all these tasks share underlying cognitive requirements: pattern recognition, causal reasoning, resource allocation, theory of mind. If you train on the primitives instead of the tasks, the skills transfer.
+## Tech Stack
 
-This is how humans learn. We don't memorize every possible situation — we develop general capabilities (attention, planning, inference) that compose into performance on any novel task. This platform brings that same approach to agent training.
+- **Frontend**: Next.js 16, React 19, Tailwind CSS 4
+- **Environments**: OpenEnv (Meta/PyTorch), FastAPI, WebSocket, Docker
+- **Deployment**: HuggingFace Spaces (10 live endpoints)
+- **Design**: Dieter Rams principles — less but better
+- **Data**: Procedurally generated — no two runs are identical
 
-## Tech stack
-- Next.js 16 + React 19 + Tailwind CSS 4
-- OpenEnv (Meta/PyTorch) for environment spec
-- FastAPI + WebSocket for environment servers
-- Procedural generation — no two runs are identical
+## Team
+
+Built by Jon Eazel at the OpenEnv Hackathon SF, March 7-9, 2026.
