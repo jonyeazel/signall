@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Shell, MetricCard, LessonCard } from "../shell";
-import { C, card, buttonStyle, ghostButton, saveScore, isDemoMode, getNextDemoPath } from "../shared";
+import { C, card, buttonStyle, ghostButton, saveScore, isDemoMode, getNextDemoPath, isAgentEmbed } from "../shared";
 import { ArrowRight, RotateCcw, Play } from "lucide-react";
 
 type Phase = "intro" | "playing" | "reveal";
@@ -207,6 +207,7 @@ export default function SequencePage() {
   const [agentMode, setAgentMode] = useState(false);
   const agentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [demoMode, setDemoMode] = useState(false);
+  const [agentEmbed, setAgentEmbed] = useState(false);
 
   const initGame = useCallback(() => {
     const newRounds = Array.from({ length: 8 }, (_, i) => generateRound(i));
@@ -293,12 +294,24 @@ export default function SequencePage() {
     setDemoMode(isDemoMode());
   }, []);
 
+  // Check agent embed mode on mount
+  useEffect(() => {
+    setAgentEmbed(isAgentEmbed());
+  }, []);
+
   // Auto-start agent in demo
   useEffect(() => {
     if (demoMode && phase === "intro") {
       handleBegin(true);
     }
   }, [demoMode, phase]);
+
+  // Auto-start agent in embed mode
+  useEffect(() => {
+    if (agentEmbed && phase === "intro") {
+      handleBegin(true);
+    }
+  }, [agentEmbed, phase]);
 
   // Auto-advance in demo after reveal
   useEffect(() => {

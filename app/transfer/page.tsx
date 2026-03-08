@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { Shell, MetricCard, LessonCard } from "../shell";
-import { C, card, buttonStyle, ghostButton, saveScore, isDemoMode, getNextDemoPath } from "../shared";
+import { C, card, buttonStyle, ghostButton, saveScore, isDemoMode, getNextDemoPath, isAgentEmbed } from "../shared";
 import { ArrowRight, RotateCcw, Play } from "lucide-react";
 
 type Phase = "intro" | "playing" | "reveal";
@@ -72,11 +72,17 @@ export default function TransferPage() {
   const [phase1SwapSequence, setPhase1SwapSequence] = useState<number[]>([]);
   const [selectedSwap, setSelectedSwap] = useState<number | null>(null);
   const [demoMode, setDemoMode] = useState(false);
+  const [agentEmbed, setAgentEmbed] = useState(false);
   const agentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Check demo mode on mount
   useEffect(() => {
     setDemoMode(isDemoMode());
+  }, []);
+
+  // Check agent embed mode on mount
+  useEffect(() => {
+    setAgentEmbed(isAgentEmbed());
   }, []);
 
   // Auto-start agent in demo
@@ -85,6 +91,13 @@ export default function TransferPage() {
       handleBegin(true);
     }
   }, [demoMode, phase]);
+
+  // Auto-start agent in embed mode
+  useEffect(() => {
+    if (agentEmbed && phase === "intro") {
+      handleBegin(true);
+    }
+  }, [agentEmbed, phase]);
 
   // Auto-advance in demo after reveal
   useEffect(() => {

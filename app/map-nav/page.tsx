@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Shell, MetricCard, LessonCard } from "../shell";
-import { C, card, buttonStyle, ghostButton, saveScore, isDemoMode, getNextDemoPath } from "../shared";
+import { C, card, buttonStyle, ghostButton, saveScore, isDemoMode, getNextDemoPath, isAgentEmbed } from "../shared";
 import { ArrowRight, RotateCcw, Play } from "lucide-react";
 
 type Phase = "intro" | "playing" | "reveal";
@@ -223,6 +223,7 @@ export default function MapNavPage() {
   const [explored, setExplored] = useState<Set<string>>(new Set());
   const agentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [demoMode, setDemoMode] = useState(false);
+  const [agentEmbed, setAgentEmbed] = useState(false);
 
   const initGame = useCallback(() => {
     const { grid: newGrid, optimalLength: optimal } = generateGrid();
@@ -317,12 +318,24 @@ export default function MapNavPage() {
     setDemoMode(isDemoMode());
   }, []);
 
+  // Check agent embed mode on mount
+  useEffect(() => {
+    setAgentEmbed(isAgentEmbed());
+  }, []);
+
   // Auto-start agent in demo
   useEffect(() => {
     if (demoMode && phase === "intro") {
       handleBegin(true);
     }
   }, [demoMode, phase]);
+
+  // Auto-start agent in embed mode
+  useEffect(() => {
+    if (agentEmbed && phase === "intro") {
+      handleBegin(true);
+    }
+  }, [agentEmbed, phase]);
 
   // Auto-advance in demo after reveal
   useEffect(() => {

@@ -197,6 +197,11 @@ function DemoRail({ currentEnvId }: { currentEnvId: string }) {
   );
 }
 
+function isEmbedMode(): boolean {
+  if (typeof window === "undefined") return false;
+  return new URLSearchParams(window.location.search).get("embed") === "true";
+}
+
 export function Shell({
   children,
   env,
@@ -205,13 +210,26 @@ export function Shell({
   env?: string;
 }) {
   const [demoMode, setDemoMode] = useState(false);
+  const [embedMode, setEmbedMode] = useState(false);
 
   useEffect(() => {
     setDemoMode(isDemoMode());
+    setEmbedMode(isEmbedMode());
   }, []);
 
   // Find the env id from the env name prop
   const envDef = env ? ENVIRONMENTS.find((e) => e.name === env || e.id === env) : null;
+
+  // Embed mode: minimal wrapper, no header, no back button
+  if (embedMode) {
+    return (
+      <div style={{ padding: "20px 24px", minHeight: "100vh", background: C.bg }}>
+        <div style={{ maxWidth: "600px", margin: "0 auto" }}>
+          {children}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -268,7 +286,7 @@ export function Shell({
               <span
                 style={{
                   fontSize: "11px",
-                  color: C.textTertiary,
+                  color: GOLD_SHELL,
                 }}
               >
                 /
@@ -293,6 +311,9 @@ export function Shell({
   );
 }
 
+const GOLD_SHELL = "#C9A96E";
+const GOLD_DIM_SHELL = "rgba(201, 169, 110, 0.2)";
+
 export function MetricCard({
   label,
   value,
@@ -305,12 +326,15 @@ export function MetricCard({
   return (
     <div
       style={{
-        background: `linear-gradient(160deg, #222226 0%, ${C.surface} 100%)`,
+        background: C.surface,
         border: `1px solid ${C.border}`,
         borderRadius: "16px",
         padding: "20px 24px",
+        position: "relative",
       }}
     >
+      {/* Gold trim */}
+      <div style={{ position: "absolute", top: 0, left: "20px", right: "20px", height: "1px", background: `linear-gradient(90deg, transparent, ${GOLD_DIM_SHELL}, transparent)` }} />
       <div
         style={{
           fontSize: "9px",

@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { Shell, MetricCard, LessonCard } from "../shell";
-import { C, card, metaLabel, buttonStyle, ghostButton, saveScore, isDemoMode, getNextDemoPath } from "../shared";
+import { C, card, metaLabel, buttonStyle, ghostButton, saveScore, isDemoMode, getNextDemoPath, isAgentEmbed } from "../shared";
 import { RotateCcw, ArrowRight, Play } from "lucide-react";
 
 const SOURCE_NAMES = ["Alpha", "Beta", "Gamma", "Delta", "Epsilon", "Zeta"];
@@ -114,6 +114,7 @@ export default function BanditPage() {
   const [agentMode, setAgentMode] = useState(false);
   const agentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [demoMode, setDemoMode] = useState(false);
+  const [agentEmbed, setAgentEmbed] = useState(false);
 
   // Agent auto-play
   useEffect(() => {
@@ -167,12 +168,24 @@ export default function BanditPage() {
     setDemoMode(isDemoMode());
   }, []);
 
+  // Check agent embed mode on mount
+  useEffect(() => {
+    setAgentEmbed(isAgentEmbed());
+  }, []);
+
   // Auto-start agent in demo
   useEffect(() => {
     if (demoMode && phase === "intro") {
       handleBegin(true);
     }
   }, [demoMode, phase]);
+
+  // Auto-start agent in embed mode
+  useEffect(() => {
+    if (agentEmbed && phase === "intro") {
+      handleBegin(true);
+    }
+  }, [agentEmbed, phase]);
 
   // Auto-advance in demo after reveal
   useEffect(() => {

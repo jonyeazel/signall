@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { Shell, MetricCard, LessonCard } from "../shell";
-import { C, card, buttonStyle, ghostButton, saveScore, isDemoMode, getNextDemoPath } from "../shared";
+import { C, card, buttonStyle, ghostButton, saveScore, isDemoMode, getNextDemoPath, isAgentEmbed } from "../shared";
 import { ArrowRight, RotateCcw, Lock, Check, X, Play } from "lucide-react";
 
 type TaskStatus = "locked" | "available" | "completed" | "failed";
@@ -141,6 +141,7 @@ export default function TowerPage() {
   const [knownDeps, setKnownDeps] = useState<Map<string, Set<string>>>(new Map());
   const agentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [demoMode, setDemoMode] = useState(false);
+  const [agentEmbed, setAgentEmbed] = useState(false);
 
   const completedCount = tasks.filter((t) => t.status === "completed").length;
   const efficiency = Math.round((6 / Math.max(turns, 6)) * 100);
@@ -229,12 +230,24 @@ export default function TowerPage() {
     setDemoMode(isDemoMode());
   }, []);
 
+  // Check agent embed mode on mount
+  useEffect(() => {
+    setAgentEmbed(isAgentEmbed());
+  }, []);
+
   // Auto-start agent in demo
   useEffect(() => {
     if (demoMode && phase === "intro") {
       handleBegin(true);
     }
   }, [demoMode, phase]);
+
+  // Auto-start agent in embed mode
+  useEffect(() => {
+    if (agentEmbed && phase === "intro") {
+      handleBegin(true);
+    }
+  }, [agentEmbed, phase]);
 
   // Auto-advance in demo after reveal
   useEffect(() => {

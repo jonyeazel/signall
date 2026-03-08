@@ -91,6 +91,11 @@ export function getAttempts(envId: string): number {
   return scores[envId]?.attempts ?? 0;
 }
 
+export function clearScores(): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(STORAGE_KEY);
+}
+
 // --- Environment definitions ---
 
 export type EnvDef = {
@@ -140,7 +145,14 @@ export const ENVIRONMENTS: EnvDef[] = ENV_GROUPS.flatMap((g) => g.envs);
 
 export function isDemoMode(): boolean {
   if (typeof window === "undefined") return false;
-  return new URLSearchParams(window.location.search).get("demo") === "true";
+  const params = new URLSearchParams(window.location.search);
+  return params.get("demo") === "true";
+}
+
+export function isAgentEmbed(): boolean {
+  if (typeof window === "undefined") return false;
+  const params = new URLSearchParams(window.location.search);
+  return params.get("embed") === "true" && params.get("agent") === "true";
 }
 
 export function getNextDemoPath(currentEnvId: string): string {
