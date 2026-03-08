@@ -688,11 +688,9 @@ async with GenericEnvClient(
             const episodeList = showLoc ? trainResults.slice(-6).reverse() : hfEps.slice(-6).reverse();
 
             const mc = (label: string, value: string | number, desc: string, isAccent?: boolean) => (
-              <div style={{ background: t.bg, border: `1px solid ${t.border}`, borderRadius: "10px", padding: "10px 12px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "2px" }}>
-                  <div style={{ fontSize: "8px", fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase", color: t.textTertiary }}>{label}</div>
-                </div>
-                <div style={{ fontSize: "20px", fontWeight: 600, color: isAccent ? t.accent : t.textPrimary, letterSpacing: "-0.02em", lineHeight: 1.1, marginBottom: "4px" }}>{value}</div>
+              <div style={{ background: t.bg, border: `1px solid ${t.border}`, borderRadius: "10px", padding: "14px", aspectRatio: "1", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                <div style={{ fontSize: "8px", fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase", color: t.textTertiary }}>{label}</div>
+                <div style={{ fontSize: "24px", fontWeight: 600, color: isAccent ? t.accent : t.textPrimary, letterSpacing: "-0.02em", lineHeight: 1 }}>{value}</div>
                 <div style={{ fontSize: "9px", color: t.textTertiary, lineHeight: 1.3 }}>{desc}</div>
               </div>
             );
@@ -720,12 +718,15 @@ async with GenericEnvClient(
                 {/* Learning curve */}
                 {chartData.length > 0 ? (
                   <div style={{ background: t.bg, border: `1px solid ${t.border}`, borderRadius: "10px", padding: "12px 14px", marginBottom: "12px" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
                       <span style={{ fontSize: "8px", fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase", color: t.textTertiary }}>Learning Curve</span>
                       <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
                         <div style={{ width: "4px", height: "4px", borderRadius: "50%", background: showLoc ? t.textTertiary : "#22A55B" }} />
                         <span style={{ fontSize: "8px", color: t.textTertiary }}>{chartLabel}</span>
                       </div>
+                    </div>
+                    <div style={{ fontSize: "9px", color: t.textTertiary, marginBottom: "6px", lineHeight: 1.4 }}>
+                      Score over time. A line going up means the agent is improving. Flat at the top means it mastered the skill.
                     </div>
                     {(() => {
                       const w = 380, h = 90, pl = 28, pr = 8, pt = 4, pb = 14, cw = w - pl - pr, ch = h - pt - pb;
