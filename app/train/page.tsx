@@ -1,13 +1,55 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import { C, buttonStyle, ghostButton, card } from "../shared";
 import Link from "next/link";
 import { ArrowLeft, Play, Square } from "lucide-react";
 
 const HF_SPACE = "https://jonyeazel-cognitive-primitives-bandit.hf.space";
 const GOLD = "#C9A96E";
-const GOLD_DIM = "rgba(201, 169, 110, 0.2)";
+const GOLD_DIM = "rgba(201, 169, 110, 0.25)";
+
+// Light palette to match home page
+const C = {
+  bg: "#F5F3EF",
+  surface: "#FFFFFF",
+  border: "#E4E0DA",
+  borderActive: "#C8C4BC",
+  textPrimary: "#191919",
+  textSecondary: "#6B6B68",
+  textTertiary: "#9B9B98",
+  accent: "#E05A00",
+  panelBg: "#ECEAE4",
+};
+
+const card: React.CSSProperties = {
+  background: C.surface,
+  border: `1px solid ${C.border}`,
+  borderRadius: "16px",
+};
+
+const buttonStyle: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "8px",
+  height: "44px",
+  padding: "0 24px",
+  background: C.accent,
+  color: "#FFFFFF",
+  border: "none",
+  borderRadius: "16px",
+  fontSize: "13px",
+  fontWeight: 500,
+  fontFamily: "inherit",
+  letterSpacing: "0.01em",
+  cursor: "pointer",
+};
+
+const ghostButton: React.CSSProperties = {
+  ...buttonStyle,
+  background: "transparent",
+  color: C.textSecondary,
+  border: `1px solid ${C.border}`,
+};
 
 type HFEpisode = { episode: number; efficiency: number; reward: number };
 type HFLog = {
