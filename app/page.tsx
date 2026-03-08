@@ -475,8 +475,8 @@ export default function Home() {
                 desc: "Returns healthy when the environment is running and accepting connections.",
                 tryFn: () => tryEndpoint("health", "GET", "/health"),
               },
-            ].map((ep) => (
-              <div key={ep.id} style={{ marginBottom: "16px" }}>
+            ].map((ep, epIdx) => (
+              <div key={ep.id} style={{ paddingBottom: "20px", marginBottom: "20px", borderBottom: epIdx < 5 ? `1px solid ${t.border}` : "none" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
                   <span style={{
                     fontSize: "9px", fontWeight: 700, letterSpacing: "0.04em",
