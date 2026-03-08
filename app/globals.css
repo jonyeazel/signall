@@ -27,41 +27,6 @@ body {
   background: rgba(224, 90, 0, 0.25);
 }
 
-/* --- Floating viewport panel --- */
-
-.viewport-panel {
-  position: fixed;
-  inset: 12px;
-  background: #0E0E10;
-  border-radius: 24px;
-  border: 1px solid #1E1E22;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-/* --- Interactive surfaces --- */
-
-.env-card {
-  transition: border-color 200ms ease-out, box-shadow 200ms ease-out, transform 200ms ease-out;
-}
-
-.env-card:hover {
-  border-color: #3A3A3E;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(224, 90, 0, 0.08);
-  transform: translateY(-2px);
-}
-
-.back-btn {
-  transition: all 150ms ease-out;
-}
-
-.back-btn:hover {
-  border-color: #3A3A3E;
-  color: #E8E8E3;
-  background: #222225;
-}
-
 /* --- Expanded card overlay --- */
 
 .slide-card-expanded {
@@ -72,23 +37,16 @@ body {
   transform: translate(-50%, -50%);
   width: 75vw;
   height: 75vh;
-  animation: card-expand 300ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-@keyframes card-expand {
-  from { opacity: 0; transform: translate(-50%, -50%) scale(0.95); }
-  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 }
 
 .card-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.6);
   z-index: 99;
   opacity: 0;
-  transition: opacity 300ms ease-out;
   pointer-events: none;
+  transition: opacity 200ms ease-out;
 }
 
 .card-overlay-visible {
@@ -96,32 +54,15 @@ body {
   pointer-events: auto;
 }
 
-/* --- Progress bar --- */
-
-@keyframes cycle-progress {
-  from { width: 0%; }
-  to { width: 100%; }
-}
-
-/* --- Fade animations --- */
-
-@keyframes fade-up {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.fade-up {
-  animation: fade-up 400ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  opacity: 0;
-}
+/* --- Card content fade --- */
 
 @keyframes card-fade-in {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .card-content-fade {
-  animation: card-fade-in 250ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: card-fade-in 200ms ease-out forwards;
 }
 
 /* --- Demo rail pulse --- */
@@ -133,20 +74,20 @@ body {
   100% { left: 100%; opacity: 0; }
 }
 
-/* --- Command dock --- */
+/* --- Docs drawer --- */
 
-.dock-item {
-  transition: all 150ms ease-out;
+.docs-drawer {
+  position: fixed;
+  top: 12px;
+  right: -440px;
+  bottom: 12px;
+  width: 420px;
+  z-index: 200;
+  transition: right 300ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.dock-item:hover {
-  background: #2A2A2E;
-  transform: translateY(-1px);
-}
-
-.dock-item-active {
-  background: rgba(224, 90, 0, 0.12);
-  box-shadow: 0 0 8px rgba(224, 90, 0, 0.15);
+.docs-drawer-open {
+  right: 12px;
 }
 
 /* --- Cursor --- */

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
-import { Play, X, Copy, Check, ExternalLink } from "lucide-react";
+import { Play, X, Copy, Check, ExternalLink, ChevronRight } from "lucide-react";
 import {
   C as darkC,
   ENVIRONMENTS,
@@ -59,6 +59,26 @@ export default function Home() {
   const [expandedCard, setExpandedCard] = useState<number | null>(null);
   const [playingMode, setPlayingMode] = useState<"play" | "agent" | null>(null);
   const [copied, setCopied] = useState(false);
+  const [docsOpen, setDocsOpen] = useState(false);
+  const [tryResult, setTryResult] = useState<Record<string, string>>({});
+  const [tryLoading, setTryLoading] = useState<string | null>(null);
+
+  const tryEndpoint = useCallback(async (id: string, method: string, path: string, body?: object) => {
+    setTryLoading(id);
+    try {
+      const opts: RequestInit = { method };
+      if (body) {
+        opts.headers = { "Content-Type": "application/json" };
+        opts.body = JSON.stringify(body);
+      }
+      const r = await fetch(`${API_URL}${path}`, opts);
+      const data = await r.json();
+      setTryResult((prev) => ({ ...prev, [id]: JSON.stringify(data, null, 2) }));
+    } catch (err) {
+      setTryResult((prev) => ({ ...prev, [id]: `Error: ${err}` }));
+    }
+    setTryLoading(null);
+  }, []);
 
   const copyEndpoint = useCallback(() => {
     navigator.clipboard.writeText(API_URL);
@@ -78,7 +98,7 @@ export default function Home() {
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeExpanded();
+      if (e.key === "Escape") { closeExpanded(); setDocsOpen(false); }
       if (expandedCard === null && !e.metaKey && !e.ctrlKey) {
         const num = e.key === "0" ? 10 : parseInt(e.key);
         if (num >= 1 && num <= 10) setExpandedCard(num - 1);
@@ -94,6 +114,7 @@ export default function Home() {
     : 0;
 
   return (
+    <>
     <div
       style={{
         position: "fixed",
@@ -323,21 +344,20 @@ export default function Home() {
             {copied ? <Check size={12} strokeWidth={2} style={{ color: "#4ADE80", flexShrink: 0 }} /> : <Copy size={12} strokeWidth={1.5} style={{ flexShrink: 0 }} />}
           </button>
 
-          {/* Docs link */}
-          <a
-            href={`${API_URL}/docs`}
-            target="_blank"
-            rel="noopener noreferrer"
+          {/* Docs button */}
+          <button
+            onClick={() => setDocsOpen((d) => !d)}
             style={{
               display: "flex", alignItems: "center", gap: "4px",
               height: "36px", padding: "0 12px", borderRadius: "10px",
-              background: t.surface, border: `1px solid ${t.border}`,
-              color: t.textSecondary, fontSize: "11px", fontWeight: 500,
-              textDecoration: "none", flexShrink: 0,
+              background: docsOpen ? t.accent : t.surface,
+              border: `1px solid ${docsOpen ? t.accent : t.border}`,
+              color: docsOpen ? "#fff" : t.textSecondary,
+              fontSize: "11px", fontWeight: 500, flexShrink: 0,
             }}
           >
-            Docs <ExternalLink size={10} strokeWidth={1.5} />
-          </a>
+            Docs
+          </button>
 
           <div style={{ width: "1px", height: "20px", background: GOLD_DIM, margin: "0 6px", flexShrink: 0 }} />
 
@@ -348,6 +368,194 @@ export default function Home() {
           </Link>
         </div>
       </div>
+
     </div>
+
+      {/* --- API Docs Drawer (outside viewport panel) --- */}
+      <div className={`docs-drawer ${docsOpen ? "docs-drawer-open" : ""}`}>
+        <div style={{
+          height: "100%",
+          background: t.surface,
+          borderRadius: "20px",
+          border: `1px solid ${GOLD_DIM}`,
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+        }}>
+          {/* Drawer header */}
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "20px 24px",
+            borderBottom: `1px solid ${t.border}`,
+            flexShrink: 0,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <div style={{ width: "5px", height: "5px", borderRadius: "50%", background: "#4ADE80" }} />
+              <span style={{ fontSize: "13px", fontWeight: 600, color: t.textPrimary }}>API Reference</span>
+              <span style={{ fontSize: "10px", color: GOLD, letterSpacing: "0.04em" }}>OPENENV 1.0</span>
+            </div>
+            <button onClick={() => setDocsOpen(false)} style={{ background: "none", border: "none", color: t.textTertiary, padding: "4px" }}>
+              <X size={16} strokeWidth={1.5} />
+            </button>
+          </div>
+
+          {/* Drawer content */}
+          <div style={{ flex: 1, overflow: "auto", padding: "20px 24px" }}>
+            {/* Endpoint */}
+            <div style={{ marginBottom: "20px" }}>
+              <div style={{ fontSize: "9px", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: t.textTertiary, marginBottom: "6px" }}>Base URL</div>
+              <button
+                onClick={copyEndpoint}
+                style={{
+                  width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+                  padding: "10px 12px", background: t.bg, border: `1px solid ${t.border}`, borderRadius: "10px",
+                  color: t.textSecondary, fontSize: "11px", fontFamily: "var(--font-mono, monospace)", textAlign: "left",
+                }}
+              >
+                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{API_URL}</span>
+                {copied ? <Check size={12} strokeWidth={2} style={{ color: "#4ADE80", flexShrink: 0 }} /> : <Copy size={12} strokeWidth={1.5} style={{ flexShrink: 0 }} />}
+              </button>
+            </div>
+
+            {/* Validation badge */}
+            <div style={{
+              display: "flex", alignItems: "center", gap: "6px",
+              padding: "10px 14px", borderRadius: "10px",
+              background: "rgba(74, 222, 128, 0.06)", border: "1px solid rgba(74, 222, 128, 0.15)",
+              marginBottom: "24px",
+            }}>
+              <Check size={12} strokeWidth={2} style={{ color: "#4ADE80" }} />
+              <span style={{ fontSize: "11px", color: "#4ADE80", fontWeight: 500 }}>OpenEnv Validated · 6/6</span>
+            </div>
+
+            {/* Endpoints */}
+            {[
+              {
+                id: "reset",
+                method: "POST",
+                path: "/reset",
+                desc: "Start a new episode. Shuffles arm rewards.",
+                example: {},
+                tryFn: () => tryEndpoint("reset", "POST", "/reset", {}),
+              },
+              {
+                id: "step",
+                method: "POST",
+                path: "/step",
+                desc: "Pull an arm and get a reward.",
+                example: { action: { source_id: 3 } },
+                tryFn: () => tryEndpoint("step", "POST", "/step", { action: { source_id: Math.floor(Math.random() * 6) } }),
+              },
+              {
+                id: "state",
+                method: "GET",
+                path: "/state",
+                desc: "Get current episode state.",
+                tryFn: () => tryEndpoint("state", "GET", "/state"),
+              },
+              {
+                id: "schema",
+                method: "GET",
+                path: "/schema",
+                desc: "Action and observation JSON schemas.",
+                tryFn: () => tryEndpoint("schema", "GET", "/schema"),
+              },
+              {
+                id: "mcp",
+                method: "POST",
+                path: "/mcp",
+                desc: "MCP JSON-RPC 2.0. Discover tools.",
+                example: { jsonrpc: "2.0", method: "tools/list", id: 1 },
+                tryFn: () => tryEndpoint("mcp", "POST", "/mcp", { jsonrpc: "2.0", method: "tools/list", id: 1 }),
+              },
+              {
+                id: "health",
+                method: "GET",
+                path: "/health",
+                desc: "Server health check.",
+                tryFn: () => tryEndpoint("health", "GET", "/health"),
+              },
+            ].map((ep) => (
+              <div key={ep.id} style={{ marginBottom: "16px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
+                  <span style={{
+                    fontSize: "9px", fontWeight: 700, letterSpacing: "0.04em",
+                    padding: "2px 6px", borderRadius: "4px",
+                    background: ep.method === "POST" ? "rgba(224, 90, 0, 0.1)" : "rgba(74, 222, 128, 0.1)",
+                    color: ep.method === "POST" ? t.accent : "#4ADE80",
+                  }}>
+                    {ep.method}
+                  </span>
+                  <span style={{ fontSize: "12px", fontWeight: 600, color: t.textPrimary, fontFamily: "var(--font-mono, monospace)" }}>
+                    {ep.path}
+                  </span>
+                </div>
+                <div style={{ fontSize: "11px", color: t.textTertiary, marginBottom: "8px" }}>{ep.desc}</div>
+
+                {ep.example && (
+                  <pre style={{
+                    fontSize: "10px", lineHeight: 1.5, color: t.textSecondary,
+                    background: t.bg, border: `1px solid ${t.border}`, borderRadius: "8px",
+                    padding: "10px 12px", margin: "0 0 8px 0", overflow: "auto",
+                    fontFamily: "var(--font-mono, monospace)",
+                  }}>
+                    {JSON.stringify(ep.example, null, 2)}
+                  </pre>
+                )}
+
+                <button
+                  onClick={ep.tryFn}
+                  disabled={tryLoading === ep.id}
+                  style={{
+                    display: "flex", alignItems: "center", gap: "5px",
+                    height: "28px", padding: "0 10px", borderRadius: "6px",
+                    background: "transparent", border: `1px solid ${t.border}`,
+                    color: tryLoading === ep.id ? t.textTertiary : t.accent,
+                    fontSize: "10px", fontWeight: 600,
+                  }}
+                >
+                  {tryLoading === ep.id ? "Loading..." : <>Try it <ChevronRight size={10} strokeWidth={2} /></>}
+                </button>
+
+                {tryResult[ep.id] && (
+                  <pre style={{
+                    fontSize: "10px", lineHeight: 1.4, color: "#4ADE80",
+                    background: "rgba(74, 222, 128, 0.04)", border: "1px solid rgba(74, 222, 128, 0.12)",
+                    borderRadius: "8px", padding: "10px 12px", margin: "8px 0 0 0",
+                    overflow: "auto", maxHeight: "120px",
+                    fontFamily: "var(--font-mono, monospace)",
+                  }}>
+                    {tryResult[ep.id]}
+                  </pre>
+                )}
+              </div>
+            ))}
+
+            {/* Quick start */}
+            <div style={{ borderTop: `1px solid ${t.border}`, paddingTop: "20px", marginTop: "8px" }}>
+              <div style={{ fontSize: "9px", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: GOLD, marginBottom: "10px" }}>Quick Start</div>
+              <pre style={{
+                fontSize: "10px", lineHeight: 1.6, color: t.textSecondary,
+                background: t.bg, border: `1px solid ${t.border}`, borderRadius: "8px",
+                padding: "14px 16px", margin: 0, overflow: "auto",
+                fontFamily: "var(--font-mono, monospace)",
+              }}>
+{`from openenv.core import GenericEnvClient
+
+async with GenericEnvClient(
+    base_url="${API_URL}"
+) as client:
+    obs = await client.reset()
+    for _ in range(25):
+        result = await client.step(
+            {"source_id": best_arm}
+        )
+        print(result.reward)`}
+              </pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
