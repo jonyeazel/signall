@@ -408,7 +408,7 @@ export default function Home() {
                 onClick={copyEndpoint}
                 style={{
                   width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
-                  padding: "10px 12px", background: "#EDEBE6", border: `1px solid ${t.border}`, borderRadius: "10px",
+                  padding: "10px 12px", background: "#F5F3EF", border: `1px solid ${t.border}`, borderRadius: "10px",
                   color: "#3D3D3A", fontSize: "11px", fontFamily: "var(--font-mono, monospace)", textAlign: "left",
                 }}
               >
@@ -495,7 +495,7 @@ export default function Home() {
                 {ep.example && (
                   <pre style={{
                     fontSize: "10px", lineHeight: 1.5, color: "#3D3D3A",
-                    background: "#EDEBE6", border: `1px solid ${t.border}`, borderRadius: "8px",
+                    background: "#F5F3EF", border: `1px solid ${t.border}`, borderRadius: "8px",
                     padding: "10px 12px", margin: "0 0 8px 0", overflow: "auto",
                     fontFamily: "var(--font-mono, monospace)",
                   }}>
@@ -536,7 +536,7 @@ export default function Home() {
               <div style={{ fontSize: "9px", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: GOLD, marginBottom: "10px" }}>Quick Start</div>
               <pre style={{
                 fontSize: "10px", lineHeight: 1.6, color: "#3D3D3A",
-                background: "#EDEBE6", border: `1px solid ${t.border}`, borderRadius: "8px",
+                background: "#F5F3EF", border: `1px solid ${t.border}`, borderRadius: "8px",
                 padding: "14px 16px", margin: 0, overflow: "auto",
                 fontFamily: "var(--font-mono, monospace)",
               }}>
