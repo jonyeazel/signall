@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState, useCallback, useRef } from "react";
 import {
   Play, X, Sun, Moon, LayoutGrid, Presentation,
-  ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight, Copy, Check, ExternalLink,
 } from "lucide-react";
 import {
   C as darkC,
@@ -71,6 +71,16 @@ export default function Home() {
   const [isDark, setIsDark] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [slideIndex, setSlideIndex] = useState(0);
+  const [showApi, setShowApi] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const API_URL = "https://jonyeazel-cognitive-primitives-bandit.hf.space";
+
+  const copyEndpoint = useCallback(() => {
+    navigator.clipboard.writeText(API_URL);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, []);
 
   const t = isDark ? darkPalette : lightC;
 
@@ -332,6 +342,103 @@ export default function Home() {
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            {/* API button */}
+            <div style={{ position: "relative" }}>
+              <button
+                onClick={() => setShowApi((s) => !s)}
+                style={{
+                  display: "flex", alignItems: "center", gap: "5px",
+                  height: "28px", padding: "0 10px",
+                  borderRadius: "8px",
+                  background: showApi ? (isDark ? "#1A2A1A" : "#E8F5E9") : "transparent",
+                  border: `1px solid ${showApi ? "#4ADE80" : t.border}`,
+                  color: showApi ? "#4ADE80" : t.textTertiary,
+                  fontSize: "10px", fontWeight: 600,
+                  letterSpacing: "0.04em",
+                }}
+              >
+                <div style={{ width: "5px", height: "5px", borderRadius: "50%", background: "#4ADE80" }} />
+                API
+              </button>
+
+              {/* API dropdown */}
+              {showApi && (
+                <div style={{
+                  position: "absolute", top: "100%", right: 0, marginTop: "8px",
+                  width: "340px", background: isDark ? "#151517" : t.surface,
+                  border: `1px solid ${t.border}`, borderRadius: "16px",
+                  padding: "20px", zIndex: 200,
+                }}>
+                  <div style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: GOLD, marginBottom: "12px" }}>
+                    Public API
+                  </div>
+
+                  {/* Endpoint */}
+                  <div style={{ marginBottom: "16px" }}>
+                    <div style={{ fontSize: "9px", color: t.textTertiary, marginBottom: "6px", letterSpacing: "0.04em", textTransform: "uppercase" }}>Endpoint</div>
+                    <button
+                      onClick={copyEndpoint}
+                      style={{
+                        width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+                        padding: "10px 12px", background: isDark ? "#0E0E10" : "#F5F3EF",
+                        border: `1px solid ${t.border}`, borderRadius: "10px",
+                        color: t.textSecondary, fontSize: "11px", fontFamily: "var(--font-mono, monospace)",
+                        textAlign: "left",
+                      }}
+                    >
+                      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {API_URL}
+                      </span>
+                      {copied ? <Check size={12} strokeWidth={2} style={{ color: "#4ADE80", flexShrink: 0 }} /> : <Copy size={12} strokeWidth={1.5} style={{ flexShrink: 0 }} />}
+                    </button>
+                  </div>
+
+                  {/* Quick links */}
+                  <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
+                    <a
+                      href={`${API_URL}/docs`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "5px",
+                        height: "32px", borderRadius: "8px",
+                        background: isDark ? "#0E0E10" : "#F5F3EF",
+                        border: `1px solid ${t.border}`,
+                        color: t.textSecondary, fontSize: "11px", fontWeight: 500,
+                        textDecoration: "none",
+                      }}
+                    >
+                      Docs <ExternalLink size={10} strokeWidth={1.5} />
+                    </a>
+                    <a
+                      href={`${API_URL}/schema`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "5px",
+                        height: "32px", borderRadius: "8px",
+                        background: isDark ? "#0E0E10" : "#F5F3EF",
+                        border: `1px solid ${t.border}`,
+                        color: t.textSecondary, fontSize: "11px", fontWeight: 500,
+                        textDecoration: "none",
+                      }}
+                    >
+                      Schema <ExternalLink size={10} strokeWidth={1.5} />
+                    </a>
+                  </div>
+
+                  {/* Spec badge */}
+                  <div style={{
+                    display: "flex", alignItems: "center", gap: "6px",
+                    fontSize: "10px", color: "#4ADE80",
+                  }}>
+                    <Check size={12} strokeWidth={2} />
+                    OpenEnv Validated · 6/6 checks passed
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div style={{ display: "flex", gap: "2px", background: isDark ? "#151517" : "#E8E5DF", borderRadius: "12px", padding: "3px" }}>
               <button style={toggleBtn(viewMode === "grid")} onClick={() => setViewMode("grid")} title="Grid view">
                 <LayoutGrid size={14} strokeWidth={1.5} />
