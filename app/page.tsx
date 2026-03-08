@@ -766,6 +766,12 @@ export default function Home() {
 
     </div>
 
+      {/* --- Drawer backdrop --- */}
+      <div
+        className={`drawer-backdrop ${docsOpen || trainOpen ? "drawer-backdrop-visible" : ""}`}
+        onClick={() => { setDocsOpen(false); setTrainOpen(false); }}
+      />
+
       {/* --- API Docs Drawer (outside viewport panel) --- */}
       <div className={`docs-drawer ${docsOpen ? "docs-drawer-open" : ""}`}>
         <div style={{

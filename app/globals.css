@@ -89,6 +89,23 @@ body {
 
 /* --- Drawers --- */
 
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 199;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 150ms ease-out;
+}
+
+.drawer-backdrop-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 .docs-drawer, .train-drawer {
   position: fixed;
   top: 12px;
