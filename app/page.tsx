@@ -392,7 +392,7 @@ export default function Home() {
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <div style={{ width: "5px", height: "5px", borderRadius: "50%", background: "#4ADE80" }} />
               <span style={{ fontSize: "13px", fontWeight: 600, color: t.textPrimary }}>API Reference</span>
-              <span style={{ fontSize: "10px", color: GOLD, letterSpacing: "0.04em" }}>OPENENV 1.0</span>
+              <span style={{ fontSize: "10px", color: "#8B7A52", letterSpacing: "0.04em", fontWeight: 500 }}>OPENENV 1.0</span>
             </div>
             <button onClick={() => setDocsOpen(false)} style={{ background: "none", border: "none", color: t.textTertiary, padding: "4px" }}>
               <X size={16} strokeWidth={1.5} />
@@ -403,13 +403,13 @@ export default function Home() {
           <div style={{ flex: 1, overflow: "auto", padding: "20px 24px" }}>
             {/* Endpoint */}
             <div style={{ marginBottom: "20px" }}>
-              <div style={{ fontSize: "9px", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: t.textTertiary, marginBottom: "6px" }}>Base URL</div>
+              <div style={{ fontSize: "9px", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: t.textSecondary, marginBottom: "6px" }}>Base URL</div>
               <button
                 onClick={copyEndpoint}
                 style={{
                   width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
-                  padding: "10px 12px", background: t.bg, border: `1px solid ${t.border}`, borderRadius: "10px",
-                  color: t.textSecondary, fontSize: "11px", fontFamily: "var(--font-mono, monospace)", textAlign: "left",
+                  padding: "10px 12px", background: "#EDEBE6", border: `1px solid ${t.border}`, borderRadius: "10px",
+                  color: "#3D3D3A", fontSize: "11px", fontFamily: "var(--font-mono, monospace)", textAlign: "left",
                 }}
               >
                 <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{API_URL}</span>
@@ -424,8 +424,8 @@ export default function Home() {
               background: "rgba(74, 222, 128, 0.06)", border: "1px solid rgba(74, 222, 128, 0.15)",
               marginBottom: "24px",
             }}>
-              <Check size={12} strokeWidth={2} style={{ color: "#4ADE80" }} />
-              <span style={{ fontSize: "11px", color: "#4ADE80", fontWeight: 500 }}>OpenEnv Validated · 6/6</span>
+              <Check size={12} strokeWidth={2} style={{ color: "#22A55B" }} />
+              <span style={{ fontSize: "11px", color: "#22A55B", fontWeight: 500 }}>OpenEnv Validated · 6/6</span>
             </div>
 
             {/* Endpoints */}
@@ -481,8 +481,8 @@ export default function Home() {
                   <span style={{
                     fontSize: "9px", fontWeight: 700, letterSpacing: "0.04em",
                     padding: "2px 6px", borderRadius: "4px",
-                    background: ep.method === "POST" ? "rgba(224, 90, 0, 0.1)" : "rgba(74, 222, 128, 0.1)",
-                    color: ep.method === "POST" ? t.accent : "#4ADE80",
+                    background: ep.method === "POST" ? "rgba(224, 90, 0, 0.1)" : "rgba(34, 165, 91, 0.1)",
+                    color: ep.method === "POST" ? t.accent : "#1A7A40",
                   }}>
                     {ep.method}
                   </span>
@@ -490,12 +490,12 @@ export default function Home() {
                     {ep.path}
                   </span>
                 </div>
-                <div style={{ fontSize: "11px", color: t.textTertiary, marginBottom: "8px" }}>{ep.desc}</div>
+                <div style={{ fontSize: "11px", color: t.textSecondary, marginBottom: "8px" }}>{ep.desc}</div>
 
                 {ep.example && (
                   <pre style={{
-                    fontSize: "10px", lineHeight: 1.5, color: t.textSecondary,
-                    background: t.bg, border: `1px solid ${t.border}`, borderRadius: "8px",
+                    fontSize: "10px", lineHeight: 1.5, color: "#3D3D3A",
+                    background: "#EDEBE6", border: `1px solid ${t.border}`, borderRadius: "8px",
                     padding: "10px 12px", margin: "0 0 8px 0", overflow: "auto",
                     fontFamily: "var(--font-mono, monospace)",
                   }}>
@@ -519,8 +519,8 @@ export default function Home() {
 
                 {tryResult[ep.id] && (
                   <pre style={{
-                    fontSize: "10px", lineHeight: 1.4, color: "#4ADE80",
-                    background: "rgba(74, 222, 128, 0.04)", border: "1px solid rgba(74, 222, 128, 0.12)",
+                    fontSize: "10px", lineHeight: 1.4, color: "#1A6B3A",
+                    background: "rgba(34, 165, 91, 0.06)", border: "1px solid rgba(34, 165, 91, 0.18)",
                     borderRadius: "8px", padding: "10px 12px", margin: "8px 0 0 0",
                     overflow: "auto", maxHeight: "120px",
                     fontFamily: "var(--font-mono, monospace)",
@@ -535,8 +535,8 @@ export default function Home() {
             <div style={{ borderTop: `1px solid ${t.border}`, paddingTop: "20px", marginTop: "8px" }}>
               <div style={{ fontSize: "9px", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: GOLD, marginBottom: "10px" }}>Quick Start</div>
               <pre style={{
-                fontSize: "10px", lineHeight: 1.6, color: t.textSecondary,
-                background: t.bg, border: `1px solid ${t.border}`, borderRadius: "8px",
+                fontSize: "10px", lineHeight: 1.6, color: "#3D3D3A",
+                background: "#EDEBE6", border: `1px solid ${t.border}`, borderRadius: "8px",
                 padding: "14px 16px", margin: 0, overflow: "auto",
                 fontFamily: "var(--font-mono, monospace)",
               }}>
