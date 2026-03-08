@@ -180,30 +180,42 @@ export default function TrainPage() {
   const chartLabel = showLocal ? "Local simulation" : "HuggingFace (live)";
 
   return (
-    <div style={{ height: "100vh", display: "flex", flexDirection: "column", padding: "24px 32px" }}>
-      <div style={{ maxWidth: "720px", width: "100%", margin: "0 auto", flex: 1, display: "flex", flexDirection: "column" }}>
+    <div style={{
+      position: "fixed",
+      inset: "12px",
+      background: C.bg,
+      borderRadius: "24px",
+      border: `1px solid ${GOLD_DIM}`,
+      overflow: "hidden",
+      display: "flex",
+      flexDirection: "column",
+    }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "24px 32px", overflow: "hidden" }}>
+        <div style={{ maxWidth: "720px", width: "100%", margin: "0 auto", flex: 1, display: "flex", flexDirection: "column" }}>
 
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px", flexShrink: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <Link href="/" className="back-btn" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "32px", height: "32px", borderRadius: "12px", border: `1px solid ${C.border}`, background: C.surface, color: C.textTertiary, textDecoration: "none" }}>
-              <ArrowLeft size={14} strokeWidth={1.5} />
-            </Link>
-            <span style={{ fontSize: "13px", fontWeight: 700, color: C.accent }}>[~]</span>
-            <span style={{ fontSize: "11px", fontWeight: 500, letterSpacing: "0.06em", textTransform: "uppercase", color: C.textTertiary }}>Training Dashboard</span>
+          {/* Header */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px", flexShrink: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <Link href="/" className="back-btn" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "32px", height: "32px", borderRadius: "12px", border: `1px solid ${C.border}`, background: C.surface, color: C.textTertiary, textDecoration: "none" }}>
+                <ArrowLeft size={14} strokeWidth={1.5} />
+              </Link>
+              <span style={{ fontSize: "13px", fontWeight: 700, color: C.accent }}>[~]</span>
+              <span style={{ fontSize: "14px", fontWeight: 600, color: C.textPrimary }}>Signall</span>
+              <span style={{ fontSize: "10px", color: GOLD }}>·</span>
+              <span style={{ fontSize: "11px", fontWeight: 500, letterSpacing: "0.06em", textTransform: "uppercase", color: C.textTertiary }}>Training Dashboard</span>
+            </div>
+            {!isRunning ? (
+              <button style={{ ...buttonStyle, height: "36px", padding: "0 18px", fontSize: "12px" }} onClick={startTraining}>
+                <Play size={12} strokeWidth={2} />
+                {localResults.length > 0 ? "Restart" : "Train"}
+              </button>
+            ) : (
+              <button style={{ ...ghostButton, height: "36px", padding: "0 18px", fontSize: "12px" }} onClick={stopTraining}>
+                <Square size={12} strokeWidth={2} />
+                Stop
+              </button>
+            )}
           </div>
-          {!isRunning ? (
-            <button style={{ ...buttonStyle, height: "36px", padding: "0 18px", fontSize: "12px" }} onClick={startTraining}>
-              <Play size={12} strokeWidth={2} />
-              {localResults.length > 0 ? "Restart" : "Train"}
-            </button>
-          ) : (
-            <button style={{ ...ghostButton, height: "36px", padding: "0 18px", fontSize: "12px" }} onClick={stopTraining}>
-              <Square size={12} strokeWidth={2} />
-              Stop
-            </button>
-          )}
-        </div>
 
         {/* Stats row */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px", marginBottom: "16px", flexShrink: 0 }}>
@@ -339,6 +351,7 @@ export default function TrainPage() {
                 )}
               </div>
             )}
+          </div>
           </div>
         </div>
       </div>
