@@ -2,8 +2,8 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Shell, MetricCard, LessonCard } from "../shell";
-import { C, card, buttonStyle, ghostButton, saveScore, isDemoMode, getNextDemoPath, isAgentEmbed } from "../shared";
-import { ArrowRight, RotateCcw, AlertCircle, Play } from "lucide-react";
+import { C, card, saveScore } from "../shared";
+import { AlertCircle } from "lucide-react";
 
 type Phase = "intro" | "playing" | "reveal";
 
@@ -61,9 +61,6 @@ function generateStream(): StreamValue[] {
 }
 
 // --- Tell detector agent ---
-// Looks for tell values (half-integers like 1.5, 2.5, 3.5, 4.5)
-// When a tell is detected, alerts 2 steps later (when spike comes)
-// Has some false positive rate (~10%) to simulate imperfect detection
 function agentShouldAlert(
   stream: StreamValue[],
   currentIndex: number,
@@ -71,23 +68,41 @@ function agentShouldAlert(
 ): boolean {
   if (alertActive > 0) return false;
 
-  // Check if 2 positions back was a tell
-  const tellIndex = currentIndex - 1; // We're about to move to currentIndex+1, so check currentIndex-1
+  const tellIndex = currentIndex - 1;
   if (tellIndex >= 0) {
     const val = stream[tellIndex].value;
     const isTell = val % 1 === 0.5 && val >= 1 && val <= 5;
     if (isTell) {
-      // ~10% chance to NOT alert (false negative simulation, but mostly we catch it)
       return Math.random() > 0.1;
     }
   }
 
-  // Small false positive rate (~5%) - occasionally alert randomly
   if (Math.random() < 0.05) {
     return true;
   }
 
   return false;
+}
+
+// Waveform chart constants
+const CHART_WIDTH = 400;
+const CHART_HEIGHT = 200;
+const CHART_PADDING_X = 32;
+const CHART_PADDING_TOP = 16;
+const CHART_PADDING_BOTTOM = 24;
+const STREAM_LENGTH = 30;
+const VALUE_MIN = 0;
+const VALUE_MAX = 10;
+
+function valueToY(value: number): number {
+  const plotHeight = CHART_HEIGHT - CHART_PADDING_TOP - CHART_PADDING_BOTTOM;
+  const normalized = (value - VALUE_MIN) / (VALUE_MAX - VALUE_MIN);
+  return CHART_HEIGHT - CHART_PADDING_BOTTOM - normalized * plotHeight;
+}
+
+function indexToX(index: number, width: number): number {
+  const plotWidth = width - CHART_PADDING_X * 2;
+  return CHART_PADDING_X + (index / (STREAM_LENGTH - 1)) * plotWidth;
 }
 
 export default function SignalPage() {
@@ -99,60 +114,41 @@ export default function SignalPage() {
   const [falseAlerts, setFalseAlerts] = useState(0);
   const [missedSpikes, setMissedSpikes] = useState(0);
   const [agentMode, setAgentMode] = useState(false);
-  const [demoMode, setDemoMode] = useState(false);
-  const [agentEmbed, setAgentEmbed] = useState(false);
   const agentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const chartRef = useRef<SVGSVGElement>(null);
+  const [chartWidth, setChartWidth] = useState(CHART_WIDTH);
 
-  // Check demo mode on mount
+  // Measure chart container width
   useEffect(() => {
-    setDemoMode(isDemoMode());
+    const updateWidth = () => {
+      if (chartRef.current?.parentElement) {
+        setChartWidth(chartRef.current.parentElement.clientWidth);
+      }
+    };
+    updateWidth();
+    window.addEventListener("resize", updateWidth);
+    return () => window.removeEventListener("resize", updateWidth);
   }, []);
 
-  // Check agent embed mode on mount
+  // Auto-start agent mode on mount
   useEffect(() => {
-    setAgentEmbed(isAgentEmbed());
-  }, []);
-
-  // Auto-start agent in demo
-  useEffect(() => {
-    if (demoMode && phase === "intro") {
+    if (phase === "intro") {
       handleBegin(true);
     }
-  }, [demoMode, phase]);
+  }, [phase]);
 
-  // Auto-start agent in embed mode
-  useEffect(() => {
-    if (agentEmbed && phase === "intro") {
-      handleBegin(true);
-    }
-  }, [agentEmbed, phase]);
-
-  // Auto-advance in demo after reveal
-  useEffect(() => {
-    if (demoMode && phase === "reveal") {
-      const timer = setTimeout(() => {
-        window.location.href = getNextDemoPath("signal");
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [demoMode, phase]);
-
-  // Agent auto-play
   useEffect(() => {
     if (!agentMode || phase !== "playing") return;
     if (currentIndex >= stream.length - 1) return;
 
     agentTimerRef.current = setTimeout(() => {
-      // Agent decides whether to alert
       const shouldAlert = agentShouldAlert(stream, currentIndex, alertActive);
 
       if (shouldAlert) {
         setAlertActive(2);
       }
 
-      // Brief pause then advance
       setTimeout(() => {
-        // Process next step (similar to handleNext)
         const nextIndex = currentIndex + 1;
         const nextValue = stream[nextIndex];
 
@@ -192,13 +188,15 @@ export default function SignalPage() {
 
         setCurrentIndex(nextIndex);
 
-        // Check if done
         if (nextIndex >= stream.length - 1) {
           const finalEfficiency = Math.max(
             0,
             Math.min(100, Math.round(((newCorrect * 25) - (newFalse * 10)) / 100 * 100))
           );
           saveScore("signal", finalEfficiency);
+          if (window.parent !== window) {
+            window.parent.postMessage({ type: "episodeComplete", envId: "signal", efficiency: finalEfficiency }, "*");
+          }
           setTimeout(() => setPhase("reveal"), 400);
         }
       }, 200);
@@ -243,6 +241,9 @@ export default function SignalPage() {
         Math.min(100, Math.round(((finalCorrect * 25) - (finalFalse * 10)) / 100 * 100))
       );
       saveScore("signal", efficiency);
+      if (window.parent !== window) {
+        window.parent.postMessage({ type: "episodeComplete", envId: "signal", efficiency }, "*");
+      }
       setCorrectAlerts(finalCorrect);
       setFalseAlerts(finalFalse);
       setMissedSpikes(finalMissed);
@@ -287,42 +288,33 @@ export default function SignalPage() {
     Math.min(100, Math.round(((correctAlerts * 25) - (falseAlerts * 10)) / 100 * 100))
   );
 
-  if (phase === "intro") {
-    return (
-      <Shell env="The Signal">
-        <div style={{ ...card, padding: "48px 32px" }}>
-          <p
-            style={{
-              fontSize: "15px",
-              lineHeight: 1.7,
-              color: C.textSecondary,
-              margin: 0,
-              marginBottom: "32px",
-            }}
-          >
-            A stream of 30 data values will appear. Most are noise (1-5).
-            Hidden among them are 4 spikes (8-10). Each spike is preceded
-            by a tell exactly 2 positions before it. The tell is any value
-            ending in .5. Predict spikes by clicking Alert before they appear.
-          </p>
-          <div style={{ display: "flex", gap: "8px" }}>
-            <button style={buttonStyle} onClick={() => handleBegin(false)}>
-              Play
-              <ArrowRight size={16} strokeWidth={2} />
-            </button>
-            <button style={ghostButton} onClick={() => handleBegin(true)}>
-              <Play size={14} strokeWidth={2} />
-              Watch agent
-            </button>
-          </div>
-        </div>
-      </Shell>
-    );
-  }
+  const currentValue = stream[currentIndex] || { value: 0, isSpike: false };
 
+  // Build waveform path for seen values
+  const buildWaveformPath = () => {
+    if (stream.length === 0) return "";
+    const points: string[] = [];
+    for (let i = 0; i <= currentIndex; i++) {
+      const x = indexToX(i, chartWidth);
+      const y = valueToY(stream[i].value);
+      points.push(`${x},${y}`);
+    }
+    return points.length > 0 ? `M${points.join(" L")}` : "";
+  };
+
+  // Build baseline path for unseen values
+  const buildBaselinePath = () => {
+    if (stream.length === 0 || currentIndex >= stream.length - 1) return "";
+    const baselineY = valueToY(3); // Middle baseline
+    const startX = indexToX(currentIndex + 1, chartWidth);
+    const endX = indexToX(STREAM_LENGTH - 1, chartWidth);
+    return `M${startX},${baselineY} L${endX},${baselineY}`;
+  };
+
+  // Reveal phase
   if (phase === "reveal") {
     return (
-      <Shell env="The Signal">
+      <Shell env="signal">
         <div
           style={{
             display: "grid",
@@ -331,211 +323,329 @@ export default function SignalPage() {
             marginBottom: "16px",
           }}
         >
-          <MetricCard label="Correct" value={`${correctAlerts}`} />
-          <MetricCard label="False" value={`${falseAlerts}`} />
-          <MetricCard label="Efficiency" value={`${efficiency}%`} />
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <MetricCard label="Correct" value={`${correctAlerts}`} />
+            <div style={{ fontSize: "9px", color: C.textTertiary, marginTop: "4px", textAlign: "center" }}>
+              Spikes correctly predicted
+            </div>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <MetricCard label="False" value={`${falseAlerts}`} />
+            <div style={{ fontSize: "9px", color: C.textTertiary, marginTop: "4px", textAlign: "center" }}>
+              Wrong predictions made
+            </div>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <MetricCard label="Efficiency" value={`${efficiency}%`} />
+            <div style={{ fontSize: "9px", color: C.textTertiary, marginTop: "4px", textAlign: "center" }}>
+              Detection accuracy
+            </div>
+          </div>
         </div>
 
         <div style={{ fontSize: "13px", color: C.textSecondary, marginBottom: "16px" }}>
           {correctAlerts === 4 ? "Perfect detection — all tells spotted." : `${missedSpikes} spike${missedSpikes !== 1 ? "s" : ""} missed. The .5 tell precedes each spike by 2 positions.`}
         </div>
 
-        <LessonCard term="In the real world">
-          Fraud detection systems scan millions of transactions for faint signals. Market analysts filter noise to find actionable intelligence. Autonomous agents in finance must distinguish meaningful patterns from random fluctuation — at scale, in real time.
+        <LessonCard term="What this teaches">
+          <ul style={{ margin: 0, paddingLeft: "16px", lineHeight: 1.8 }}>
+            <li>Separate real signals from noise</li>
+            <li>Fraud detection runs on this logic</li>
+            <li>False positives cost money too</li>
+          </ul>
         </LessonCard>
-
-        {demoMode && (
-          <div style={{ fontSize: "12px", color: C.textTertiary, marginTop: "16px" }}>
-            Advancing to next environment...
-          </div>
-        )}
-
-        <div style={{ display: "flex", gap: "8px", marginTop: "16px" }}>
-          <button style={buttonStyle} onClick={() => handleBegin(false)}>
-            <RotateCcw size={14} strokeWidth={2} />
-            Play again
-          </button>
-          <button style={ghostButton} onClick={() => handleBegin(true)}>
-            <Play size={14} strokeWidth={2} />
-            Watch agent
-          </button>
-        </div>
       </Shell>
     );
   }
 
-  const currentValue = stream[currentIndex];
-  const history = stream.slice(0, currentIndex);
-  const remaining = stream.length - currentIndex - 1;
-
+  // Playing phase - waveform visualization
   return (
-    <Shell env="The Signal">
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          marginBottom: "24px",
-        }}
-      >
-        <div style={{ fontSize: "13px", color: C.textSecondary }}>
-          {agentMode && (
-            <span style={{ color: C.accent, marginRight: "8px" }}>Agent</span>
-          )}
-          Position {currentIndex + 1} / {stream.length}
-        </div>
-        <div style={{ fontSize: "13px", color: C.textSecondary }}>
-          Remaining: {remaining}
-        </div>
-      </div>
-
+    <Shell env="signal">
+      {/* Waveform chart container */}
       <div
         style={{
           ...card,
-          padding: "48px",
-          textAlign: "center",
-          marginBottom: "24px",
+          padding: 0,
+          position: "relative",
+          marginBottom: "16px",
+          overflow: "hidden",
         }}
       >
+        <svg
+          ref={chartRef}
+          width="100%"
+          height={CHART_HEIGHT}
+          style={{ display: "block" }}
+        >
+          {/* Alert zone band - shows where alert is active */}
+          {alertActive > 0 && currentIndex < stream.length - 1 && (
+            <>
+              {[1, 2].slice(0, alertActive).map((offset) => {
+                const targetIdx = currentIndex + offset;
+                if (targetIdx >= stream.length) return null;
+                const x = indexToX(targetIdx, chartWidth);
+                const width = (chartWidth - CHART_PADDING_X * 2) / (STREAM_LENGTH - 1);
+                return (
+                  <rect
+                    key={offset}
+                    x={x - width / 2}
+                    y={CHART_PADDING_TOP}
+                    width={width}
+                    height={CHART_HEIGHT - CHART_PADDING_TOP - CHART_PADDING_BOTTOM}
+                    fill="rgba(224, 90, 0, 0.08)"
+                  />
+                );
+              })}
+            </>
+          )}
+
+          {/* Y-axis grid lines */}
+          {[0, 2, 4, 6, 8, 10].map((val) => (
+            <g key={val}>
+              <line
+                x1={CHART_PADDING_X}
+                y1={valueToY(val)}
+                x2={chartWidth - CHART_PADDING_X}
+                y2={valueToY(val)}
+                stroke={C.border}
+                strokeWidth={val === 0 || val === 10 ? 1 : 0.5}
+                strokeDasharray={val === 5 ? "4,4" : undefined}
+              />
+              <text
+                x={CHART_PADDING_X - 8}
+                y={valueToY(val)}
+                textAnchor="end"
+                alignmentBaseline="middle"
+                fontSize="10"
+                fill={C.textTertiary}
+              >
+                {val}
+              </text>
+            </g>
+          ))}
+
+          {/* Baseline for unseen values */}
+          <path
+            d={buildBaselinePath()}
+            stroke={C.border}
+            strokeWidth={1}
+            strokeDasharray="4,4"
+            fill="none"
+          />
+
+          {/* Correctly alerted spike fills (green area under peak) */}
+          {stream.map((v, i) => {
+            if (!v.alertedCorrectly || i > currentIndex) return null;
+            const x = indexToX(i, chartWidth);
+            const y = valueToY(v.value);
+            const baseY = valueToY(0);
+            const width = (chartWidth - CHART_PADDING_X * 2) / (STREAM_LENGTH - 1) * 0.8;
+            return (
+              <path
+                key={`fill-${i}`}
+                d={`M${x - width / 2},${baseY} L${x - width / 2},${y} L${x},${y - 8} L${x + width / 2},${y} L${x + width / 2},${baseY} Z`}
+                fill="rgba(34, 165, 91, 0.15)"
+              />
+            );
+          })}
+
+          {/* Waveform line */}
+          <path
+            d={buildWaveformPath()}
+            stroke={C.textPrimary}
+            strokeWidth={2}
+            fill="none"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+
+          {/* Data points */}
+          {stream.map((v, i) => {
+            if (i > currentIndex) return null;
+            const x = indexToX(i, chartWidth);
+            const y = valueToY(v.value);
+            const isCurrent = i === currentIndex;
+
+            // Missed spike - red dot
+            if (v.missed) {
+              return (
+                <g key={i}>
+                  <circle cx={x} cy={y} r={6} fill="#E05A00" />
+                  <circle cx={x} cy={y} r={3} fill="#FFFFFF" />
+                </g>
+              );
+            }
+
+            // Correctly alerted spike - green dot
+            if (v.alertedCorrectly) {
+              return (
+                <circle key={i} cx={x} cy={y} r={5} fill="#22A55B" />
+              );
+            }
+
+            // Current value - glowing dot
+            if (isCurrent) {
+              return (
+                <g key={i}>
+                  <circle cx={x} cy={y} r={12} fill="rgba(224, 90, 0, 0.15)" />
+                  <circle cx={x} cy={y} r={6} fill={C.accent} />
+                </g>
+              );
+            }
+
+            // Regular point
+            return (
+              <circle
+                key={i}
+                cx={x}
+                cy={y}
+                r={3}
+                fill={v.isSpike ? C.accent : C.textTertiary}
+              />
+            );
+          })}
+
+          {/* Position markers on X axis */}
+          {[0, 9, 19, 29].map((idx) => (
+            <text
+              key={idx}
+              x={indexToX(idx, chartWidth)}
+              y={CHART_HEIGHT - 6}
+              textAnchor="middle"
+              fontSize="10"
+              fill={C.textTertiary}
+            >
+              {idx + 1}
+            </text>
+          ))}
+        </svg>
+
+        {/* Current value overlay - right side */}
         <div
           style={{
-            fontSize: "64px",
-            fontWeight: 600,
-            color: currentValue.value >= 8 ? "#E05A00" : C.textPrimary,
-            letterSpacing: "-0.02em",
-            lineHeight: 1,
+            position: "absolute",
+            right: "24px",
+            top: "50%",
+            transform: "translateY(-50%)",
+            textAlign: "right",
           }}
         >
-          {currentValue.value.toFixed(1)}
+          <div
+            style={{
+              fontSize: "48px",
+              fontWeight: 600,
+              color: currentValue.value >= 8 ? C.accent : C.textPrimary,
+              lineHeight: 1,
+              letterSpacing: "-0.02em",
+            }}
+          >
+            {currentValue.value.toFixed(1)}
+          </div>
+          <div
+            style={{
+              fontSize: "11px",
+              color: C.textTertiary,
+              marginTop: "4px",
+            }}
+          >
+            {currentIndex + 1} / {stream.length || 30}
+          </div>
         </div>
+
+        {/* Alert indicator */}
         {alertActive > 0 && (
           <div
             style={{
-              marginTop: "16px",
-              fontSize: "13px",
-              color: C.accent,
+              position: "absolute",
+              left: "16px",
+              top: "16px",
               display: "flex",
               alignItems: "center",
-              justifyContent: "center",
               gap: "6px",
+              padding: "6px 12px",
+              background: "rgba(224, 90, 0, 0.1)",
+              borderRadius: "8px",
+              fontSize: "12px",
+              color: C.accent,
+              fontWeight: 500,
             }}
           >
-            <AlertCircle size={16} strokeWidth={2} />
-            Alert active ({alertActive} step{alertActive > 1 ? "s" : ""} remaining)
+            <AlertCircle size={14} strokeWidth={2} />
+            Alert {alertActive}
+          </div>
+        )}
+
+        {/* Agent mode indicator */}
+        {agentMode && (
+          <div
+            style={{
+              position: "absolute",
+              left: "16px",
+              bottom: "12px",
+              fontSize: "11px",
+              color: C.textTertiary,
+            }}
+          >
+            Tell-detection agent
           </div>
         )}
       </div>
 
-      {history.length > 0 && (
+      {/* Compact stats bar */}
+      <div
+        style={{
+          display: "flex",
+          gap: "12px",
+          justifyContent: "center",
+        }}
+      >
         <div
           style={{
             display: "flex",
-            gap: "4px",
-            marginBottom: "24px",
-            overflowX: "auto",
-            paddingBottom: "8px",
+            alignItems: "center",
+            gap: "6px",
+            padding: "8px 16px",
+            background: correctAlerts > 0 ? "rgba(34, 165, 91, 0.1)" : C.surface,
+            border: `1px solid ${correctAlerts > 0 ? "rgba(34, 165, 91, 0.3)" : C.border}`,
+            borderRadius: "8px",
+            fontSize: "13px",
+            color: correctAlerts > 0 ? "#22A55B" : C.textTertiary,
           }}
         >
-          {history.slice(-12).map((v, i) => (
-            <div
-              key={i}
-              style={{
-                padding: "8px 10px",
-                fontSize: "13px",
-                background: v.isSpike
-                  ? v.alertedCorrectly
-                    ? "rgba(74, 222, 128, 0.1)"
-                    : "rgba(224, 90, 0, 0.1)"
-                  : C.surface,
-                border: `1px solid ${C.border}`,
-                borderRadius: "16px",
-                color: v.isSpike
-                  ? v.alertedCorrectly
-                    ? "#22A55B"
-                    : "#E05A00"
-                  : C.textTertiary,
-                flexShrink: 0,
-              }}
-            >
-              {v.value.toFixed(1)}
-            </div>
-          ))}
+          <span style={{ fontWeight: 600 }}>{correctAlerts}</span>
+          <span>correct</span>
         </div>
-      )}
-
-      {!agentMode && (
-        <div style={{ display: "flex", gap: "12px" }}>
-          <button
-            style={{
-              ...buttonStyle,
-              background: alertActive > 0 ? C.border : C.accent,
-              flex: 1,
-            }}
-            onClick={handleAlert}
-            disabled={alertActive > 0}
-          >
-            <AlertCircle size={16} strokeWidth={2} />
-            Alert
-          </button>
-          <button
-            style={{
-              ...buttonStyle,
-              background: "transparent",
-              color: C.textSecondary,
-              border: `1px solid ${C.border}`,
-              flex: 1,
-            }}
-            onClick={handleNext}
-          >
-            Next
-            <ArrowRight size={16} strokeWidth={2} />
-          </button>
-        </div>
-      )}
-
-      {agentMode && (
         <div
           style={{
-            textAlign: "center",
-            fontSize: "12px",
-            color: C.textTertiary,
-            marginBottom: "24px",
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            padding: "8px 16px",
+            background: C.surface,
+            border: `1px solid ${C.border}`,
+            borderRadius: "8px",
+            fontSize: "13px",
+            color: falseAlerts > 0 ? C.textPrimary : C.textTertiary,
           }}
         >
-          Tell-detection agent
+          <span style={{ fontWeight: 600 }}>{falseAlerts}</span>
+          <span>false</span>
         </div>
-      )}
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr 1fr",
-          gap: "12px",
-          marginTop: "24px",
-        }}
-      >
-        <div style={{ ...card, padding: "16px", textAlign: "center" }}>
-          <div style={{ fontSize: "11px", color: C.textTertiary, marginBottom: "4px" }}>
-            Correct
-          </div>
-          <div style={{ fontSize: "18px", fontWeight: 600, color: "#22A55B" }}>
-            {correctAlerts}
-          </div>
-        </div>
-        <div style={{ ...card, padding: "16px", textAlign: "center" }}>
-          <div style={{ fontSize: "11px", color: C.textTertiary, marginBottom: "4px" }}>
-            False
-          </div>
-          <div style={{ fontSize: "18px", fontWeight: 600, color: C.textPrimary }}>
-            {falseAlerts}
-          </div>
-        </div>
-        <div style={{ ...card, padding: "16px", textAlign: "center" }}>
-          <div style={{ fontSize: "11px", color: C.textTertiary, marginBottom: "4px" }}>
-            Missed
-          </div>
-          <div style={{ fontSize: "18px", fontWeight: 600, color: "#E05A00" }}>
-            {missedSpikes}
-          </div>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            padding: "8px 16px",
+            background: missedSpikes > 0 ? "rgba(224, 90, 0, 0.1)" : C.surface,
+            border: `1px solid ${missedSpikes > 0 ? "rgba(224, 90, 0, 0.3)" : C.border}`,
+            borderRadius: "8px",
+            fontSize: "13px",
+            color: missedSpikes > 0 ? C.accent : C.textTertiary,
+          }}
+        >
+          <span style={{ fontWeight: 600 }}>{missedSpikes}</span>
+          <span>missed</span>
         </div>
       </div>
     </Shell>

@@ -143,22 +143,3 @@ export const ENV_GROUPS: EnvGroup[] = [
 
 export const ENVIRONMENTS: EnvDef[] = ENV_GROUPS.flatMap((g) => g.envs);
 
-// --- Demo mode helpers ---
-
-export function isDemoMode(): boolean {
-  if (typeof window === "undefined") return false;
-  const params = new URLSearchParams(window.location.search);
-  return params.get("demo") === "true";
-}
-
-export function isAgentEmbed(): boolean {
-  if (typeof window === "undefined") return false;
-  const params = new URLSearchParams(window.location.search);
-  return params.get("embed") === "true" && params.get("agent") === "true";
-}
-
-export function getNextDemoPath(currentEnvId: string): string {
-  const idx = ENVIRONMENTS.findIndex((e) => e.id === currentEnvId);
-  if (idx === -1 || idx >= ENVIRONMENTS.length - 1) return "/";
-  return `${ENVIRONMENTS[idx + 1].path}?demo=true`;
-}

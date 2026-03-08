@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Shell, MetricCard, LessonCard } from "../shell";
-import { C, card, buttonStyle, ghostButton, saveScore, isDemoMode, getNextDemoPath, isAgentEmbed } from "../shared";
-import { ArrowRight, RotateCcw, Play } from "lucide-react";
+import { C, saveScore } from "../shared";
 
 type Phase = "intro" | "playing" | "reveal";
 type Cell = "empty" | "wall" | "goal" | "start";
@@ -222,8 +221,6 @@ export default function MapNavPage() {
   const [agentMode, setAgentMode] = useState(false);
   const [explored, setExplored] = useState<Set<string>>(new Set());
   const agentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [demoMode, setDemoMode] = useState(false);
-  const [agentEmbed, setAgentEmbed] = useState(false);
 
   const initGame = useCallback(() => {
     const { grid: newGrid, optimalLength: optimal } = generateGrid();
@@ -257,11 +254,17 @@ export default function MapNavPage() {
       const finalMoves = moves + 1;
       const efficiency = Math.min(100, Math.round((optimalLength / finalMoves) * 100));
       saveScore("map", efficiency);
+      if (window.parent !== window) {
+        window.parent.postMessage({ type: "episodeComplete", envId: "map", efficiency }, "*");
+      }
       setGameOver(true);
       setTimeout(() => setPhase("reveal"), 500);
     } else if (moves + 1 >= 50) {
       const efficiency = Math.round((optimalLength / 50) * 100);
       saveScore("map", efficiency);
+      if (window.parent !== window) {
+        window.parent.postMessage({ type: "episodeComplete", envId: "map", efficiency }, "*");
+      }
       setGameOver(true);
       setTimeout(() => setPhase("reveal"), 500);
     }
@@ -277,6 +280,9 @@ export default function MapNavPage() {
         // Stuck, end game
         const efficiency = Math.round((optimalLength / Math.max(1, moves)) * 100);
         saveScore("map", efficiency);
+        if (window.parent !== window) {
+          window.parent.postMessage({ type: "episodeComplete", envId: "map", efficiency }, "*");
+        }
         setGameOver(true);
         setTimeout(() => setPhase("reveal"), 500);
         return;
@@ -293,11 +299,17 @@ export default function MapNavPage() {
         if (nextPos.x === GRID_SIZE - 1 && nextPos.y === GRID_SIZE - 1) {
           const efficiency = Math.min(100, Math.round((optimalLength / newMoves) * 100));
           saveScore("map", efficiency);
+          if (window.parent !== window) {
+            window.parent.postMessage({ type: "episodeComplete", envId: "map", efficiency }, "*");
+          }
           setGameOver(true);
           setTimeout(() => setPhase("reveal"), 500);
         } else if (newMoves >= 50) {
           const efficiency = Math.round((optimalLength / 50) * 100);
           saveScore("map", efficiency);
+          if (window.parent !== window) {
+            window.parent.postMessage({ type: "episodeComplete", envId: "map", efficiency }, "*");
+          }
           setGameOver(true);
           setTimeout(() => setPhase("reveal"), 500);
         }
@@ -313,74 +325,16 @@ export default function MapNavPage() {
     initGame();
   }, [initGame]);
 
-  // Check demo mode on mount
+  // Auto-start agent mode on mount
   useEffect(() => {
-    setDemoMode(isDemoMode());
-  }, []);
-
-  // Check agent embed mode on mount
-  useEffect(() => {
-    setAgentEmbed(isAgentEmbed());
-  }, []);
-
-  // Auto-start agent in demo
-  useEffect(() => {
-    if (demoMode && phase === "intro") {
+    if (phase === "intro") {
       handleBegin(true);
     }
-  }, [demoMode, phase]);
-
-  // Auto-start agent in embed mode
-  useEffect(() => {
-    if (agentEmbed && phase === "intro") {
-      handleBegin(true);
-    }
-  }, [agentEmbed, phase]);
-
-  // Auto-advance in demo after reveal
-  useEffect(() => {
-    if (demoMode && phase === "reveal") {
-      const timer = setTimeout(() => {
-        window.location.href = getNextDemoPath("map");
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [demoMode, phase]);
-
-  if (phase === "intro") {
-    return (
-      <Shell env="The Map">
-        <div style={{ ...card, padding: "48px 32px" }}>
-          <p
-            style={{
-              fontSize: "15px",
-              lineHeight: 1.7,
-              color: C.textSecondary,
-              margin: "0 0 32px 0",
-            }}
-          >
-            Navigate from the top-left corner to the bottom-right goal. You can
-            only see your current cell and the four adjacent cells. Walls block
-            your path. Find the shortest route with limited visibility. Maximum
-            50 moves.
-          </p>
-          <div style={{ display: "flex", gap: "8px" }}>
-            <button style={buttonStyle} onClick={() => handleBegin(false)}>
-              Play <ArrowRight size={16} strokeWidth={2} />
-            </button>
-            <button style={ghostButton} onClick={() => handleBegin(true)}>
-              <Play size={14} strokeWidth={2} />
-              Watch agent
-            </button>
-          </div>
-        </div>
-      </Shell>
-    );
-  }
+  }, [phase]);
 
   if (phase === "playing" && grid.length > 0) {
     return (
-      <Shell env="The Map">
+      <Shell env="map">
         <div
           style={{
             display: "flex",
@@ -406,7 +360,7 @@ export default function MapNavPage() {
             gridTemplateColumns: `repeat(${GRID_SIZE}, ${CELL_SIZE}px)`,
             gap: `${GAP}px`,
             justifyContent: "center",
-            marginBottom: agentMode ? "24px" : "0",
+            marginBottom: "24px",
           }}
         >
           {grid.map((row, y) =>
@@ -491,17 +445,17 @@ export default function MapNavPage() {
           )}
         </div>
 
-        {agentMode && (
-          <div
-            style={{
-              textAlign: "center",
-              fontSize: "12px",
-              color: C.textTertiary,
-            }}
-          >
-            BFS pathfinding agent
-          </div>
-        )}
+        <div
+          style={{
+            textAlign: "center",
+            fontSize: "12px",
+            color: C.textTertiary,
+            height: "18px",
+            opacity: agentMode ? 1 : 0,
+          }}
+        >
+          BFS pathfinding agent
+        </div>
       </Shell>
     );
   }
@@ -511,42 +465,27 @@ export default function MapNavPage() {
     const efficiency = Math.min(100, Math.round((optimalLength / finalMoves) * 100));
 
     return (
-      <Shell env="The Map">
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: "8px",
-            marginBottom: "16px",
-          }}
-        >
-          <MetricCard label="Your Moves" value={String(finalMoves)} />
-          <MetricCard label="Optimal" value={String(optimalLength)} />
-          <MetricCard label="Efficiency" value={`${efficiency}%`} />
-        </div>
-
-        <div style={{ marginBottom: "16px" }}>
-          <LessonCard term="In the real world">
-            Logistics companies route deliveries through uncertain traffic, weather, and road conditions. Supply chain agents navigate supplier networks with partial visibility. Planning under uncertainty is the core skill of autonomous operations.
-          </LessonCard>
-        </div>
-
-        {demoMode && (
-          <div style={{ fontSize: "12px", color: C.textTertiary, marginBottom: "16px" }}>
-            Advancing to next environment...
+      <Shell env="map">
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px", marginBottom: "16px" }}>
+          <div>
+            <MetricCard label="Your Moves" value={String(finalMoves)} />
+            <div style={{ fontSize: "9px", color: C.textTertiary, marginTop: "6px", padding: "0 4px" }}>Steps taken to reach goal</div>
           </div>
-        )}
-
-        <div style={{ display: "flex", gap: "8px" }}>
-          <button style={buttonStyle} onClick={() => handleBegin(false)}>
-            <RotateCcw size={14} strokeWidth={2} />
-            Play again
-          </button>
-          <button style={ghostButton} onClick={() => handleBegin(true)}>
-            <Play size={14} strokeWidth={2} />
-            Watch agent
-          </button>
+          <div>
+            <MetricCard label="Optimal" value={String(optimalLength)} />
+            <div style={{ fontSize: "9px", color: C.textTertiary, marginTop: "6px", padding: "0 4px" }}>Shortest possible path</div>
+          </div>
+          <div>
+            <MetricCard label="Efficiency" value={`${efficiency}%`} />
+            <div style={{ fontSize: "9px", color: C.textTertiary, marginTop: "6px", padding: "0 4px" }}>Path efficiency vs optimal</div>
+          </div>
         </div>
+
+        <LessonCard term="What this teaches">
+          <span style={{ display: "block", marginBottom: "4px" }}>· Plan with incomplete information</span>
+          <span style={{ display: "block", marginBottom: "4px" }}>· Delivery routes need real-time adaptation</span>
+          <span style={{ display: "block" }}>· Every logistics problem looks like this</span>
+        </LessonCard>
       </Shell>
     );
   }

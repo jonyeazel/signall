@@ -65,6 +65,19 @@ body {
   animation: card-fade-in 200ms ease-out forwards;
 }
 
+/* --- Card scale-up from carousel --- */
+
+@keyframes card-scale-up {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
 /* --- Demo rail pulse --- */
 
 @keyframes rail-pulse {
@@ -88,6 +101,24 @@ body {
 
 .docs-drawer-open, .train-drawer-open {
   right: 12px;
+}
+
+/* --- Carousel --- */
+
+.carousel-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.carousel-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+/* --- Score pulse --- */
+
+@keyframes score-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
 
 /* --- Cursor --- */

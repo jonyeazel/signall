@@ -2,8 +2,8 @@
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { Shell, MetricCard, LessonCard } from "../shell";
-import { C, card, buttonStyle, ghostButton, saveScore, isDemoMode, getNextDemoPath, isAgentEmbed } from "../shared";
-import { ArrowRight, RotateCcw, Play } from "lucide-react";
+import { C, card, buttonStyle, saveScore } from "../shared";
+import { ArrowRight } from "lucide-react";
 
 type Phase = "intro" | "playing" | "reveal";
 type BetSize = 10 | 25 | 50 | 100;
@@ -186,43 +186,14 @@ export default function MetaPage() {
   const [showingResult, setShowingResult] = useState(false);
   const [lastResult, setLastResult] = useState<RoundResult | null>(null);
   const [agentMode, setAgentMode] = useState(false);
-  const [demoMode, setDemoMode] = useState(false);
-  const [agentEmbed, setAgentEmbed] = useState(false);
   const agentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Check demo mode on mount
+  // Auto-start agent mode on mount
   useEffect(() => {
-    setDemoMode(isDemoMode());
-  }, []);
-
-  // Check agent embed mode on mount
-  useEffect(() => {
-    setAgentEmbed(isAgentEmbed());
-  }, []);
-
-  // Auto-start agent in demo
-  useEffect(() => {
-    if (demoMode && phase === "intro") {
+    if (phase === "intro") {
       handleBegin(true);
     }
-  }, [demoMode, phase]);
-
-  // Auto-start agent in embed mode
-  useEffect(() => {
-    if (agentEmbed && phase === "intro") {
-      handleBegin(true);
-    }
-  }, [agentEmbed, phase]);
-
-  // Auto-advance in demo after reveal
-  useEffect(() => {
-    if (demoMode && phase === "reveal") {
-      const timer = setTimeout(() => {
-        window.location.href = getNextDemoPath("meta");
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [demoMode, phase]);
+  }, [phase]);
 
   const finalScore = useMemo(() => {
     return Math.round((bankroll / STARTING_BANKROLL) * 100);
@@ -256,9 +227,9 @@ export default function MetaPage() {
 
         setTimeout(() => {
           submitBet(prediction, confidence);
-        }, 300);
-      }, 400);
-    }, 500);
+        }, 600);
+      }, 800);
+    }, 800);
 
     return () => {
       if (agentTimerRef.current) clearTimeout(agentTimerRef.current);
@@ -272,6 +243,9 @@ export default function MetaPage() {
     agentTimerRef.current = setTimeout(() => {
       if (currentRound >= TOTAL_ROUNDS - 1) {
         saveScore("meta", finalScore);
+        if (window.parent !== window) {
+          window.parent.postMessage({ type: "episodeComplete", envId: "meta", efficiency: finalScore }, "*");
+        }
         setPhase("reveal");
       } else {
         setCurrentRound((c) => c + 1);
@@ -280,7 +254,7 @@ export default function MetaPage() {
         setShowingResult(false);
         setLastResult(null);
       }
-    }, 800);
+    }, 1200);
 
     return () => {
       if (agentTimerRef.current) clearTimeout(agentTimerRef.current);
@@ -335,6 +309,9 @@ export default function MetaPage() {
     if (agentMode) return;
     if (currentRound >= TOTAL_ROUNDS - 1 || bankroll <= 0) {
       saveScore("meta", finalScore);
+      if (window.parent !== window) {
+        window.parent.postMessage({ type: "episodeComplete", envId: "meta", efficiency: finalScore }, "*");
+      }
       setPhase("reveal");
     } else {
       setCurrentRound((c) => c + 1);
@@ -345,171 +322,29 @@ export default function MetaPage() {
     }
   }, [currentRound, bankroll, finalScore, agentMode]);
 
-  if (phase === "intro") {
+  // Get current round data
+  const round = rounds[currentRound] || null;
+  const betAmount = selectedBet ? Math.round((bankroll * selectedBet) / 100) : 0;
+
+  // --- PLAYING PHASE (unified layout for betting + result) ---
+  if (phase === "playing" && round) {
     return (
-      <Shell env="The Meta">
-        <div style={{ ...card, padding: "48px 32px" }}>
-          <p
-            style={{
-              fontSize: "15px",
-              lineHeight: 1.7,
-              color: C.textSecondary,
-              margin: 0,
-              marginBottom: "24px",
-            }}
-          >
-            Eight rounds. Starting bankroll: 1,000 points. Each round shows partial data — predict whether the next value will be above or below a threshold, then size your bet based on confidence.
-          </p>
-          <p
-            style={{
-              fontSize: "15px",
-              lineHeight: 1.7,
-              color: C.textSecondary,
-              margin: 0,
-              marginBottom: "24px",
-            }}
-          >
-            Correct bets add to your bankroll. Wrong bets subtract. Bet big when you see a clear trend. Bet small when the data is noisy. The goal: grow your capital.
-          </p>
-          <p
-            style={{
-              fontSize: "13px",
-              lineHeight: 1.6,
-              color: C.textTertiary,
-              margin: 0,
-              marginBottom: "32px",
-            }}
-          >
-            Score = final bankroll / starting bankroll (efficiency %).
-          </p>
-          <div style={{ display: "flex", gap: "8px" }}>
-            <button style={buttonStyle} onClick={() => handleBegin(false)}>
-              Play
-              <ArrowRight size={16} strokeWidth={2} />
-            </button>
-            <button style={ghostButton} onClick={() => handleBegin(true)}>
-              <Play size={14} strokeWidth={2} />
-              Watch agent
-            </button>
-          </div>
-        </div>
-      </Shell>
-    );
-  }
-
-  if (phase === "playing") {
-    const round = rounds[currentRound];
-
-    if (showingResult && lastResult) {
-      return (
-        <Shell env="The Meta">
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "24px",
-            }}
-          >
-            <span style={{ fontSize: "13px", color: C.textSecondary }}>
-              {agentMode && (
-                <span style={{ color: C.accent, marginRight: "8px" }}>Agent</span>
-              )}
-              Round {currentRound + 1} / {TOTAL_ROUNDS}
-            </span>
-            <span style={{ fontSize: "15px", fontWeight: 500, color: C.textPrimary }}>
-              {bankroll.toLocaleString()} pts
-            </span>
-          </div>
-
-          <div
-            style={{
-              ...card,
-              padding: "32px",
-              marginBottom: "24px",
-              textAlign: "center",
-            }}
-          >
-            <div
-              style={{
-                width: "48px",
-                height: "48px",
-                borderRadius: "16px",
-                background: lastResult.correct ? "rgba(74, 222, 128, 0.1)" : "rgba(224, 90, 0, 0.1)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                margin: "0 auto 16px",
-              }}
-            >
-              <span style={{ fontSize: "24px", color: lastResult.correct ? "#22A55B" : "#E05A00" }}>
-                {lastResult.correct ? "+" : "−"}
-              </span>
-            </div>
-            <div
-              style={{
-                fontSize: "32px",
-                fontWeight: 600,
-                color: lastResult.correct ? "#22A55B" : C.accent,
-                marginBottom: "8px",
-              }}
-            >
-              {lastResult.pnl > 0 ? "+" : ""}
-              {lastResult.pnl.toLocaleString()} pts
-            </div>
-            <div style={{ fontSize: "14px", color: C.textSecondary }}>
-              Actual value: {lastResult.round.actualValue} — {lastResult.round.actualValue > lastResult.round.threshold ? "above" : "below"} {lastResult.round.threshold}
-            </div>
-          </div>
-
-          <div style={{ ...card, padding: "24px", marginBottom: "24px" }}>
-            <div style={{ fontSize: "13px", color: C.textTertiary, marginBottom: "12px" }}>
-              {lastResult.round.label}: {lastResult.round.sequence.join(", ")}
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px", color: C.textSecondary }}>
-              <span>You bet: {lastResult.prediction.toUpperCase()} {lastResult.round.threshold}</span>
-              <span>Stake: {BET_LABELS[lastResult.betPercent]} ({lastResult.betAmount.toLocaleString()} pts)</span>
-            </div>
-          </div>
-
-          {!agentMode && (
-            <button style={buttonStyle} onClick={nextRound}>
-              {currentRound >= TOTAL_ROUNDS - 1 || bankroll <= 0 ? "See Results" : "Next Round"}
-              <ArrowRight size={16} strokeWidth={2} />
-            </button>
-          )}
-
-          {agentMode && (
-            <div
-              style={{
-                textAlign: "center",
-                fontSize: "12px",
-                color: C.textTertiary,
-              }}
-            >
-              Trend analysis agent
-            </div>
-          )}
-        </Shell>
-      );
-    }
-
-    const betAmount = selectedBet ? Math.round((bankroll * selectedBet) / 100) : 0;
-
-    return (
-      <Shell env="The Meta">
+      <Shell env="meta">
+        {/* HEADER: Round counter + bankroll — always same structure */}
         <div
           style={{
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
             marginBottom: "24px",
+            height: "20px",
           }}
         >
           <span style={{ fontSize: "13px", color: C.textSecondary }}>
-            {agentMode && (
-              <span style={{ color: C.accent, marginRight: "8px" }}>Agent</span>
-            )}
+            {/* Agent indicator always rendered, visibility controlled */}
+            <span style={{ color: C.accent, marginRight: "8px", opacity: agentMode ? 1 : 0 }}>
+              Agent
+            </span>
             Round {currentRound + 1} / {TOTAL_ROUNDS}
           </span>
           <span style={{ fontSize: "15px", fontWeight: 500, color: C.textPrimary }}>
@@ -517,157 +352,246 @@ export default function MetaPage() {
           </span>
         </div>
 
-        <div style={{ ...card, padding: "32px", marginBottom: "24px" }}>
-          <div style={{ fontSize: "13px", color: C.textTertiary, marginBottom: "16px" }}>
-            {round.label}
-          </div>
-          <div
-            style={{
-              display: "flex",
-              gap: "16px",
-              justifyContent: "center",
-              marginBottom: "24px",
-            }}
-          >
-            {round.sequence.map((val, i) => (
+        {/* MAIN CARD AREA: Fixed height container, content swaps inside */}
+        <div
+          style={{
+            ...card,
+            padding: "32px",
+            marginBottom: "24px",
+            minHeight: "180px",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+          }}
+        >
+          {/* BETTING STATE: Show sequence + question */}
+          <div style={{ opacity: showingResult ? 0 : 1, position: showingResult ? "absolute" : "relative", pointerEvents: showingResult ? "none" : "auto" }}>
+            <div style={{ fontSize: "13px", color: C.textTertiary, marginBottom: "16px", textAlign: "center" }}>
+              {round.label}
+            </div>
+            <div
+              style={{
+                display: "flex",
+                gap: "16px",
+                justifyContent: "center",
+                marginBottom: "24px",
+              }}
+            >
+              {round.sequence.map((val, i) => (
+                <div
+                  key={i}
+                  style={{
+                    fontSize: "24px",
+                    fontWeight: 500,
+                    color: C.textPrimary,
+                  }}
+                >
+                  {val}
+                </div>
+              ))}
               <div
-                key={i}
                 style={{
                   fontSize: "24px",
                   fontWeight: 500,
-                  color: C.textPrimary,
+                  color: C.textTertiary,
                 }}
               >
-                {val}
+                ?
               </div>
-            ))}
-            <div
-              style={{
-                fontSize: "24px",
-                fontWeight: 500,
-                color: C.textTertiary,
-              }}
-            >
-              ?
+            </div>
+            <div style={{ fontSize: "15px", color: C.textSecondary, textAlign: "center" }}>
+              Will the next value be above or below <span style={{ fontWeight: 500, color: C.textPrimary }}>{round.threshold}</span>?
             </div>
           </div>
-          <div style={{ fontSize: "15px", color: C.textSecondary, textAlign: "center" }}>
-            Will the next value be above or below <span style={{ fontWeight: 500, color: C.textPrimary }}>{round.threshold}</span>?
+
+          {/* RESULT STATE: Show outcome */}
+          <div style={{ opacity: showingResult ? 1 : 0, position: showingResult ? "relative" : "absolute", pointerEvents: showingResult ? "auto" : "none", textAlign: "center" }}>
+            {lastResult && (
+              <>
+                <div
+                  style={{
+                    width: "48px",
+                    height: "48px",
+                    borderRadius: "16px",
+                    background: lastResult.correct ? "rgba(74, 222, 128, 0.1)" : "rgba(224, 90, 0, 0.1)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    margin: "0 auto 16px",
+                  }}
+                >
+                  <span style={{ fontSize: "24px", color: lastResult.correct ? "#22A55B" : "#E05A00" }}>
+                    {lastResult.correct ? "+" : "−"}
+                  </span>
+                </div>
+                <div
+                  style={{
+                    fontSize: "32px",
+                    fontWeight: 600,
+                    color: lastResult.correct ? "#22A55B" : C.accent,
+                    marginBottom: "8px",
+                  }}
+                >
+                  {lastResult.pnl > 0 ? "+" : ""}
+                  {lastResult.pnl.toLocaleString()} pts
+                </div>
+                <div style={{ fontSize: "14px", color: C.textSecondary }}>
+                  Actual value: {lastResult.round.actualValue} — {lastResult.round.actualValue > lastResult.round.threshold ? "above" : "below"} {lastResult.round.threshold}
+                </div>
+              </>
+            )}
           </div>
         </div>
 
-        <div style={{ marginBottom: "24px" }}>
-          <div
-            style={{
-              fontSize: "11px",
-              fontWeight: 500,
-              letterSpacing: "0.06em",
-              textTransform: "uppercase",
-              color: C.textTertiary,
-              marginBottom: "12px",
-            }}
-          >
-            Prediction
-          </div>
-          <div style={{ display: "flex", gap: "8px" }}>
-            {(["above", "below"] as Prediction[]).map((pred) => (
-              <button
-                key={pred}
-                onClick={() => !agentMode && setSelectedPrediction(pred)}
-                disabled={agentMode}
+        {/* CONTROLS AREA: Fixed height, content swaps inside */}
+        <div style={{ minHeight: "180px", position: "relative" }}>
+          {/* BETTING CONTROLS */}
+          <div style={{ opacity: showingResult ? 0 : 1, position: showingResult ? "absolute" : "relative", top: 0, left: 0, right: 0, pointerEvents: showingResult ? "none" : "auto" }}>
+            {/* Prediction buttons */}
+            <div style={{ marginBottom: "24px" }}>
+              <div
                 style={{
-                  flex: 1,
-                  height: "44px",
-                  background: selectedPrediction === pred ? C.accent : C.surface,
-                  color: selectedPrediction === pred ? "#FFFFFF" : C.textSecondary,
-                  border: `1px solid ${selectedPrediction === pred ? C.accent : C.border}`,
-                  borderRadius: "16px",
-                  fontSize: "13px",
+                  fontSize: "11px",
                   fontWeight: 500,
-                  fontFamily: "inherit",
-                  cursor: agentMode ? "default" : "pointer",
-                  textTransform: "capitalize",
+                  letterSpacing: "0.06em",
+                  textTransform: "uppercase",
+                  color: C.textTertiary,
+                  marginBottom: "12px",
                 }}
               >
-                {pred} {round.threshold}
-              </button>
-            ))}
-          </div>
-        </div>
+                Prediction
+              </div>
+              <div style={{ display: "flex", gap: "8px" }}>
+                {(["above", "below"] as Prediction[]).map((pred) => (
+                  <button
+                    key={pred}
+                    onClick={() => !agentMode && setSelectedPrediction(pred)}
+                    disabled={agentMode}
+                    style={{
+                      flex: 1,
+                      height: "44px",
+                      background: selectedPrediction === pred ? C.accent : C.surface,
+                      color: selectedPrediction === pred ? "#FFFFFF" : C.textSecondary,
+                      border: `1px solid ${selectedPrediction === pred ? C.accent : C.border}`,
+                      borderRadius: "16px",
+                      fontSize: "13px",
+                      fontWeight: 500,
+                      fontFamily: "inherit",
+                      cursor: agentMode ? "default" : "pointer",
+                      textTransform: "capitalize",
+                    }}
+                  >
+                    {pred} {round.threshold}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-        <div style={{ marginBottom: "24px" }}>
-          <div
-            style={{
-              fontSize: "11px",
-              fontWeight: 500,
-              letterSpacing: "0.06em",
-              textTransform: "uppercase",
-              color: C.textTertiary,
-              marginBottom: "12px",
-              opacity: selectedPrediction === null ? 0.5 : 1,
-            }}
-          >
-            Bet Size
-          </div>
-          <div style={{ display: "flex", gap: "8px" }}>
-            {([10, 25, 50, 100] as BetSize[]).map((bet) => (
-              <button
-                key={bet}
-                onClick={() => !agentMode && selectedPrediction && setSelectedBet(bet)}
-                disabled={agentMode || selectedPrediction === null}
+            {/* Bet size buttons */}
+            <div style={{ marginBottom: "24px" }}>
+              <div
                 style={{
-                  flex: 1,
-                  height: "44px",
-                  background: selectedBet === bet ? C.accent : C.surface,
-                  color: selectedBet === bet ? "#FFFFFF" : C.textSecondary,
-                  border: `1px solid ${selectedBet === bet ? C.accent : C.border}`,
-                  borderRadius: "16px",
-                  fontSize: "13px",
+                  fontSize: "11px",
                   fontWeight: 500,
-                  fontFamily: "inherit",
-                  cursor: (agentMode || selectedPrediction === null) ? "not-allowed" : "pointer",
+                  letterSpacing: "0.06em",
+                  textTransform: "uppercase",
+                  color: C.textTertiary,
+                  marginBottom: "12px",
                   opacity: selectedPrediction === null ? 0.5 : 1,
                 }}
               >
-                {BET_LABELS[bet]}
-              </button>
-            ))}
+                Bet Size
+              </div>
+              <div style={{ display: "flex", gap: "8px" }}>
+                {([10, 25, 50, 100] as BetSize[]).map((bet) => (
+                  <button
+                    key={bet}
+                    onClick={() => !agentMode && selectedPrediction && setSelectedBet(bet)}
+                    disabled={agentMode || selectedPrediction === null}
+                    style={{
+                      flex: 1,
+                      height: "44px",
+                      background: selectedBet === bet ? C.accent : C.surface,
+                      color: selectedBet === bet ? "#FFFFFF" : C.textSecondary,
+                      border: `1px solid ${selectedBet === bet ? C.accent : C.border}`,
+                      borderRadius: "16px",
+                      fontSize: "13px",
+                      fontWeight: 500,
+                      fontFamily: "inherit",
+                      cursor: (agentMode || selectedPrediction === null) ? "not-allowed" : "pointer",
+                      opacity: selectedPrediction === null ? 0.5 : 1,
+                    }}
+                  >
+                    {BET_LABELS[bet]}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* RESULT INFO (your bet summary) */}
+          <div style={{ opacity: showingResult ? 1 : 0, position: showingResult ? "relative" : "absolute", top: 0, left: 0, right: 0, pointerEvents: showingResult ? "auto" : "none" }}>
+            {lastResult && (
+              <div style={{ ...card, padding: "24px", marginBottom: "24px" }}>
+                <div style={{ fontSize: "13px", color: C.textTertiary, marginBottom: "12px" }}>
+                  {lastResult.round.label}: {lastResult.round.sequence.join(", ")}
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px", color: C.textSecondary }}>
+                  <span>You bet: {lastResult.prediction.toUpperCase()} {lastResult.round.threshold}</span>
+                  <span>Stake: {BET_LABELS[lastResult.betPercent]} ({lastResult.betAmount.toLocaleString()} pts)</span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
-        {!agentMode && (
-          <button
-            style={{
-              ...buttonStyle,
-              opacity: (selectedPrediction === null || selectedBet === null) ? 0.5 : 1,
-              cursor: (selectedPrediction === null || selectedBet === null) ? "not-allowed" : "pointer",
-            }}
-            onClick={handleSubmit}
-            disabled={selectedPrediction === null || selectedBet === null}
-          >
-            {selectedBet ? `Bet ${betAmount.toLocaleString()} pts` : "Place Bet"}
-            <ArrowRight size={16} strokeWidth={2} />
-          </button>
-        )}
+        {/* BOTTOM ACTION AREA: Fixed height, always rendered */}
+        <div style={{ height: "44px", display: "flex", alignItems: "center" }}>
+          {/* Submit button (betting state) */}
+          <div style={{ opacity: (!showingResult && !agentMode) ? 1 : 0, position: "absolute", pointerEvents: (!showingResult && !agentMode) ? "auto" : "none" }}>
+            <button
+              style={{
+                ...buttonStyle,
+                opacity: (selectedPrediction === null || selectedBet === null) ? 0.5 : 1,
+                cursor: (selectedPrediction === null || selectedBet === null) ? "not-allowed" : "pointer",
+              }}
+              onClick={handleSubmit}
+              disabled={selectedPrediction === null || selectedBet === null}
+            >
+              {selectedBet ? `Bet ${betAmount.toLocaleString()} pts` : "Place Bet"}
+              <ArrowRight size={16} strokeWidth={2} />
+            </button>
+          </div>
 
-        {agentMode && (
+          {/* Next round button (result state, non-agent) */}
+          <div style={{ opacity: (showingResult && !agentMode) ? 1 : 0, position: (showingResult && !agentMode) ? "relative" : "absolute", pointerEvents: (showingResult && !agentMode) ? "auto" : "none" }}>
+            <button style={buttonStyle} onClick={nextRound}>
+              {currentRound >= TOTAL_ROUNDS - 1 || bankroll <= 0 ? "See Results" : "Next Round"}
+              <ArrowRight size={16} strokeWidth={2} />
+            </button>
+          </div>
+
+          {/* Agent mode indicator — always rendered, visibility controlled */}
           <div
             style={{
               textAlign: "center",
               fontSize: "12px",
               color: C.textTertiary,
+              width: "100%",
+              opacity: agentMode ? 1 : 0,
+              pointerEvents: "none",
             }}
           >
             Trend analysis agent
           </div>
-        )}
+        </div>
       </Shell>
     );
   }
 
-  // Reveal phase
+  // --- REVEAL PHASE ---
   return (
-    <Shell env="The Meta">
+    <Shell env="meta">
       <div
         style={{
           display: "grid",
@@ -676,35 +600,22 @@ export default function MetaPage() {
           marginBottom: "16px",
         }}
       >
-        <MetricCard label="Efficiency" value={`${finalScore}%`} />
-        <MetricCard label="Win Rate" value={`${winRate}%`} />
-        <MetricCard label="Avg Bet" value={`${avgBetSize}%`} />
+        <MetricCard label="Efficiency" value={`${finalScore}%`} subtitle="Final bankroll vs starting" />
+        <MetricCard label="Win Rate" value={`${winRate}%`} subtitle="Correct predictions made" />
+        <MetricCard label="Avg Bet" value={`${avgBetSize}%`} subtitle="Mean confidence per bet" />
       </div>
 
       <div style={{ fontSize: "13px", color: C.textSecondary, marginBottom: "16px" }}>
         {finalScore >= 150 ? "Exceptional returns — strong trend reading and bet sizing." : finalScore >= 100 ? "Capital preserved. Room for more aggressive conviction plays." : finalScore >= 50 ? "Drawdown occurred. Review bet sizing on uncertain signals." : "Significant losses. Consider smaller bets when trends are unclear."}
       </div>
 
-      <LessonCard term="In the real world">
-        Every trading desk, insurance underwriter, and venture fund runs on calibrated confidence. Betting big when you're right and small when you're uncertain is the difference between profit and ruin.
+      <LessonCard term="What this teaches">
+        <ul style={{ margin: 0, paddingLeft: "16px", display: "flex", flexDirection: "column", gap: "6px" }}>
+          <li>Bet big when confident, small when unsure</li>
+          <li>Overconfidence destroys returns</li>
+          <li>Knowing what you don't know is a skill</li>
+        </ul>
       </LessonCard>
-
-      {demoMode && (
-        <div style={{ fontSize: "12px", color: C.textTertiary, marginTop: "16px" }}>
-          Advancing to next environment...
-        </div>
-      )}
-
-      <div style={{ display: "flex", gap: "8px", marginTop: "16px" }}>
-        <button style={buttonStyle} onClick={() => handleBegin(false)}>
-          <RotateCcw size={14} strokeWidth={2} />
-          Play again
-        </button>
-        <button style={ghostButton} onClick={() => handleBegin(true)}>
-          <Play size={14} strokeWidth={2} />
-          Watch agent
-        </button>
-      </div>
     </Shell>
   );
 }

@@ -1,8 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useState, useCallback } from "react";
-import { useRef } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Play, X, Copy, Check, ExternalLink, ChevronRight, Square, Activity } from "lucide-react";
 import {
   C as darkC,
@@ -58,11 +56,24 @@ function Avatar({ index }: { index: number }) {
 export default function Home() {
   const [scores, setScores] = useState<Record<string, EnvScore>>({});
   const [expandedCard, setExpandedCard] = useState<number | null>(null);
+  const [expandedResult, setExpandedResult] = useState<{ efficiency: number } | null>(null);
   const [playingMode, setPlayingMode] = useState<"play" | "agent" | null>(null);
   const [copied, setCopied] = useState(false);
   const [docsOpen, setDocsOpen] = useState(false);
   const [trainOpen, setTrainOpen] = useState(false);
   const [tryResult, setTryResult] = useState<Record<string, string>>({});
+
+  // --- Carousel state ---
+  const [activeCardIndex, setActiveCardIndex] = useState(0);
+  const carouselRef = useRef<HTMLDivElement>(null);
+
+  // --- Theater state ---
+  type TheaterState = "idle" | "training" | "complete";
+  const [theaterState, setTheaterState] = useState<TheaterState>("idle");
+  const [theaterCardIndex, setTheaterCardIndex] = useState(0);
+  const [currentRunScore, setCurrentRunScore] = useState<number | null>(null);
+  const [runningTally, setRunningTally] = useState({ completed: 0, totalEfficiency: 0 });
+  const [theaterScores, setTheaterScores] = useState<(number | null)[]>(Array(ENVIRONMENTS.length).fill(null));
 
   // --- Training drawer state ---
   type HFEpisode = { episode: number; efficiency: number; reward: number };
@@ -110,21 +121,103 @@ export default function Home() {
 
   const closeExpanded = useCallback(() => {
     setExpandedCard(null);
+    setExpandedResult(null);
     setPlayingMode(null);
     setScores(getScores());
   }, []);
 
+  // Carousel scroll tracking
+  const handleCarouselScroll = useCallback(() => {
+    if (!carouselRef.current) return;
+    const container = carouselRef.current;
+    const cardWidth = 338; // 280 + 16 gap
+    const scrollCenter = container.scrollLeft + container.clientWidth / 2;
+    const paddingOffset = container.clientWidth / 2 - 161;
+    const newIndex = Math.round((scrollCenter - paddingOffset) / cardWidth);
+    const clamped = Math.max(0, Math.min(ENVIRONMENTS.length - 1, newIndex));
+    if (clamped !== activeCardIndex) setActiveCardIndex(clamped);
+  }, [activeCardIndex]);
+
+  // Scroll carousel to specific index
+  const scrollToCard = useCallback((index: number) => {
+    if (!carouselRef.current) return;
+    const cardWidth = 338;
+    const paddingOffset = carouselRef.current.clientWidth / 2 - 161;
+    carouselRef.current.scrollTo({ left: index * cardWidth - paddingOffset + 161, behavior: "smooth" });
+  }, []);
+
+  // Start training theater
+  const startTheater = useCallback(() => {
+    setTheaterState("training");
+    setTheaterCardIndex(0);
+    setRunningTally({ completed: 0, totalEfficiency: 0 });
+    setCurrentRunScore(null);
+    setTheaterScores(Array(ENVIRONMENTS.length).fill(null));
+    setTrainOpen(true); // Auto-open training analytics during theater
+    setDocsOpen(false);
+    scrollToCard(0);
+  }, [scrollToCard]);
+
+  // Listen for postMessage from iframe (episode completion)
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type !== "episodeComplete") return;
+      const efficiency = Math.min(100, Math.max(0, Math.round(event.data.efficiency ?? 0)));
+      setScores(getScores());
+
+      // Theater mode — auto-advance
+      if (theaterState === "training") {
+        setCurrentRunScore(efficiency);
+        // Store this environment's score
+        setTheaterScores(prev => {
+          const next = [...prev];
+          next[theaterCardIndex] = efficiency;
+          return next;
+        });
+        setTimeout(() => {
+          setRunningTally(prev => ({
+            completed: prev.completed + 1,
+            totalEfficiency: prev.totalEfficiency + efficiency,
+          }));
+          if (theaterCardIndex < ENVIRONMENTS.length - 1) {
+            const next = theaterCardIndex + 1;
+            setTheaterCardIndex(next);
+            setCurrentRunScore(null);
+            scrollToCard(next);
+          } else {
+            // Show completion summary — close drawer, don't auto-dismiss
+            setTheaterState("complete");
+            setTrainOpen(false);
+            setScores(getScores());
+          }
+        }, 1500);
+      }
+
+      // Individual card expanded — show results panel
+      if (expandedCard !== null && theaterState === "idle") {
+        setExpandedResult({ efficiency });
+      }
+    };
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [theaterState, theaterCardIndex, scrollToCard, expandedCard]);
+
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { closeExpanded(); setDocsOpen(false); setTrainOpen(false); }
-      if (expandedCard === null && !e.metaKey && !e.ctrlKey) {
-        const num = e.key === "0" ? 10 : parseInt(e.key);
-        if (num >= 1 && num <= 10) setExpandedCard(num - 1);
+      if (e.key === "Escape") {
+        closeExpanded();
+        setDocsOpen(false);
+        setTrainOpen(false);
+        if (theaterState !== "idle") { setTheaterState("idle"); setCurrentRunScore(null); }
+      }
+      if (expandedCard === null && theaterState === "idle" && !e.metaKey && !e.ctrlKey) {
+        if (e.key === "ArrowRight") { scrollToCard(Math.min(activeCardIndex + 1, ENVIRONMENTS.length - 1)); }
+        if (e.key === "ArrowLeft") { scrollToCard(Math.max(activeCardIndex - 1, 0)); }
       }
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
-  }, [expandedCard, closeExpanded]);
+  }, [expandedCard, closeExpanded, theaterState, activeCardIndex, scrollToCard]);
 
   // HuggingFace polling
   useEffect(() => {
@@ -197,92 +290,251 @@ export default function Home() {
         style={{ background: "rgba(0,0,0,0.4)" }}
       />
 
-      {/* Expanded card */}
+      {/* Expanded card — unified training view */}
       {expandedCard !== null && (() => {
         const xEnv = ENVIRONMENTS[expandedCard];
-        const xScore = scores[xEnv.id];
         const xGroup = ENV_GROUPS.find((g) => g.envs.includes(xEnv));
+        const embedUrl = `${xEnv.path}?embed=true&agent=true`;
 
-        // Playing mode — iframe
-        if (playingMode) {
-          const embedUrl = `${xEnv.path}?embed=true${playingMode === "agent" ? "&agent=true" : ""}`;
-          return (
-            <div className="slide-card-expanded">
-              <div style={{ width: "100%", height: "100%", background: t.bg, borderRadius: "24px", border: `1px solid ${GOLD_DIM}`, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 24px", borderBottom: `1px solid ${t.border}`, flexShrink: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                    <Avatar index={expandedCard} />
-                    <span style={{ fontSize: "13px", fontWeight: 600, color: t.textPrimary }}>{xEnv.name}</span>
-                    <span style={{ fontSize: "10px", color: GOLD, letterSpacing: "0.04em", textTransform: "uppercase" }}>{xGroup?.label}</span>
-                  </div>
-                  <div style={{ display: "flex", gap: "8px" }}>
-                    <button onClick={() => setPlayingMode(playingMode === "agent" ? "play" : "agent")} style={{ height: "28px", padding: "0 12px", borderRadius: "8px", border: `1px solid ${t.border}`, background: "transparent", color: t.textSecondary, fontSize: "11px", fontWeight: 500 }}>
-                      {playingMode === "agent" ? "Switch to Play" : "Switch to Agent"}
-                    </button>
-                    <button onClick={closeExpanded} style={{ background: "none", border: "none", color: t.textTertiary, padding: "4px" }}>
-                      <X size={18} strokeWidth={1.5} />
-                    </button>
-                  </div>
-                </div>
-                <iframe src={embedUrl} style={{ flex: 1, border: "none", borderRadius: "0 0 24px 24px" }} />
-              </div>
-            </div>
-          );
-        }
-
-        // Info mode
         return (
-          <div className="slide-card-expanded">
-            <div style={{ width: "100%", height: "100%", background: t.surface, borderRadius: "24px", border: `1px solid ${GOLD_DIM}`, padding: "48px", display: "flex", flexDirection: "column", position: "relative" }}>
-              <div style={{ position: "absolute", top: 0, left: "48px", right: "48px", height: "1px", background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)` }} />
-              <button onClick={closeExpanded} style={{ position: "absolute", top: "20px", right: "20px", background: "none", border: "none", color: t.textTertiary, padding: "8px" }}>
-                <X size={20} strokeWidth={1.5} />
-              </button>
+          <div className="slide-card-expanded" style={{ animation: "card-scale-up 150ms ease-out forwards" }}>
+            <div style={{
+              width: "100%", height: "100%", background: t.bg, borderRadius: "24px",
+              border: `1px solid ${GOLD}`, display: "flex", flexDirection: "column",
+              overflow: "hidden", position: "relative",
+            }}>
+              {/* Gold trim */}
+              <div style={{ position: "absolute", top: 0, left: "24px", right: "24px", height: "1px", background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)`, zIndex: 1 }} />
 
-              <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "32px" }}>
-                <Avatar index={expandedCard} />
-                <div style={{ fontSize: "11px", fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase", color: GOLD }}>{xGroup?.label}</div>
-              </div>
-
-              <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                <h2 style={{ fontSize: "48px", fontWeight: 600, color: t.textPrimary, letterSpacing: "-0.03em", lineHeight: 1.1, margin: "0 0 16px 0" }}>{xEnv.name}</h2>
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "20px" }}>
-                  {xEnv.useCases.map((uc, j) => (
-                    <div key={j} style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "16px", color: t.textSecondary }}>
-                      <span style={{ color: GOLD, fontSize: "6px" }}>●</span>{uc}
-                    </div>
-                  ))}
+              {/* Header */}
+              <div style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                padding: "16px 24px", borderBottom: `1px solid ${t.border}`, flexShrink: 0,
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <Avatar index={expandedCard} />
+                  <span style={{ fontSize: "14px", fontWeight: 600, color: t.textPrimary }}>{xEnv.name}</span>
+                  <span style={{ fontSize: "11px", color: t.border }}>/</span>
+                  <span style={{ fontSize: "10px", color: GOLD, letterSpacing: "0.04em", textTransform: "uppercase" }}>{xGroup?.label}</span>
                 </div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "32px" }}>
-                  {xEnv.domains.map((d) => (
-                    <span key={d} style={{ fontSize: "11px", color: t.textTertiary, background: t.bg, padding: "4px 10px", borderRadius: "6px", border: `1px solid ${t.border}` }}>{d}</span>
-                  ))}
-                </div>
-
-                <div style={{ display: "flex", gap: "32px", marginBottom: "32px" }}>
-                  <div>
-                    <div style={{ fontSize: "36px", fontWeight: 600, color: t.accent, lineHeight: 1 }}>{xScore?.best ?? 0}%</div>
-                    <div style={{ fontSize: "11px", color: t.textTertiary, marginTop: "6px" }}>best</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: "36px", fontWeight: 600, color: t.textPrimary, lineHeight: 1 }}>{xScore?.attempts ?? 0}</div>
-                    <div style={{ fontSize: "11px", color: t.textTertiary, marginTop: "6px" }}>runs</div>
-                  </div>
-                </div>
-
-                <div style={{ display: "flex", gap: "12px" }}>
-                  <button onClick={() => setPlayingMode("play")} style={{ display: "inline-flex", alignItems: "center", gap: "8px", height: "44px", padding: "0 24px", background: t.accent, color: "#fff", border: "none", borderRadius: "16px", fontSize: "13px", fontWeight: 500, fontFamily: "inherit" }}>
-                    Play
-                  </button>
-                  <button onClick={() => setPlayingMode("agent")} style={{ display: "inline-flex", alignItems: "center", gap: "8px", height: "44px", padding: "0 24px", background: "transparent", color: t.textSecondary, border: `1px solid ${t.border}`, borderRadius: "16px", fontSize: "13px", fontWeight: 500, fontFamily: "inherit" }}>
-                    <Play size={13} strokeWidth={2} />
-                    Watch agent
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                  {expandedResult && (
+                    <span style={{ fontSize: "13px", fontWeight: 600, color: t.accent }}>{expandedResult.efficiency}%</span>
+                  )}
+                  <button onClick={closeExpanded} style={{ background: "none", border: "none", color: t.textTertiary, padding: "4px" }}>
+                    <X size={18} strokeWidth={1.5} />
                   </button>
                 </div>
               </div>
-              <div style={{ position: "absolute", bottom: 0, left: "48px", right: "48px", height: "1px", background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)` }} />
+
+              {/* Game + Results panel */}
+              <div style={{ flex: 1, display: "flex", position: "relative", overflow: "hidden" }}>
+                {/* Game iframe — always running */}
+                <iframe
+                  src={embedUrl}
+                  style={{
+                    flex: 1,
+                    border: "none",
+                    borderRadius: "0 0 24px 24px",
+                    transition: "margin-right 150ms ease-out",
+                    marginRight: expandedResult ? "280px" : "0",
+                  }}
+                />
+
+                {/* Results panel — slides in from right */}
+                <div style={{
+                  position: "absolute",
+                  top: 0,
+                  right: expandedResult ? 0 : "-280px",
+                  bottom: 0,
+                  width: "280px",
+                  background: t.surface,
+                  borderLeft: `1px solid ${t.border}`,
+                  borderRadius: "0 0 24px 0",
+                  transition: "right 150ms ease-out",
+                  display: "flex",
+                  flexDirection: "column",
+                  padding: "24px",
+                  overflow: "auto",
+                }}>
+                  {expandedResult && (
+                    <>
+                      {/* Score */}
+                      <div style={{ marginBottom: "24px" }}>
+                        <div style={{ fontSize: "9px", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: t.textTertiary, marginBottom: "8px" }}>Efficiency</div>
+                        <div style={{ fontSize: "48px", fontWeight: 600, color: t.accent, letterSpacing: "-0.03em", lineHeight: 1 }}>{expandedResult.efficiency}%</div>
+                      </div>
+
+                      {/* Capability */}
+                      <div style={{ fontSize: "13px", color: t.textSecondary, lineHeight: 1.5, marginBottom: "20px" }}>
+                        {xEnv.capability}
+                      </div>
+
+                      {/* Use cases */}
+                      <div style={{ marginBottom: "20px" }}>
+                        <div style={{ fontSize: "9px", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: t.textTertiary, marginBottom: "8px" }}>Applications</div>
+                        {xEnv.useCases.map((uc, j) => (
+                          <div key={j} style={{ fontSize: "12px", color: t.textSecondary, lineHeight: 1.5, padding: "6px 0", borderBottom: j < 2 ? `1px solid ${t.border}` : "none" }}>
+                            {uc}
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Domain badges */}
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", marginBottom: "24px" }}>
+                        {xEnv.domains.map((d) => (
+                          <span key={d} style={{ fontSize: "10px", color: t.textSecondary, background: t.bg, padding: "4px 8px", borderRadius: "6px", border: `1px solid ${t.border}` }}>{d}</span>
+                        ))}
+                      </div>
+
+                      {/* Train again */}
+                      <button
+                        onClick={() => {
+                          setExpandedResult(null);
+                          setExpandedCard(null);
+                          setTimeout(() => setExpandedCard(expandedCard), 50);
+                        }}
+                        style={{
+                          display: "inline-flex", alignItems: "center", gap: "8px",
+                          height: "40px", padding: "0 20px", background: t.accent, color: "#fff",
+                          border: "none", borderRadius: "12px", fontSize: "12px", fontWeight: 500,
+                          fontFamily: "inherit", marginTop: "auto",
+                        }}
+                      >
+                        <Play size={12} strokeWidth={2} />
+                        Train again
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
+        );
+      })()}
+
+      {/* --- Theater overlay --- */}
+      {theaterState === "training" && (
+        <>
+          <div
+            style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 99 }}
+            onClick={() => { setTheaterState("idle"); setCurrentRunScore(null); }}
+          />
+          <div className="slide-card-expanded">
+            <div style={{ width: "100%", height: "100%", background: t.bg, borderRadius: "24px", border: `1px solid ${GOLD_DIM}`, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 24px", borderBottom: `1px solid ${t.border}`, flexShrink: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <Avatar index={theaterCardIndex} />
+                  <span style={{ fontSize: "13px", fontWeight: 600, color: t.textPrimary }}>{ENVIRONMENTS[theaterCardIndex]?.name}</span>
+                  <span style={{ fontSize: "11px", color: t.border }}>/</span>
+                  <span style={{ fontSize: "10px", color: GOLD, letterSpacing: "0.04em", textTransform: "uppercase" }}>
+                    {ENV_GROUPS.find(g => g.envs.includes(ENVIRONMENTS[theaterCardIndex]))?.label}
+                  </span>
+                  <span style={{ fontSize: "10px", color: t.textTertiary, marginLeft: "8px" }}>
+                    {theaterCardIndex + 1} / {ENVIRONMENTS.length}
+                  </span>
+                </div>
+                <button onClick={() => { setTheaterState("idle"); setCurrentRunScore(null); }} style={{ background: "none", border: "none", color: t.textTertiary, padding: "4px" }}>
+                  <X size={18} strokeWidth={1.5} />
+                </button>
+              </div>
+              <iframe
+                src={`${ENVIRONMENTS[theaterCardIndex]?.path}?embed=true&agent=true`}
+                style={{ flex: 1, border: "none", borderRadius: "0 0 24px 24px" }}
+              />
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* --- Theater completion summary --- */}
+      {theaterState === "complete" && (() => {
+        const completedScores = theaterScores.map(s => s !== null ? Math.min(100, Math.max(0, s)) : null);
+        const validScores = completedScores.filter((s): s is number => s !== null);
+        const avgScore = validScores.length > 0 ? Math.round(validScores.reduce((a, b) => a + b, 0) / validScores.length) : 0;
+        const maxScore = validScores.length > 0 ? Math.max(...validScores) : 0;
+        const minScore = validScores.length > 0 ? Math.min(...validScores) : 0;
+        const mastered = validScores.filter(s => s >= 80).length;
+
+        return (
+          <>
+            <div
+              style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 99 }}
+              onClick={() => { setTheaterState("idle"); }}
+            />
+            <div className="slide-card-expanded" style={{ animation: "card-scale-up 150ms ease-out forwards" }}>
+              <div style={{
+                width: "100%", height: "100%", background: t.surface, borderRadius: "24px",
+                border: `1px solid ${GOLD}`, padding: "48px",
+                display: "flex", flexDirection: "column", position: "relative", overflow: "hidden",
+              }}>
+                <div style={{ position: "absolute", top: 0, left: "48px", right: "48px", height: "2px", background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)` }} />
+                <button onClick={() => setTheaterState("idle")} style={{ position: "absolute", top: "24px", right: "24px", background: "none", border: "none", color: t.textTertiary, padding: "8px" }}>
+                  <X size={20} strokeWidth={1.5} />
+                </button>
+
+                {/* Top: Generalist Score */}
+                <div style={{ textAlign: "center", marginBottom: "32px" }}>
+                  <div style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: GOLD, marginBottom: "8px" }}>Generalist Score</div>
+                  <div style={{ fontSize: "64px", fontWeight: 600, color: t.accent, letterSpacing: "-0.03em", lineHeight: 1 }}>{avgScore}%</div>
+                  <div style={{ fontSize: "13px", color: t.textSecondary, marginTop: "8px" }}>
+                    {mastered}/10 skills mastered · Best {maxScore}% · Lowest {minScore}%
+                  </div>
+                </div>
+
+                {/* Bar chart of all 10 scores */}
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                  <div style={{ display: "flex", alignItems: "flex-end", gap: "8px", height: "140px", marginBottom: "8px" }}>
+                    {ENVIRONMENTS.map((env, i) => {
+                      const score = completedScores[i] ?? 0;
+                      const capped = Math.min(100, Math.max(0, score));
+                      const barHeight = Math.max(4, (capped / 100) * 140);
+                      return (
+                        <div key={env.id} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
+                          <div style={{ fontSize: "11px", fontWeight: 600, color: capped >= 80 ? t.accent : capped >= 50 ? t.textPrimary : t.textTertiary }}>{capped}%</div>
+                          <div style={{
+                            width: "100%", maxWidth: "48px", height: `${barHeight}px`, borderRadius: "6px 6px 0 0",
+                            background: capped >= 80 ? t.accent : capped >= 50 ? GOLD : t.border,
+                          }} />
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    {ENVIRONMENTS.map((env, i) => {
+                      const group = ENV_GROUPS.find(g => g.envs.includes(env));
+                      return (
+                        <div key={env.id} style={{ flex: 1, textAlign: "center", overflow: "hidden" }}>
+                          <div style={{ fontSize: "9px", fontWeight: 500, color: t.textSecondary, whiteSpace: "nowrap", textOverflow: "ellipsis", overflow: "hidden" }}>
+                            {env.name.split(" ")[0]}
+                          </div>
+                          <div style={{ fontSize: "7px", color: GOLD, letterSpacing: "0.04em", textTransform: "uppercase" }}>
+                            {group?.label}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Bottom: Verdict */}
+                <div style={{ textAlign: "center", marginTop: "24px" }}>
+                  <div style={{ fontSize: "15px", color: t.textSecondary, lineHeight: 1.6, maxWidth: "480px", margin: "0 auto" }}>
+                    {avgScore >= 80
+                      ? "This agent operates across all 10 cognitive primitives. It negotiates, predicts, debugs, and plans autonomously."
+                      : avgScore >= 60
+                        ? "Strong cross-domain performance. The agent handles most cognitive challenges with room to grow."
+                        : "Training in progress. Each run improves the agent's generalist capabilities across domains."}
+                  </div>
+                  <button onClick={() => { setTheaterState("idle"); }} style={{ display: "inline-flex", alignItems: "center", gap: "8px", height: "44px", padding: "0 24px", background: t.accent, color: "#fff", border: "none", borderRadius: "16px", fontSize: "13px", fontWeight: 500, fontFamily: "inherit", marginTop: "20px", cursor: "pointer" }}>
+                    Done
+                  </button>
+                </div>
+
+                <div style={{ position: "absolute", bottom: 0, left: "48px", right: "48px", height: "2px", background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)` }} />
+              </div>
+            </div>
+          </>
         );
       })()}
 
@@ -296,49 +548,95 @@ export default function Home() {
               The best agents are <span style={{ color: t.accent }}>generalists</span>.
             </h1>
             <p style={{ fontSize: "15px", lineHeight: 1.6, color: t.textSecondary, margin: 0 }}>
-              You already know specialists hit a ceiling. This is where your agents learn the 10 skills that let them work across any problem — not just the one they were built for.
+              Specialist agents break the moment a problem crosses domains. Generalists don&apos;t, because they learned the skills underneath every domain. These are the 10 that matter.
             </p>
           </div>
 
-          {/* Card grid */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "10px", width: "100%", maxWidth: "920px" }}>
+          {/* Carousel */}
+          <div
+            ref={carouselRef}
+            className="carousel-scroll"
+            onScroll={handleCarouselScroll}
+            style={{
+              display: "flex",
+              gap: "16px",
+              overflowX: "scroll",
+              scrollSnapType: "x mandatory",
+              scrollBehavior: "smooth",
+              padding: "0 calc(50% - 161px)",
+              width: "100%",
+              WebkitOverflowScrolling: "touch",
+            }}
+          >
             {ENVIRONMENTS.map((env, i) => {
               const group = ENV_GROUPS.find((g) => g.envs.includes(env));
+              const isActive = activeCardIndex === i;
               return (
                 <div
                   key={env.id}
                   onClick={() => setExpandedCard(i)}
                   style={{
+                    flexShrink: 0,
+                    width: "322px",
+                    height: "322px",
                     background: t.surface,
-                    border: `1px solid ${t.border}`,
+                    border: `1px solid ${isActive ? GOLD : t.border}`,
                     borderRadius: "16px",
-                    padding: "14px",
+                    padding: "24px",
                     display: "flex",
                     flexDirection: "column",
+                    justifyContent: "space-between",
                     cursor: "pointer",
-                    minHeight: "110px",
+                    scrollSnapAlign: "center",
+                    transform: isActive ? "scale(1)" : "scale(0.92)",
+                    opacity: isActive ? 1 : 0.5,
+                    transition: "transform 150ms ease-out, opacity 150ms ease-out, border-color 150ms ease-out",
                     position: "relative",
                   }}
                 >
-                  <div style={{ position: "absolute", top: 0, left: "16px", right: "16px", height: "1px", background: `linear-gradient(90deg, transparent, ${GOLD_DIM}, transparent)` }} />
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <Avatar index={i} />
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: "12px", fontWeight: 600, color: t.textPrimary, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{env.name}</div>
-                      <div style={{ fontSize: "9px", color: GOLD, letterSpacing: "0.04em", textTransform: "uppercase" }}>{group?.label}</div>
+                  <div style={{ position: "absolute", top: 0, left: "24px", right: "24px", height: "1px", background: `linear-gradient(90deg, transparent, ${isActive ? GOLD : GOLD_DIM}, transparent)` }} />
+                  {/* Top-left */}
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+                      <Avatar index={i} />
+                      <div>
+                        <div style={{ fontSize: "15px", fontWeight: 600, color: t.textPrimary, letterSpacing: "-0.01em" }}>{env.name}</div>
+                        <div style={{ fontSize: "10px", color: GOLD, letterSpacing: "0.04em", textTransform: "uppercase" }}>{group?.label}</div>
+                      </div>
                     </div>
                   </div>
-                  <div style={{ fontSize: "10px", color: t.textTertiary, lineHeight: 1.4, marginTop: "8px" }}>
-                    {env.capability}
-                  </div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "3px", marginTop: "auto", paddingTop: "8px" }}>
-                    {env.domains.map((d) => (
-                      <span key={d} style={{ fontSize: "8px", color: t.textSecondary, background: t.panelBg, padding: "2px 6px", borderRadius: "4px", letterSpacing: "0.02em" }}>{d}</span>
-                    ))}
+                  {/* Bottom-left */}
+                  <div>
+                    <div style={{ fontSize: "13px", color: t.textSecondary, lineHeight: 1.5, marginBottom: "12px" }}>
+                      {env.capability}
+                    </div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
+                      {env.domains.map((d) => (
+                        <span key={d} style={{ fontSize: "9px", color: t.textSecondary, background: t.panelBg, padding: "3px 8px", borderRadius: "6px", letterSpacing: "0.02em" }}>{d}</span>
+                      ))}
+                    </div>
                   </div>
                 </div>
               );
             })}
+          </div>
+
+          {/* Carousel position dots */}
+          <div style={{ display: "flex", gap: "6px", justifyContent: "center", marginTop: "16px" }}>
+            {ENVIRONMENTS.map((_, i) => (
+              <div
+                key={i}
+                onClick={() => scrollToCard(i)}
+                style={{
+                  width: activeCardIndex === i ? "16px" : "6px",
+                  height: "6px",
+                  borderRadius: "3px",
+                  background: activeCardIndex === i ? t.accent : t.border,
+                  cursor: "pointer",
+                  transition: "all 150ms ease-out",
+                }}
+              />
+            ))}
           </div>
         </div>
       </div>
@@ -409,29 +707,68 @@ export default function Home() {
             Docs
           </button>
 
-          {/* Train button */}
-          <button
-            onClick={() => { setTrainOpen((d) => !d); setDocsOpen(false); }}
-            style={{
-              display: "flex", alignItems: "center", gap: "4px",
-              height: "36px", padding: "0 12px", borderRadius: "10px",
-              background: trainOpen ? t.accent : t.surface,
-              border: `1px solid ${trainOpen ? t.accent : t.border}`,
-              color: trainOpen ? "#fff" : t.textSecondary,
-              fontSize: "11px", fontWeight: 500, flexShrink: 0,
-            }}
-          >
-            <Activity size={12} strokeWidth={1.5} />
-            Train
-          </button>
+          {/* Live score with mini bar chart or Train toggle */}
+          {theaterState !== "idle" ? (
+            <div style={{
+              display: "flex", alignItems: "center", gap: "8px",
+              height: "36px", padding: "0 14px", borderRadius: "10px",
+              background: t.surface, border: `1px solid ${GOLD_DIM}`,
+              minWidth: "200px", flexShrink: 0,
+            }}>
+              <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: t.accent, animation: "score-pulse 1.5s infinite", flexShrink: 0 }} />
+              <div style={{ display: "flex", alignItems: "flex-end", gap: "2px", height: "20px", flexShrink: 0 }}>
+                {theaterScores.map((score, i) => (
+                  <div key={i} style={{
+                    width: "4px",
+                    height: score !== null ? `${Math.max(3, (score / 100) * 20)}px` : "3px",
+                    borderRadius: "1px",
+                    background: score !== null ? (score >= 80 ? t.accent : GOLD) : t.border,
+                    transition: "height 150ms ease-out",
+                  }} />
+                ))}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: "10px", fontWeight: 600, color: t.textPrimary, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {theaterState === "complete" ? "Complete" : ENVIRONMENTS[theaterCardIndex]?.name}
+                </div>
+                <div style={{ fontSize: "9px", color: t.textTertiary }}>
+                  {theaterState === "complete"
+                    ? `${Math.round(runningTally.totalEfficiency / Math.max(runningTally.completed, 1))}% avg`
+                    : `${currentRunScore !== null ? `${currentRunScore}%` : "training..."} · ${runningTally.completed}/10`
+                  }
+                </div>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => { setTrainOpen((d) => !d); setDocsOpen(false); }}
+              style={{
+                display: "flex", alignItems: "center", gap: "4px",
+                height: "36px", padding: "0 12px", borderRadius: "10px",
+                background: trainOpen ? t.accent : t.surface,
+                border: `1px solid ${trainOpen ? t.accent : t.border}`,
+                color: trainOpen ? "#fff" : t.textSecondary,
+                fontSize: "11px", fontWeight: 500, flexShrink: 0,
+              }}
+            >
+              <Activity size={12} strokeWidth={1.5} />
+              Train
+            </button>
+          )}
 
           <div style={{ width: "1px", height: "20px", background: GOLD_DIM, margin: "0 6px", flexShrink: 0 }} />
 
           {/* CTA */}
-          <Link href="/bandit?demo=true" style={{ display: "flex", alignItems: "center", gap: "6px", padding: "0 16px", height: "36px", borderRadius: "14px", background: t.accent, color: "#fff", fontSize: "12px", fontWeight: 500, textDecoration: "none", flexShrink: 0, fontFamily: "inherit" }}>
-            <Play size={12} strokeWidth={2} />
-            Watch AI Learn
-          </Link>
+          <button
+            onClick={() => {
+              if (theaterState === "idle") { startTheater(); }
+              else { setTheaterState("idle"); setCurrentRunScore(null); }
+            }}
+            style={{ display: "flex", alignItems: "center", gap: "6px", padding: "0 16px", height: "36px", borderRadius: "14px", background: t.accent, color: "#fff", fontSize: "12px", fontWeight: 500, border: "none", flexShrink: 0, fontFamily: "inherit" }}
+          >
+            {theaterState === "idle" ? <Play size={12} strokeWidth={2} /> : <Square size={12} strokeWidth={2} />}
+            {theaterState === "idle" ? "Train Agent" : "Stop"}
+          </button>
         </div>
       </div>
 

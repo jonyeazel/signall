@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Shell, MetricCard, LessonCard } from "../shell";
-import { C, card, buttonStyle, ghostButton, saveScore, isDemoMode, getNextDemoPath, isAgentEmbed } from "../shared";
-import { ArrowRight, RotateCcw, Play } from "lucide-react";
+import { C, card, buttonStyle, ghostButton, saveScore } from "../shared";
 
 type Phase = "intro" | "playing" | "reveal";
 
@@ -13,6 +12,8 @@ type Item = {
   cost: number;
   trueValue: number;
 };
+
+const GREEN = "#22A55B";
 
 function gaussianRandom(mean: number, stdDev: number): number {
   let u = 0,
@@ -66,30 +67,23 @@ function expectedValueAgentChoice(
   currentBudget: number,
   itemsRemaining: number
 ): "buy" | "pass" {
-  // Estimate true value based on appeal (appeal * 6 is the mean)
   const estimatedValue = item.appeal * 6;
-
-  // Reserve some budget for later items (don't spend everything early)
   const reserveRatio = Math.max(0.2, itemsRemaining / 8);
-  const reserveBudget = 100 * reserveRatio * 0.3; // Keep ~30% of proportional budget
+  const reserveBudget = 100 * reserveRatio * 0.3;
   const availableBudget = currentBudget - reserveBudget;
 
-  // Buy if estimated value > cost and we have budget
   if (item.cost <= availableBudget && estimatedValue > item.cost * 0.9) {
     return "buy";
   }
 
-  // Also buy high-appeal items even if slightly overpriced
   if (item.appeal >= 4 && item.cost <= availableBudget && item.cost <= 25) {
     return "buy";
   }
 
-  // Skip items that look overpriced
   if (estimatedValue < item.cost * 0.7) {
     return "pass";
   }
 
-  // On last item, buy if we can afford
   if (itemsRemaining === 1 && currentBudget >= item.cost && estimatedValue > item.cost * 0.5) {
     return "buy";
   }
@@ -97,20 +91,141 @@ function expectedValueAgentChoice(
   return "pass";
 }
 
-function AppealDots({ rating }: { rating: number }) {
+// --- Budget Gauge Component ---
+function BudgetGauge({ budget, maxBudget = 100 }: { budget: number; maxBudget?: number }) {
+  const percentage = budget / maxBudget;
+  const radius = 70;
+  const strokeWidth = 10;
+  const centerX = 100;
+  const centerY = 80;
+
+  // Arc goes from 180 degrees (left) to 0 degrees (right) - a semicircle
+  // We draw from right to left for the background, then fill from left based on percentage
+  const startX = centerX - radius; // Left end
+  const startY = centerY;
+  const endX = centerX + radius; // Right end
+  const endY = centerY;
+
+  // For the filled arc, calculate how far along we are
+  // percentage 1 = full arc, percentage 0 = no arc
+  const filledAngle = Math.PI * (1 - percentage);
+  const filledEndX = centerX + radius * Math.cos(filledAngle);
+  const filledEndY = centerY - radius * Math.sin(filledAngle);
+
+  // Color interpolation: green at 100%, yellow at 50%, orange at 0%
+  const color = percentage > 0.5 ? GREEN : percentage > 0.25 ? "#D4A72C" : C.accent;
+
   return (
-    <div style={{ display: "flex", gap: "4px" }}>
-      {Array.from({ length: 5 }, (_, i) => (
-        <div
-          key={i}
-          style={{
-            width: "8px",
-            height: "8px",
-            borderRadius: "50%",
-            background: i < rating ? C.accent : C.border,
-          }}
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "24px" }}>
+      <svg width="200" height="120" viewBox="0 0 200 120">
+        {/* Background arc - full semicircle */}
+        <path
+          d={`M ${startX} ${startY} A ${radius} ${radius} 0 0 1 ${endX} ${endY}`}
+          fill="none"
+          stroke={C.border}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
         />
-      ))}
+        {/* Filled arc - from left, proportional to budget remaining */}
+        {percentage > 0.01 && (
+          <path
+            d={`M ${startX} ${startY} A ${radius} ${radius} 0 ${percentage > 0.5 ? 1 : 0} 1 ${filledEndX} ${filledEndY}`}
+            fill="none"
+            stroke={color}
+            strokeWidth={strokeWidth}
+            strokeLinecap="round"
+          />
+        )}
+        {/* Budget number in center */}
+        <text
+          x={centerX}
+          y={centerY + 8}
+          textAnchor="middle"
+          style={{
+            fontSize: "32px",
+            fontWeight: 600,
+            fill: C.textPrimary,
+          }}
+        >
+          {budget}
+        </text>
+        <text
+          x={centerX}
+          y={centerY + 28}
+          textAnchor="middle"
+          style={{
+            fontSize: "11px",
+            fontWeight: 500,
+            letterSpacing: "0.06em",
+            fill: C.textTertiary,
+          }}
+        >
+          BUDGET
+        </text>
+      </svg>
+    </div>
+  );
+}
+
+// --- Appeal Bars (vertical) ---
+function AppealBars({ rating, size = "normal" }: { rating: number; size?: "normal" | "mini" }) {
+  const barWidth = size === "mini" ? 4 : 6;
+  const barHeight = size === "mini" ? 16 : 32;
+  const gap = size === "mini" ? 2 : 4;
+
+  return (
+    <div style={{ display: "flex", gap: `${gap}px`, alignItems: "flex-end", height: `${barHeight}px` }}>
+      {Array.from({ length: 5 }, (_, i) => {
+        const height = ((i + 1) / 5) * barHeight;
+        const filled = i < rating;
+        return (
+          <div
+            key={i}
+            style={{
+              width: `${barWidth}px`,
+              height: `${height}px`,
+              borderRadius: "2px",
+              background: filled ? C.accent : C.border,
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+// --- Portfolio Tile ---
+function PortfolioTile({ item, empty }: { item?: Item; empty?: boolean }) {
+  if (empty) {
+    return (
+      <div
+        style={{
+          width: "40px",
+          height: "40px",
+          borderRadius: "8px",
+          border: `1px dashed ${C.border}`,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      />
+    );
+  }
+
+  return (
+    <div
+      style={{
+        width: "40px",
+        height: "40px",
+        borderRadius: "8px",
+        background: C.surface,
+        border: `1px solid ${C.border}`,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <AppealBars rating={item?.appeal ?? 0} size="mini" />
     </div>
   );
 }
@@ -125,8 +240,6 @@ export default function AuctionPage() {
   const [agentMode, setAgentMode] = useState(false);
   const [agentDecision, setAgentDecision] = useState<"buy" | "pass" | null>(null);
   const agentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [demoMode, setDemoMode] = useState(false);
-  const [agentEmbed, setAgentEmbed] = useState(false);
 
   const initGame = useCallback(() => {
     const newItems = generateItems();
@@ -176,6 +289,9 @@ export default function AuctionPage() {
         ? Math.round((finalValue / optimalResult.value) * 100)
         : 0;
       saveScore("auction", efficiency);
+      if (window.parent !== window) {
+        window.parent.postMessage({ type: "episodeComplete", envId: "auction", efficiency }, "*");
+      }
     }
   }, [phase, items, purchased, optimalResult.value]);
 
@@ -189,7 +305,6 @@ export default function AuctionPage() {
       const decision = expectedValueAgentChoice(currentItem, budget, itemsRemaining);
       setAgentDecision(decision);
 
-      // Brief pause to show decision, then execute
       setTimeout(() => {
         if (decision === "buy" && budget >= currentItem.cost) {
           setBudget((b) => b - currentItem.cost);
@@ -216,314 +331,252 @@ export default function AuctionPage() {
     initGame();
   }, [initGame]);
 
-  // Check demo mode on mount
+  // Auto-start agent mode on mount
   useEffect(() => {
-    setDemoMode(isDemoMode());
-  }, []);
-
-  // Check agent embed mode on mount
-  useEffect(() => {
-    setAgentEmbed(isAgentEmbed());
-  }, []);
-
-  // Auto-start agent in demo
-  useEffect(() => {
-    if (demoMode && phase === "intro") {
+    if (phase === "intro") {
       handleBegin(true);
     }
-  }, [demoMode, phase]);
+  }, [phase]);
 
-  // Auto-start agent in embed mode
-  useEffect(() => {
-    if (agentEmbed && phase === "intro") {
-      handleBegin(true);
-    }
-  }, [agentEmbed, phase]);
+  // Compute derived state for all phases
+  const currentItem = items.length > 0 ? items[currentIndex] : null;
+  const canAfford = currentItem ? budget >= currentItem.cost : false;
+  const purchasedItems = purchased.map((idx) => items[idx]);
+  const playerValue = purchased.reduce((sum, idx) => sum + items[idx].trueValue, 0);
+  const runningTotal = purchasedItems.reduce((sum, item) => sum + item.cost, 0);
+  const efficiency = optimalResult.value > 0
+    ? Math.round((playerValue / optimalResult.value) * 100)
+    : 0;
 
-  // Auto-advance in demo after reveal
-  useEffect(() => {
-    if (demoMode && phase === "reveal") {
-      const timer = setTimeout(() => {
-        window.location.href = getNextDemoPath("auction");
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [demoMode, phase]);
+  return (
+    <Shell env="auction">
+      {/* Playing phase */}
+      {phase === "playing" && currentItem && (
+        <>
+          {/* Budget Gauge */}
+          <BudgetGauge budget={budget} />
 
-  if (phase === "intro") {
-    return (
-      <Shell env="The Auction">
-        <div style={{ ...card, padding: "48px 32px" }}>
-          <p
+          {/* Current Item Card */}
+          <div
             style={{
-              fontSize: "15px",
-              lineHeight: 1.7,
-              color: C.textSecondary,
-              margin: "0 0 32px 0",
+              ...card,
+              padding: "0",
+              marginBottom: "16px",
+              overflow: "hidden",
             }}
           >
-            Eight items will appear one at a time. You have a budget of 100
-            points. Each item shows an appeal rating and cost, but the true
-            value is hidden. Some high-appeal items are traps; some low-appeal
-            items are gems. Maximize your total value.
-          </p>
-          <div style={{ display: "flex", gap: "8px" }}>
-            <button style={buttonStyle} onClick={() => handleBegin(false)}>
-              Play <ArrowRight size={16} strokeWidth={2} />
-            </button>
-            <button style={ghostButton} onClick={() => handleBegin(true)}>
-              <Play size={14} strokeWidth={2} />
-              Watch agent
-            </button>
+            {/* Progress bar at top */}
+            <div style={{ height: "4px", background: C.border }}>
+              <div
+                style={{
+                  height: "100%",
+                  width: `${((currentIndex + 1) / 8) * 100}%`,
+                  background: C.accent,
+                  transition: "width 150ms ease-out",
+                }}
+              />
+            </div>
+
+            {/* Item counter */}
+            <div
+              style={{
+                padding: "12px 24px",
+                borderBottom: `1px solid ${C.border}`,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <span style={{ fontSize: "13px", color: C.textSecondary }}>
+                {currentIndex + 1} of 8
+              </span>
+              {agentMode && (
+                <span style={{ fontSize: "11px", color: C.accent, fontWeight: 500 }}>
+                  Agent
+                </span>
+              )}
+            </div>
+
+            {/* Item content */}
+            <div
+              style={{
+                padding: "24px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                minHeight: "80px",
+              }}
+            >
+              {/* Left: Appeal bars */}
+              <div>
+                <div
+                  style={{
+                    fontSize: "11px",
+                    fontWeight: 500,
+                    letterSpacing: "0.06em",
+                    textTransform: "uppercase",
+                    color: C.textTertiary,
+                    marginBottom: "12px",
+                  }}
+                >
+                  Appeal
+                </div>
+                <AppealBars rating={currentItem.appeal} />
+              </div>
+
+              {/* Right: Cost */}
+              <div style={{ textAlign: "right" }}>
+                <div
+                  style={{
+                    fontSize: "11px",
+                    fontWeight: 500,
+                    letterSpacing: "0.06em",
+                    textTransform: "uppercase",
+                    color: C.textTertiary,
+                    marginBottom: "8px",
+                  }}
+                >
+                  Cost
+                </div>
+                <div
+                  style={{
+                    fontSize: "32px",
+                    fontWeight: 600,
+                    color: C.textPrimary,
+                    lineHeight: 1,
+                  }}
+                >
+                  {currentItem.cost}
+                </div>
+              </div>
+            </div>
+
+            {/* Decision buttons */}
+            <div
+              style={{
+                padding: "16px 24px 24px",
+                display: "flex",
+                gap: "12px",
+              }}
+            >
+              <button
+                style={{
+                  ...buttonStyle,
+                  flex: 1,
+                  justifyContent: "center",
+                  opacity: agentMode
+                    ? (agentDecision === "buy" ? 1 : 0.3)
+                    : (canAfford ? 1 : 0.5),
+                  cursor: agentMode ? "default" : "pointer",
+                  boxShadow: agentDecision === "buy" ? `0 0 0 2px ${C.accent}` : "none",
+                }}
+                onClick={agentMode ? undefined : handleBuy}
+                disabled={agentMode || !canAfford}
+              >
+                Buy
+              </button>
+              <button
+                style={{
+                  ...ghostButton,
+                  flex: 1,
+                  justifyContent: "center",
+                  opacity: agentMode
+                    ? (agentDecision === "pass" ? 1 : 0.3)
+                    : 1,
+                  cursor: agentMode ? "default" : "pointer",
+                }}
+                onClick={agentMode ? undefined : handlePass}
+                disabled={agentMode}
+              >
+                Pass
+              </button>
+            </div>
           </div>
-        </div>
-      </Shell>
-    );
-  }
 
-  if (phase === "playing" && items.length > 0) {
-    const currentItem = items[currentIndex];
-    const canAfford = budget >= currentItem.cost;
-    const purchasedItems = purchased.map((idx) => items[idx]);
-
-    return (
-      <Shell env="The Auction">
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: "24px",
-          }}
-        >
-          <span style={{ fontSize: "13px", color: C.textSecondary }}>
-            {agentMode && (
-              <span style={{ color: C.accent, marginRight: "8px" }}>Agent</span>
-            )}
-            Item {currentIndex + 1} of 8
-            <span style={{ marginLeft: "8px", color: C.textTertiary }}>
-              {8 - currentIndex - 1} left
-            </span>
-          </span>
-          <span
-            style={{
-              fontSize: "15px",
-              fontWeight: 600,
-              color: C.textPrimary,
-            }}
-          >
-            Budget: {budget}
-          </span>
-        </div>
-
-        <div
-          style={{
-            ...card,
-            padding: "32px",
-            marginBottom: "24px",
-          }}
-        >
+          {/* Portfolio Strip */}
           <div
             style={{
               display: "flex",
-              justifyContent: "space-between",
-              alignItems: "flex-start",
-              marginBottom: "24px",
+              alignItems: "center",
+              gap: "16px",
             }}
           >
-            <div>
-              <div
-                style={{
-                  fontSize: "11px",
-                  fontWeight: 500,
-                  letterSpacing: "0.06em",
-                  textTransform: "uppercase",
-                  color: C.textTertiary,
-                  marginBottom: "8px",
-                }}
-              >
-                Appeal
-              </div>
-              <AppealDots rating={currentItem.appeal} />
+            <div style={{ display: "flex", gap: "8px" }}>
+              {Array.from({ length: 8 }, (_, i) => {
+                const purchasedItem = purchasedItems[i];
+                return (
+                  <PortfolioTile
+                    key={i}
+                    item={purchasedItem}
+                    empty={!purchasedItem}
+                  />
+                );
+              })}
             </div>
-            <div style={{ textAlign: "right" }}>
-              <div
-                style={{
-                  fontSize: "11px",
-                  fontWeight: 500,
-                  letterSpacing: "0.06em",
-                  textTransform: "uppercase",
-                  color: C.textTertiary,
-                  marginBottom: "8px",
-                }}
-              >
-                Cost
-              </div>
-              <div
-                style={{
-                  fontSize: "24px",
-                  fontWeight: 600,
-                  color: C.textPrimary,
-                }}
-              >
-                {currentItem.cost}
-              </div>
-            </div>
-          </div>
-
-          {!agentMode && (
-            <div style={{ display: "flex", gap: "12px" }}>
-              <button
-                style={{
-                  ...buttonStyle,
-                  flex: 1,
-                  justifyContent: "center",
-                  opacity: canAfford ? 1 : 0.5,
-                }}
-                onClick={handleBuy}
-                disabled={!canAfford}
-              >
-                Buy
-              </button>
-              <button
-                style={{
-                  ...ghostButton,
-                  flex: 1,
-                  justifyContent: "center",
-                }}
-                onClick={handlePass}
-              >
-                Pass
-              </button>
-            </div>
-          )}
-
-          {agentMode && (
-            <div style={{ display: "flex", gap: "12px" }}>
-              <div
-                style={{
-                  ...buttonStyle,
-                  flex: 1,
-                  justifyContent: "center",
-                  opacity: agentDecision === "buy" ? 1 : 0.3,
-                  cursor: "default",
-                }}
-              >
-                Buy
-              </div>
-              <div
-                style={{
-                  ...ghostButton,
-                  flex: 1,
-                  justifyContent: "center",
-                  opacity: agentDecision === "pass" ? 1 : 0.3,
-                  cursor: "default",
-                }}
-              >
-                Pass
-              </div>
-            </div>
-          )}
-        </div>
-
-        {agentMode && (
-          <div
-            style={{
-              textAlign: "center",
-              fontSize: "12px",
-              color: C.textTertiary,
-              marginBottom: "24px",
-            }}
-          >
-            Expected value agent
-          </div>
-        )}
-
-        {purchasedItems.length > 0 && (
-          <div>
             <div
               style={{
-                fontSize: "11px",
-                fontWeight: 500,
-                letterSpacing: "0.06em",
-                textTransform: "uppercase",
-                color: C.textTertiary,
-                marginBottom: "12px",
+                fontSize: "13px",
+                color: C.textSecondary,
+                whiteSpace: "nowrap",
               }}
             >
-              Purchased
+              <span style={{ fontWeight: 600, color: C.textPrimary }}>{runningTotal}</span>
+              <span style={{ marginLeft: "4px" }}>spent</span>
             </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-              {purchasedItems.map((item, i) => (
-                <div
-                  key={i}
-                  style={{
-                    ...card,
-                    padding: "8px 12px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                  }}
-                >
-                  <AppealDots rating={item.appeal} />
-                  <span style={{ fontSize: "13px", color: C.textSecondary }}>
-                    -{item.cost}
-                  </span>
+          </div>
+        </>
+      )}
+
+      {/* Reveal phase */}
+      {phase === "reveal" && (
+        <>
+          <div
+            style={{
+              ...card,
+              padding: "32px",
+              marginBottom: "24px",
+            }}
+          >
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(3, 1fr)",
+                gap: "8px",
+                marginBottom: "16px",
+              }}
+            >
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <MetricCard label="Your Value" value={String(playerValue)} />
+                <div style={{ fontSize: "9px", color: C.textTertiary, marginTop: "4px", textAlign: "center" }}>
+                  Total value of purchased items
                 </div>
-              ))}
+              </div>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <MetricCard label="Optimal" value={String(optimalResult.value)} />
+                <div style={{ fontSize: "9px", color: C.textTertiary, marginTop: "4px", textAlign: "center" }}>
+                  Best possible with same budget
+                </div>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <MetricCard label="Efficiency" value={`${efficiency}%`} />
+                <div style={{ fontSize: "9px", color: C.textTertiary, marginTop: "4px", textAlign: "center" }}>
+                  Value captured vs possible
+                </div>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: "16px" }}>
+              <LessonCard term="What this teaches">
+                <ul style={{ margin: 0, paddingLeft: "16px", lineHeight: 1.8 }}>
+                  <li>Spend limited budgets wisely</li>
+                  <li>Apparent value isn't always real value</li>
+                  <li>Every procurement decision is this game</li>
+                </ul>
+              </LessonCard>
             </div>
           </div>
-        )}
-      </Shell>
-    );
-  }
-
-  if (phase === "reveal") {
-    const playerValue = purchased.reduce((sum, idx) => sum + items[idx].trueValue, 0);
-    const efficiency = optimalResult.value > 0
-      ? Math.round((playerValue / optimalResult.value) * 100)
-      : 0;
-
-    return (
-      <Shell env="The Auction">
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: "8px",
-            marginBottom: "16px",
-          }}
-        >
-          <MetricCard label="Your Value" value={String(playerValue)} />
-          <MetricCard label="Optimal" value={String(optimalResult.value)} />
-          <MetricCard label="Efficiency" value={`${efficiency}%`} />
-        </div>
-
-        <div style={{ marginBottom: "16px" }}>
-          <LessonCard term="In the real world">
-            Every capital allocation decision is a version of this game — limited budget, uncertain returns, irreversible commitments. Procurement agents, ad bidders, and venture allocators all need to distinguish apparent value from true value under scarcity.
-          </LessonCard>
-        </div>
-
-        {demoMode && (
-          <div style={{ fontSize: "12px", color: C.textTertiary, marginBottom: "16px" }}>
-            Advancing to next environment...
-          </div>
-        )}
-
-        <div style={{ display: "flex", gap: "8px" }}>
-          <button style={buttonStyle} onClick={() => handleBegin(false)}>
-            <RotateCcw size={14} strokeWidth={2} />
-            Play again
-          </button>
-          <button style={ghostButton} onClick={() => handleBegin(true)}>
-            <Play size={14} strokeWidth={2} />
-            Watch agent
-          </button>
-        </div>
-      </Shell>
-    );
-  }
-
-  return null;
+        </>
+      )}
+    </Shell>
+  );
 }

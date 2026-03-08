@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Shell, MetricCard, LessonCard } from "../shell";
-import { C, card, buttonStyle, ghostButton, saveScore, isDemoMode, getNextDemoPath, isAgentEmbed } from "../shared";
-import { ArrowRight, RotateCcw, Play } from "lucide-react";
+import { C, card, saveScore } from "../shared";
 
 type Phase = "intro" | "playing" | "reveal";
 
@@ -206,8 +205,6 @@ export default function SequencePage() {
   const [showResult, setShowResult] = useState(false);
   const [agentMode, setAgentMode] = useState(false);
   const agentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [demoMode, setDemoMode] = useState(false);
-  const [agentEmbed, setAgentEmbed] = useState(false);
 
   const initGame = useCallback(() => {
     const newRounds = Array.from({ length: 8 }, (_, i) => generateRound(i));
@@ -242,6 +239,9 @@ export default function SequencePage() {
       } else {
         const efficiency = Math.round(((score + (isCorrect ? 1 : 0)) / 8) * 100);
         saveScore("sequence", efficiency);
+        if (window.parent !== window) {
+          window.parent.postMessage({ type: "episodeComplete", envId: "sequence", efficiency }, "*");
+        }
         setPhase("reveal");
       }
     }, 1000);
@@ -274,6 +274,9 @@ export default function SequencePage() {
             const finalScore = score + (isCorrect ? 1 : 0);
             const efficiency = Math.round((finalScore / 8) * 100);
             saveScore("sequence", efficiency);
+            if (window.parent !== window) {
+              window.parent.postMessage({ type: "episodeComplete", envId: "sequence", efficiency }, "*");
+            }
             setPhase("reveal");
           }
         }, 1000);
@@ -289,75 +292,18 @@ export default function SequencePage() {
     initGame();
   }, [initGame]);
 
-  // Check demo mode on mount
+  // Auto-start agent mode on mount
   useEffect(() => {
-    setDemoMode(isDemoMode());
-  }, []);
-
-  // Check agent embed mode on mount
-  useEffect(() => {
-    setAgentEmbed(isAgentEmbed());
-  }, []);
-
-  // Auto-start agent in demo
-  useEffect(() => {
-    if (demoMode && phase === "intro") {
+    if (phase === "intro") {
       handleBegin(true);
     }
-  }, [demoMode, phase]);
-
-  // Auto-start agent in embed mode
-  useEffect(() => {
-    if (agentEmbed && phase === "intro") {
-      handleBegin(true);
-    }
-  }, [agentEmbed, phase]);
-
-  // Auto-advance in demo after reveal
-  useEffect(() => {
-    if (demoMode && phase === "reveal") {
-      const timer = setTimeout(() => {
-        window.location.href = getNextDemoPath("sequence");
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [demoMode, phase]);
-
-  if (phase === "intro") {
-    return (
-      <Shell env="The Sequence">
-        <div style={{ ...card, padding: "48px 32px" }}>
-          <p
-            style={{
-              fontSize: "15px",
-              lineHeight: 1.7,
-              color: C.textSecondary,
-              margin: "0 0 32px 0",
-            }}
-          >
-            You will see 8 number sequences. Each follows a hidden rule. Your
-            task is to identify the pattern and select the correct next number
-            from four choices. Difficulty increases with each round.
-          </p>
-          <div style={{ display: "flex", gap: "8px" }}>
-            <button style={buttonStyle} onClick={() => handleBegin(false)}>
-              Play <ArrowRight size={16} strokeWidth={2} />
-            </button>
-            <button style={ghostButton} onClick={() => handleBegin(true)}>
-              <Play size={14} strokeWidth={2} />
-              Watch agent
-            </button>
-          </div>
-        </div>
-      </Shell>
-    );
-  }
+  }, [phase]);
 
   if (phase === "playing" && rounds.length > 0) {
     const round = rounds[currentRound];
 
     return (
-      <Shell env="The Sequence">
+      <Shell env="sequence">
         <div
           style={{
             display: "flex",
@@ -430,7 +376,7 @@ export default function SequencePage() {
             display: "grid",
             gridTemplateColumns: "repeat(2, 1fr)",
             gap: "12px",
-            marginBottom: agentMode ? "24px" : "0",
+            marginBottom: "24px",
           }}
         >
           {round.choices.map((choice) => {
@@ -473,17 +419,17 @@ export default function SequencePage() {
           })}
         </div>
 
-        {agentMode && (
-          <div
-            style={{
-              textAlign: "center",
-              fontSize: "12px",
-              color: C.textTertiary,
-            }}
-          >
-            Pattern analysis agent
-          </div>
-        )}
+        <div
+          style={{
+            textAlign: "center",
+            fontSize: "12px",
+            color: C.textTertiary,
+            height: "18px",
+            opacity: agentMode ? 1 : 0,
+          }}
+        >
+          Pattern analysis agent
+        </div>
       </Shell>
     );
   }
@@ -492,41 +438,23 @@ export default function SequencePage() {
     const efficiency = Math.round((score / 8) * 100);
 
     return (
-      <Shell env="The Sequence">
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(2, 1fr)",
-            gap: "8px",
-            marginBottom: "16px",
-          }}
-        >
-          <MetricCard label="Correct" value={`${score}/8`} />
-          <MetricCard label="Accuracy" value={`${efficiency}%`} />
-        </div>
-
-        <div style={{ marginBottom: "16px" }}>
-          <LessonCard term="In the real world">
-            Trend prediction powers quantitative finance — detecting price patterns, demand cycles, and supply fluctuations before competitors. An agent that masters induction can identify emerging market opportunities from raw data streams.
-          </LessonCard>
-        </div>
-
-        {demoMode && (
-          <div style={{ fontSize: "12px", color: C.textTertiary, marginBottom: "16px" }}>
-            Advancing to next environment...
+      <Shell env="sequence">
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "8px", marginBottom: "16px" }}>
+          <div>
+            <MetricCard label="Correct" value={`${score}/8`} />
+            <div style={{ fontSize: "9px", color: C.textTertiary, marginTop: "6px", padding: "0 4px" }}>Patterns identified correctly</div>
           </div>
-        )}
-
-        <div style={{ display: "flex", gap: "8px" }}>
-          <button style={buttonStyle} onClick={() => handleBegin(false)}>
-            <RotateCcw size={14} strokeWidth={2} />
-            Play again
-          </button>
-          <button style={ghostButton} onClick={() => handleBegin(true)}>
-            <Play size={14} strokeWidth={2} />
-            Watch agent
-          </button>
+          <div>
+            <MetricCard label="Accuracy" value={`${efficiency}%`} />
+            <div style={{ fontSize: "9px", color: C.textTertiary, marginTop: "6px", padding: "0 4px" }}>Overall prediction rate</div>
+          </div>
         </div>
+
+        <LessonCard term="What this teaches">
+          <span style={{ display: "block", marginBottom: "4px" }}>· Find the rule hidden in the data</span>
+          <span style={{ display: "block", marginBottom: "4px" }}>· Sales forecasting depends on this</span>
+          <span style={{ display: "block" }}>· Price trends follow detectable patterns</span>
+        </LessonCard>
       </Shell>
     );
   }

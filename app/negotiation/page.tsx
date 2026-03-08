@@ -2,8 +2,8 @@
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { Shell, MetricCard, LessonCard } from "../shell";
-import { C, card, buttonStyle, ghostButton, saveScore, isDemoMode, getNextDemoPath, isAgentEmbed } from "../shared";
-import { ArrowRight, RotateCcw, Check, X, Play } from "lucide-react";
+import { C, card, buttonStyle, saveScore } from "../shared";
+import { Check, X, ArrowRight } from "lucide-react";
 
 type Phase = "intro" | "playing" | "reveal";
 
@@ -100,25 +100,19 @@ type TradeHistory = {
 type EstimatedBotType = "unknown" | "fair" | "greedy" | "generous";
 
 // --- Adaptive trading agent ---
-// Start by proposing small trades to probe the bot's strategy
-// Track whether bot accepts/rejects to infer its type
-// Once bot type is estimated, optimize trades accordingly
 function agentProposeTrade(
   playerResources: Resources,
   botResources: Resources,
   history: TradeHistory[],
   estimatedType: EstimatedBotType
 ): { give: Resources; want: Resources } {
-  // Probe phase: first 2 rounds, try small trades to learn
   if (history.length < 2) {
     if (history.length === 0) {
-      // First trade: offer 1 iron for 1 crystal (tests if bot will accept equal-ish trades)
       return {
         give: { iron: Math.min(1, playerResources.iron), crystal: 0, gold: 0 },
         want: { iron: 0, crystal: Math.min(1, botResources.crystal), gold: 0 },
       };
     } else {
-      // Second trade: offer something more generous to test
       return {
         give: { iron: Math.min(2, playerResources.iron), crystal: 0, gold: 0 },
         want: { iron: 0, crystal: Math.min(1, botResources.crystal), gold: 0 },
@@ -126,10 +120,8 @@ function agentProposeTrade(
     }
   }
 
-  // Based on estimated type, craft optimal trade
   switch (estimatedType) {
     case "generous":
-      // Ask for more aggressive trades - try to get gold
       if (botResources.gold > 0 && playerResources.iron > 0) {
         return {
           give: { iron: Math.min(2, playerResources.iron), crystal: 0, gold: 0 },
@@ -145,7 +137,6 @@ function agentProposeTrade(
       break;
 
     case "greedy":
-      // Offer small concessions - give more than we get
       if (playerResources.iron >= 2 && botResources.crystal > 0) {
         return {
           give: { iron: 2, crystal: 0, gold: 0 },
@@ -161,7 +152,6 @@ function agentProposeTrade(
       break;
 
     case "fair":
-      // Propose mutually beneficial trades
       if (playerResources.iron >= 2 && botResources.crystal > 0) {
         return {
           give: { iron: Math.min(2, playerResources.iron), crystal: 0, gold: 0 },
@@ -177,7 +167,6 @@ function agentProposeTrade(
       break;
 
     default:
-      // Unknown - try a moderate trade
       if (playerResources.iron > 0 && botResources.crystal > 0) {
         return {
           give: { iron: Math.min(1, playerResources.iron), crystal: 0, gold: 0 },
@@ -186,7 +175,6 @@ function agentProposeTrade(
       }
   }
 
-  // Fallback: any trade that makes sense
   if (playerResources.iron > 0 && botResources.crystal > 0) {
     return {
       give: { iron: 1, crystal: 0, gold: 0 },
@@ -200,7 +188,6 @@ function agentProposeTrade(
     };
   }
 
-  // Last resort
   return {
     give: { iron: 0, crystal: 0, gold: 0 },
     want: { iron: 0, crystal: 0, gold: 0 },
@@ -212,24 +199,18 @@ function inferBotType(history: TradeHistory[]): EstimatedBotType {
 
   const acceptCount = history.filter((h) => h.accepted).length;
 
-  // If both probe trades accepted, likely generous or fair
   if (acceptCount === 2) {
-    // Check if the second (more generous from us) was accepted
-    // Generous bots accept anything that benefits them
     return "generous";
   }
 
-  // If only first accepted, likely fair
   if (acceptCount === 1 && history[0].accepted) {
     return "fair";
   }
 
-  // If none accepted, likely greedy
   if (acceptCount === 0) {
     return "greedy";
   }
 
-  // Mixed results - assume fair
   return "fair";
 }
 
@@ -261,62 +242,28 @@ export default function NegotiationPage() {
   const [history, setHistory] = useState<TradeHistory[]>([]);
   const [agentMode, setAgentMode] = useState(false);
   const [estimatedBotType, setEstimatedBotType] = useState<EstimatedBotType>("unknown");
-  const [demoMode, setDemoMode] = useState(false);
-  const [agentEmbed, setAgentEmbed] = useState(false);
   const agentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Check demo mode on mount
+  // Auto-start agent mode on mount
   useEffect(() => {
-    setDemoMode(isDemoMode());
-  }, []);
-
-  // Check agent embed mode on mount
-  useEffect(() => {
-    setAgentEmbed(isAgentEmbed());
-  }, []);
-
-  // Auto-start agent in demo
-  useEffect(() => {
-    if (demoMode && phase === "intro") {
+    if (phase === "intro") {
       handleBegin(true);
     }
-  }, [demoMode, phase]);
+  }, [phase]);
 
-  // Auto-start agent in embed mode
-  useEffect(() => {
-    if (agentEmbed && phase === "intro") {
-      handleBegin(true);
-    }
-  }, [agentEmbed, phase]);
-
-  // Auto-advance in demo after reveal
-  useEffect(() => {
-    if (demoMode && phase === "reveal") {
-      const timer = setTimeout(() => {
-        window.location.href = getNextDemoPath("negotiation");
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [demoMode, phase]);
-
-  // Agent auto-play
   useEffect(() => {
     if (!agentMode || phase !== "playing") return;
     if (round > 5) return;
 
     agentTimerRef.current = setTimeout(() => {
-      // Update bot type estimate
       const newEstimate = inferBotType(history);
       setEstimatedBotType(newEstimate);
 
-      // Get agent's proposed trade
       const proposal = agentProposeTrade(playerResources, botResources, history, newEstimate);
       setTradeGive(proposal.give);
       setTradeWant(proposal.want);
 
-      // Brief pause to show selection, then submit
       setTimeout(() => {
-        // Execute the trade (similar to handleSubmitTrade)
         const giveValue = calcValue(proposal.give, PLAYER_VALUES);
         const wantValue = calcValue(proposal.want, PLAYER_VALUES);
         const playerGain = wantValue - giveValue;
@@ -365,6 +312,9 @@ export default function NegotiationPage() {
           );
           const efficiency = Math.round((finalValue / theoreticalMax) * 100);
           saveScore("negotiation", efficiency);
+          if (window.parent !== window) {
+            window.parent.postMessage({ type: "episodeComplete", envId: "negotiation", efficiency }, "*");
+          }
           setTimeout(() => setPhase("reveal"), 500);
         } else {
           setRound((r) => r + 1);
@@ -459,6 +409,9 @@ export default function NegotiationPage() {
       );
       const efficiency = Math.round((finalValue / theoreticalMax) * 100);
       saveScore("negotiation", efficiency);
+      if (window.parent !== window) {
+        window.parent.postMessage({ type: "episodeComplete", envId: "negotiation", efficiency }, "*");
+      }
       setTimeout(() => setPhase("reveal"), 500);
     } else {
       setRound((r) => r + 1);
@@ -477,83 +430,6 @@ export default function NegotiationPage() {
     [botProfile]
   );
   const efficiency = Math.round((playerValue / theoreticalMax) * 100);
-
-  if (phase === "intro") {
-    return (
-      <Shell env="The Negotiation">
-        <div style={{ ...card, padding: "48px 32px" }}>
-          <p
-            style={{
-              fontSize: "15px",
-              lineHeight: 1.7,
-              color: C.textSecondary,
-              margin: 0,
-              marginBottom: "32px",
-            }}
-          >
-            Trade resources with a bot over 5 rounds. You know your own values
-            (Iron=1, Crystal=3, Gold=5), but the bot&apos;s values and strategy are
-            hidden. Propose trades to maximize your total value. The bot will
-            accept or reject based on its hidden preferences.
-          </p>
-          <div style={{ display: "flex", gap: "8px" }}>
-            <button style={buttonStyle} onClick={() => handleBegin(false)}>
-              Play
-              <ArrowRight size={16} strokeWidth={2} />
-            </button>
-            <button style={ghostButton} onClick={() => handleBegin(true)}>
-              <Play size={14} strokeWidth={2} />
-              Watch agent
-            </button>
-          </div>
-        </div>
-      </Shell>
-    );
-  }
-
-  if (phase === "reveal") {
-    return (
-      <Shell env="The Negotiation">
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: "12px",
-            marginBottom: "16px",
-          }}
-        >
-          <MetricCard label="Final Value" value={`${playerValue}`} />
-          <MetricCard label="Efficiency" value={`${efficiency}%`} />
-          <MetricCard label="Accepted" value={`${history.filter((h) => h.accepted).length}/5`} />
-        </div>
-
-        <div style={{ fontSize: "13px", color: C.textSecondary, marginBottom: "16px" }}>
-          Bot was <span style={{ fontWeight: 500, color: C.textPrimary }}>{botProfile.name}</span> — {botProfile.name === "Fair" ? "accepts when both gain" : botProfile.name === "Greedy" ? "needs 2x your gain" : botProfile.name === "Generous" ? "accepts any gain" : "needs more than you"}. Values: I={botProfile.values.iron}, C={botProfile.values.crystal}, G={botProfile.values.gold}.
-        </div>
-
-        <LessonCard term="In the real world">
-          Every business deal involves counterparties with hidden preferences. Procurement agents negotiate supplier contracts. Sales agents adapt pricing strategies. An autonomous agent that models other agents can close deals that generate real revenue.
-        </LessonCard>
-
-        {demoMode && (
-          <div style={{ fontSize: "12px", color: C.textTertiary, marginTop: "16px" }}>
-            Advancing to next environment...
-          </div>
-        )}
-
-        <div style={{ display: "flex", gap: "8px", marginTop: "16px" }}>
-          <button style={buttonStyle} onClick={() => handleBegin(false)}>
-            <RotateCcw size={14} strokeWidth={2} />
-            Play again
-          </button>
-          <button style={ghostButton} onClick={() => handleBegin(true)}>
-            <Play size={14} strokeWidth={2} />
-            Watch agent
-          </button>
-        </div>
-      </Shell>
-    );
-  }
 
   const ResourceRow = ({
     label,
@@ -696,212 +572,279 @@ export default function NegotiationPage() {
     </div>
   );
 
+  const isPlaying = phase === "playing";
+  const isReveal = phase === "reveal";
+
   return (
-    <Shell env="The Negotiation">
+    <Shell env="negotiation">
+      {/* HEADER BAR - Fixed height, always present */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
+          alignItems: "center",
+          height: "24px",
           marginBottom: "24px",
         }}
       >
-        <div style={{ fontSize: "13px", color: C.textSecondary }}>
-          {agentMode && (
-            <span style={{ color: C.accent, marginRight: "8px" }}>Agent</span>
-          )}
-          Round {round} / 5
+        {/* Left side: agent indicator + round or phase info */}
+        <div style={{ fontSize: "13px", color: C.textSecondary, display: "flex", alignItems: "center", gap: "8px" }}>
+          {/* Agent indicator - always rendered, visibility via opacity */}
+          <span style={{ color: C.accent, opacity: agentMode && isPlaying ? 1 : 0 }}>Agent</span>
+          {/* Round / phase info */}
+          <span>
+            {isPlaying ? `Round ${round} / 5` : `Complete`}
+          </span>
         </div>
+        {/* Right side: value display */}
         <div style={{ fontSize: "13px", color: C.textSecondary }}>
           Your value: {playerValue}
         </div>
       </div>
 
-      {lastResponse && (
-        <div
-          style={{
-            ...card,
-            padding: "16px 20px",
-            marginBottom: "16px",
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-            background: lastResponse === "accepted" ? "rgba(74, 222, 128, 0.1)" : "rgba(224, 90, 0, 0.1)",
-            borderColor: lastResponse === "accepted" ? "#2A5A3A" : "#5A3A2A",
-          }}
-        >
-          {lastResponse === "accepted" ? (
-            <Check size={18} strokeWidth={2} color="#22A55B" />
-          ) : (
-            <X size={18} strokeWidth={2} color="#E05A00" />
-          )}
-          <span
-            style={{
-              fontSize: "14px",
-              color: lastResponse === "accepted" ? "#22A55B" : "#E05A00",
-            }}
-          >
-            Trade {lastResponse}
-          </span>
-        </div>
-      )}
+      {/* MAIN CONTENT AREA - Fixed structure, content swaps inside */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
 
-      <div style={{ ...card, padding: "20px 24px", marginBottom: "24px" }}>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "80px 1fr 1fr",
-            gap: "12px",
-            marginBottom: "8px",
-          }}
-        >
-          <div />
+        {/* PLAYING CONTENT */}
+        <div style={{ display: isPlaying ? "block" : "none" }}>
+          {/* Feedback banner - fixed height container, content fades in/out */}
           <div
             style={{
-              fontSize: "11px",
-              fontWeight: 500,
-              letterSpacing: "0.06em",
-              textTransform: "uppercase",
-              color: C.textTertiary,
+              height: "56px",
+              marginBottom: "16px",
+              display: "flex",
+              alignItems: "center",
             }}
           >
-            You give
-          </div>
-          <div
-            style={{
-              fontSize: "11px",
-              fontWeight: 500,
-              letterSpacing: "0.06em",
-              textTransform: "uppercase",
-              color: C.textTertiary,
-            }}
-          >
-            You want
-          </div>
-        </div>
-
-        <ResourceRow
-          label="Iron"
-          player={playerResources.iron}
-          bot={botResources.iron}
-          give={tradeGive.iron}
-          want={tradeWant.iron}
-          onAdjustGive={(d) => adjustGive("iron", d)}
-          onAdjustWant={(d) => adjustWant("iron", d)}
-        />
-        <ResourceRow
-          label="Crystal"
-          player={playerResources.crystal}
-          bot={botResources.crystal}
-          give={tradeGive.crystal}
-          want={tradeWant.crystal}
-          onAdjustGive={(d) => adjustGive("crystal", d)}
-          onAdjustWant={(d) => adjustWant("crystal", d)}
-        />
-        <ResourceRow
-          label="Gold"
-          player={playerResources.gold}
-          bot={botResources.gold}
-          give={tradeGive.gold}
-          want={tradeWant.gold}
-          onAdjustGive={(d) => adjustGive("gold", d)}
-          onAdjustWant={(d) => adjustWant("gold", d)}
-        />
-      </div>
-
-      <div style={{ ...card, padding: "16px 20px", marginBottom: "24px" }}>
-        <div
-          style={{
-            fontSize: "11px",
-            fontWeight: 500,
-            letterSpacing: "0.06em",
-            textTransform: "uppercase",
-            color: C.textTertiary,
-            marginBottom: "8px",
-          }}
-        >
-          Your Values
-        </div>
-        <div style={{ fontSize: "13px", color: C.textSecondary }}>
-          Iron = 1, Crystal = 3, Gold = 5
-        </div>
-      </div>
-
-      {!agentMode && (
-        <button
-          style={{
-            ...buttonStyle,
-            width: "100%",
-            justifyContent: "center",
-            opacity:
-              tradeGive.iron + tradeGive.crystal + tradeGive.gold === 0 &&
-              tradeWant.iron + tradeWant.crystal + tradeWant.gold === 0
-                ? 0.5
-                : 1,
-          }}
-          onClick={handleSubmitTrade}
-          disabled={
-            tradeGive.iron + tradeGive.crystal + tradeGive.gold === 0 &&
-            tradeWant.iron + tradeWant.crystal + tradeWant.gold === 0
-          }
-        >
-          Submit Trade
-          <ArrowRight size={16} strokeWidth={2} />
-        </button>
-      )}
-
-      {agentMode && (
-        <div
-          style={{
-            textAlign: "center",
-            fontSize: "12px",
-            color: C.textTertiary,
-            marginBottom: "24px",
-          }}
-        >
-          Adaptive trading agent
-        </div>
-      )}
-
-      {history.length > 0 && (
-        <div style={{ ...card, padding: "16px 20px", marginTop: "24px" }}>
-          <div
-            style={{
-              fontSize: "11px",
-              fontWeight: 500,
-              letterSpacing: "0.06em",
-              textTransform: "uppercase",
-              color: C.textTertiary,
-              marginBottom: "12px",
-            }}
-          >
-            Trade History
-          </div>
-          {history.map((h, i) => (
             <div
-              key={i}
               style={{
+                ...card,
+                padding: "16px 20px",
                 display: "flex",
-                justifyContent: "space-between",
                 alignItems: "center",
-                fontSize: "13px",
-                color: C.textSecondary,
-                padding: "8px 0",
-                borderBottom: i < history.length - 1 ? `1px solid ${C.border}` : "none",
+                gap: "10px",
+                width: "100%",
+                opacity: lastResponse ? 1 : 0,
+                background: lastResponse === "accepted" ? "rgba(74, 222, 128, 0.1)" : "rgba(224, 90, 0, 0.1)",
+                borderColor: lastResponse === "accepted" ? "#2A5A3A" : "#5A3A2A",
+                transition: "opacity 150ms ease-out",
               }}
             >
-              <span>
-                Gave: {h.give.iron}I, {h.give.crystal}C, {h.give.gold}G | Wanted:{" "}
-                {h.want.iron}I, {h.want.crystal}C, {h.want.gold}G
-              </span>
-              {h.accepted ? (
-                <Check size={16} strokeWidth={2} color="#22A55B" />
+              {lastResponse === "accepted" ? (
+                <Check size={18} strokeWidth={2} color="#22A55B" />
               ) : (
-                <X size={16} strokeWidth={2} color="#E05A00" />
+                <X size={18} strokeWidth={2} color={C.accent} />
+              )}
+              <span
+                style={{
+                  fontSize: "14px",
+                  color: lastResponse === "accepted" ? "#22A55B" : C.accent,
+                }}
+              >
+                Trade {lastResponse || "pending"}
+              </span>
+            </div>
+          </div>
+
+          {/* Trade form */}
+          <div style={{ ...card, padding: "20px 24px", marginBottom: "16px" }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "80px 1fr 1fr",
+                gap: "12px",
+                marginBottom: "8px",
+              }}
+            >
+              <div />
+              <div
+                style={{
+                  fontSize: "11px",
+                  fontWeight: 500,
+                  letterSpacing: "0.06em",
+                  textTransform: "uppercase",
+                  color: C.textTertiary,
+                }}
+              >
+                You give
+              </div>
+              <div
+                style={{
+                  fontSize: "11px",
+                  fontWeight: 500,
+                  letterSpacing: "0.06em",
+                  textTransform: "uppercase",
+                  color: C.textTertiary,
+                }}
+              >
+                You want
+              </div>
+            </div>
+
+            <ResourceRow
+              label="Iron"
+              player={playerResources.iron}
+              bot={botResources.iron}
+              give={tradeGive.iron}
+              want={tradeWant.iron}
+              onAdjustGive={(d) => adjustGive("iron", d)}
+              onAdjustWant={(d) => adjustWant("iron", d)}
+            />
+            <ResourceRow
+              label="Crystal"
+              player={playerResources.crystal}
+              bot={botResources.crystal}
+              give={tradeGive.crystal}
+              want={tradeWant.crystal}
+              onAdjustGive={(d) => adjustGive("crystal", d)}
+              onAdjustWant={(d) => adjustWant("crystal", d)}
+            />
+            <ResourceRow
+              label="Gold"
+              player={playerResources.gold}
+              bot={botResources.gold}
+              give={tradeGive.gold}
+              want={tradeWant.gold}
+              onAdjustGive={(d) => adjustGive("gold", d)}
+              onAdjustWant={(d) => adjustWant("gold", d)}
+            />
+          </div>
+
+          {/* Values reference */}
+          <div style={{ ...card, padding: "16px 20px", marginBottom: "16px" }}>
+            <div
+              style={{
+                fontSize: "11px",
+                fontWeight: 500,
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
+                color: C.textTertiary,
+                marginBottom: "8px",
+              }}
+            >
+              Your Values
+            </div>
+            <div style={{ fontSize: "13px", color: C.textSecondary }}>
+              Iron = 1, Crystal = 3, Gold = 5
+            </div>
+          </div>
+
+          {/* Submit button / Agent status - fixed height container */}
+          <div style={{ height: "44px", marginBottom: "16px" }}>
+            {/* Player submit button - shown when not agent mode */}
+            <button
+              style={{
+                ...buttonStyle,
+                width: "100%",
+                justifyContent: "center",
+                display: agentMode ? "none" : "inline-flex",
+                opacity:
+                  tradeGive.iron + tradeGive.crystal + tradeGive.gold === 0 &&
+                  tradeWant.iron + tradeWant.crystal + tradeWant.gold === 0
+                    ? 0.5
+                    : 1,
+              }}
+              onClick={handleSubmitTrade}
+              disabled={
+                tradeGive.iron + tradeGive.crystal + tradeGive.gold === 0 &&
+                tradeWant.iron + tradeWant.crystal + tradeWant.gold === 0
+              }
+            >
+              Submit Trade
+              <ArrowRight size={16} strokeWidth={2} />
+            </button>
+            {/* Agent status - shown when agent mode */}
+            <div
+              style={{
+                display: agentMode ? "flex" : "none",
+                alignItems: "center",
+                justifyContent: "center",
+                height: "100%",
+                fontSize: "12px",
+                color: C.textTertiary,
+              }}
+            >
+              Adaptive trading agent
+            </div>
+          </div>
+
+          {/* Trade history - FIXED HEIGHT scrollable container */}
+          <div style={{ ...card, padding: "16px 20px", height: "140px", display: "flex", flexDirection: "column" }}>
+            <div
+              style={{
+                fontSize: "11px",
+                fontWeight: 500,
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
+                color: C.textTertiary,
+                marginBottom: "12px",
+                flexShrink: 0,
+              }}
+            >
+              Trade History
+            </div>
+            <div style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
+              {history.length === 0 ? (
+                <div style={{ fontSize: "13px", color: C.textTertiary }}>No trades yet</div>
+              ) : (
+                history.map((h, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      fontSize: "13px",
+                      color: C.textSecondary,
+                      padding: "8px 0",
+                      borderBottom: i < history.length - 1 ? `1px solid ${C.border}` : "none",
+                    }}
+                  >
+                    <span>
+                      Gave: {h.give.iron}I, {h.give.crystal}C, {h.give.gold}G | Wanted:{" "}
+                      {h.want.iron}I, {h.want.crystal}C, {h.want.gold}G
+                    </span>
+                    {h.accepted ? (
+                      <Check size={16} strokeWidth={2} color="#22A55B" />
+                    ) : (
+                      <X size={16} strokeWidth={2} color={C.accent} />
+                    )}
+                  </div>
+                ))
               )}
             </div>
-          ))}
+          </div>
         </div>
-      )}
+
+        {/* REVEAL CONTENT */}
+        <div style={{ display: isReveal ? "block" : "none" }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3, 1fr)",
+              gap: "12px",
+              marginBottom: "16px",
+            }}
+          >
+            <MetricCard label="Final Value" value={`${playerValue}`} subtitle="Total resource value accumulated" />
+            <MetricCard label="Efficiency" value={`${efficiency}%`} subtitle="Value captured vs theoretical max" />
+            <MetricCard label="Accepted" value={`${history.filter((h) => h.accepted).length}/5`} subtitle="Trades the counterpart agreed to" />
+          </div>
+
+          <div style={{ fontSize: "13px", color: C.textSecondary, marginBottom: "16px" }}>
+            Bot was <span style={{ fontWeight: 500, color: C.textPrimary }}>{botProfile.name}</span> — {botProfile.name === "Fair" ? "accepts when both gain" : botProfile.name === "Greedy" ? "needs 2x your gain" : botProfile.name === "Generous" ? "accepts any gain" : "needs more than you"}. Values: I={botProfile.values.iron}, C={botProfile.values.crystal}, G={botProfile.values.gold}.
+            <span style={{ display: "block", fontSize: "12px", color: C.textTertiary, marginTop: "6px" }}>The agent had to figure out the counterpart's hidden strategy.</span>
+          </div>
+
+          <LessonCard term="What this teaches">
+            <ul style={{ margin: 0, paddingLeft: "16px", fontSize: "13px", lineHeight: 1.8 }}>
+              <li>Read what the other side values</li>
+              <li>Every deal has hidden preferences</li>
+              <li>Adapt strategy based on responses</li>
+            </ul>
+          </LessonCard>
+        </div>
+      </div>
     </Shell>
   );
 }

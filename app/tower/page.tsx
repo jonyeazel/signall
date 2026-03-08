@@ -2,8 +2,8 @@
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { Shell, MetricCard, LessonCard } from "../shell";
-import { C, card, buttonStyle, ghostButton, saveScore, isDemoMode, getNextDemoPath, isAgentEmbed } from "../shared";
-import { ArrowRight, RotateCcw, Lock, Check, X, Play } from "lucide-react";
+import { C, card, buttonStyle, saveScore } from "../shared";
+import { Lock, Check, X } from "lucide-react";
 
 type TaskStatus = "locked" | "available" | "completed" | "failed";
 
@@ -22,6 +22,16 @@ const PRESET_DAGS: [string, string][][] = [
   [["A", "D"], ["B", "D"], ["B", "E"], ["C", "F"], ["D", "F"], ["E", "F"]],
   [["A", "B"], ["B", "C"], ["C", "D"], ["D", "E"], ["E", "F"]],
   [["A", "C"], ["A", "D"], ["B", "E"], ["C", "F"], ["D", "F"], ["E", "F"]],
+];
+
+// Placeholder tasks for consistent layout before game starts
+const PLACEHOLDER_TASKS: Task[] = [
+  { id: "A", status: "available", prerequisites: [] },
+  { id: "B", status: "available", prerequisites: [] },
+  { id: "C", status: "available", prerequisites: [] },
+  { id: "D", status: "available", prerequisites: [] },
+  { id: "E", status: "available", prerequisites: [] },
+  { id: "F", status: "available", prerequisites: [] },
 ];
 
 function shuffleArray<T>(arr: T[]): T[] {
@@ -130,6 +140,9 @@ function agentChooseTask(
   return available.length > 0 ? available[0].id : null;
 }
 
+// Fixed height for dependencies section
+const DEPS_SECTION_HEIGHT = 100;
+
 export default function TowerPage() {
   const [phase, setPhase] = useState<Phase>("intro");
   const [turns, setTurns] = useState(0);
@@ -140,8 +153,6 @@ export default function TowerPage() {
   const [selectedTask, setSelectedTask] = useState<string | null>(null);
   const [knownDeps, setKnownDeps] = useState<Map<string, Set<string>>>(new Map());
   const agentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [demoMode, setDemoMode] = useState(false);
-  const [agentEmbed, setAgentEmbed] = useState(false);
 
   const completedCount = tasks.filter((t) => t.status === "completed").length;
   const efficiency = Math.round((6 / Math.max(turns, 6)) * 100);
@@ -185,6 +196,9 @@ export default function TowerPage() {
           if (newCompleted === 6) {
             const finalEfficiency = Math.round((6 / (turns + 1)) * 100);
             saveScore("tower", finalEfficiency);
+            if (window.parent !== window) {
+              window.parent.postMessage({ type: "episodeComplete", envId: "tower", efficiency: finalEfficiency }, "*");
+            }
             setTimeout(() => setPhase("reveal"), 400);
           }
         } else {
@@ -225,39 +239,12 @@ export default function TowerPage() {
     };
   }, [agentMode, phase, tasks, turns, completedCount, knownDeps]);
 
-  // Check demo mode on mount
+  // Auto-start agent mode on mount
   useEffect(() => {
-    setDemoMode(isDemoMode());
-  }, []);
-
-  // Check agent embed mode on mount
-  useEffect(() => {
-    setAgentEmbed(isAgentEmbed());
-  }, []);
-
-  // Auto-start agent in demo
-  useEffect(() => {
-    if (demoMode && phase === "intro") {
+    if (phase === "intro") {
       handleBegin(true);
     }
-  }, [demoMode, phase]);
-
-  // Auto-start agent in embed mode
-  useEffect(() => {
-    if (agentEmbed && phase === "intro") {
-      handleBegin(true);
-    }
-  }, [agentEmbed, phase]);
-
-  // Auto-advance in demo after reveal
-  useEffect(() => {
-    if (demoMode && phase === "reveal") {
-      const timer = setTimeout(() => {
-        window.location.href = getNextDemoPath("tower");
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [demoMode, phase]);
+  }, [phase]);
 
   const handleBegin = useCallback((withAgent: boolean = false) => {
     const { tasks: newTasks, edges: newEdges } = generateDAG();
@@ -299,6 +286,9 @@ export default function TowerPage() {
         if (newCompleted === 6) {
           const finalEfficiency = Math.round((6 / (turns + 1)) * 100);
           saveScore("tower", finalEfficiency);
+          if (window.parent !== window) {
+            window.parent.postMessage({ type: "episodeComplete", envId: "tower", efficiency: finalEfficiency }, "*");
+          }
           setTimeout(() => setPhase("reveal"), 300);
         }
       } else {
@@ -325,113 +315,73 @@ export default function TowerPage() {
 
   const optimalOrder = useMemo(() => topologicalSort(tasks, edges), [tasks, edges]);
 
-  if (phase === "intro") {
-    return (
-      <Shell env="The Tower">
-        <div style={{ ...card, padding: "48px 32px" }}>
-          <p
-            style={{
-              fontSize: "15px",
-              lineHeight: 1.7,
-              color: C.textSecondary,
-              margin: 0,
-              marginBottom: "32px",
-            }}
-          >
-            Six tasks must be completed, but they have hidden dependencies.
-            Attempt a task before its prerequisites are done, and you will fail
-            and reveal the dependency. Complete all tasks in as few turns as
-            possible. Maximum 12 turns.
-          </p>
-          <div style={{ display: "flex", gap: "8px" }}>
-            <button style={buttonStyle} onClick={() => handleBegin(false)}>
-              Play
-              <ArrowRight size={16} strokeWidth={2} />
-            </button>
-            <button style={ghostButton} onClick={() => handleBegin(true)}>
-              <Play size={14} strokeWidth={2} />
-              Watch agent
-            </button>
-          </div>
-        </div>
-      </Shell>
-    );
-  }
-
-  if (phase === "reveal") {
-    return (
-      <Shell env="The Tower">
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "8px",
-            marginBottom: "16px",
-          }}
-        >
-          <MetricCard label="Turns Used" value={`${turns}`} />
-          <MetricCard label="Efficiency" value={`${efficiency}%`} />
-        </div>
-
-        <div style={{ marginBottom: "16px" }}>
-          <LessonCard term="In the real world">
-            Project execution, CI/CD pipelines, manufacturing workflows — all involve tasks with hidden dependencies. An agent that can infer structure from failures and find valid orderings can manage complex operations autonomously.
-          </LessonCard>
-        </div>
-
-        {demoMode && (
-          <div style={{ fontSize: "12px", color: C.textTertiary, marginBottom: "16px" }}>
-            Advancing to next environment...
-          </div>
-        )}
-
-        <div style={{ display: "flex", gap: "8px" }}>
-          <button style={buttonStyle} onClick={() => handleBegin(false)}>
-            <RotateCcw size={14} strokeWidth={2} />
-            Play again
-          </button>
-          <button style={ghostButton} onClick={() => handleBegin(true)}>
-            <Play size={14} strokeWidth={2} />
-            Watch agent
-          </button>
-        </div>
-      </Shell>
-    );
-  }
+  // Use placeholder tasks for intro phase to maintain consistent layout
+  const displayTasks = phase === "intro" ? PLACEHOLDER_TASKS : tasks;
+  const isPlaying = phase === "playing";
+  const isReveal = phase === "reveal";
+  const isIntro = phase === "intro";
+  const maxTurnsReached = turns >= 12 && completedCount < 6;
 
   return (
-    <Shell env="The Tower">
+    <Shell env="tower">
+      {/* Header section - always rendered with fixed height */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
           marginBottom: "24px",
+          height: "20px",
+          alignItems: "center",
         }}
       >
-        <div style={{ fontSize: "13px", color: C.textSecondary }}>
-          {agentMode && (
-            <span style={{ color: C.accent, marginRight: "8px" }}>Agent</span>
-          )}
+        <div
+          style={{
+            fontSize: "13px",
+            color: C.textSecondary,
+            opacity: isIntro ? 0 : 1,
+            transition: "opacity 150ms ease-out",
+          }}
+        >
+          <span
+            style={{
+              color: C.accent,
+              marginRight: "8px",
+              opacity: agentMode ? 1 : 0,
+              transition: "opacity 150ms ease-out",
+            }}
+          >
+            Agent
+          </span>
           Turn {turns} / 12
         </div>
-        <div style={{ fontSize: "13px", color: C.textSecondary }}>
+        <div
+          style={{
+            fontSize: "13px",
+            color: C.textSecondary,
+            opacity: isIntro ? 0 : 1,
+            transition: "opacity 150ms ease-out",
+          }}
+        >
           Completed: {completedCount} / 6
         </div>
       </div>
 
+      {/* Task grid - always 3x2, fixed dimensions */}
       <div
         style={{
           display: "grid",
           gridTemplateColumns: "1fr 1fr 1fr",
           gap: "12px",
           marginBottom: "24px",
+          opacity: isReveal ? 0.5 : 1,
+          transition: "opacity 150ms ease-out",
         }}
       >
-        {tasks.map((task) => {
+        {displayTasks.map((task) => {
           const isCompleted = task.status === "completed";
           const isFailed = task.failedAttempt;
           const isSelected = selectedTask === task.id;
-          const isDisabled = isCompleted || turns >= 12 || agentMode;
+          const isDisabled = isCompleted || turns >= 12 || agentMode || isIntro || isReveal;
 
           let bgColor: string = C.surface;
           let borderColor: string = C.border;
@@ -458,9 +408,14 @@ export default function TowerPage() {
                 padding: "24px",
                 paddingLeft: isSelected ? "22px" : "24px",
                 cursor: isDisabled ? "default" : "pointer",
-                opacity: isDisabled && !isCompleted ? 0.5 : 1,
+                opacity: isDisabled && !isCompleted && !isIntro && !isReveal ? 0.5 : 1,
                 fontFamily: "inherit",
                 textAlign: "center",
+                height: "100px",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
               }}
             >
               <div
@@ -497,60 +452,146 @@ export default function TowerPage() {
         })}
       </div>
 
-      {agentMode && (
+      {/* Agent mode indicator - always rendered, visibility via opacity */}
+      <div
+        style={{
+          textAlign: "center",
+          fontSize: "12px",
+          color: C.textTertiary,
+          marginBottom: "24px",
+          height: "16px",
+          opacity: agentMode && isPlaying ? 1 : 0,
+          transition: "opacity 150ms ease-out",
+        }}
+      >
+        Topological sort agent
+      </div>
+
+      {/* Discovered dependencies section - fixed height container, always rendered */}
+      <div
+        style={{
+          ...card,
+          padding: "16px",
+          marginBottom: "24px",
+          height: `${DEPS_SECTION_HEIGHT}px`,
+          opacity: isPlaying ? 1 : 0,
+          transition: "opacity 150ms ease-out",
+          overflow: "hidden",
+        }}
+      >
         <div
           style={{
-            textAlign: "center",
-            fontSize: "12px",
+            fontSize: "11px",
+            fontWeight: 500,
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
             color: C.textTertiary,
-            marginBottom: "24px",
+            marginBottom: "8px",
           }}
         >
-          Topological sort agent
+          Discovered Dependencies
         </div>
-      )}
-
-      {discoveredDeps.length > 0 && (
-        <div style={{ ...card, padding: "16px", marginBottom: "24px" }}>
-          <div
-            style={{
-              fontSize: "11px",
-              fontWeight: 500,
-              letterSpacing: "0.06em",
-              textTransform: "uppercase",
-              color: C.textTertiary,
-              marginBottom: "8px",
-            }}
-          >
-            Discovered Dependencies
-          </div>
-          <div
-            style={{
-              fontSize: "13px",
-              color: C.textSecondary,
-              lineHeight: 1.6,
-            }}
-          >
-            {discoveredDeps.map((dep, i) => (
+        <div
+          style={{
+            fontSize: "13px",
+            color: discoveredDeps.length > 0 ? C.textSecondary : C.textTertiary,
+            lineHeight: 1.6,
+            height: `${DEPS_SECTION_HEIGHT - 48}px`,
+            overflowY: "auto",
+            opacity: discoveredDeps.length > 0 ? 1 : 0.4,
+          }}
+        >
+          {discoveredDeps.length > 0 ? (
+            discoveredDeps.map((dep, i) => (
               <div key={i}>{dep}</div>
-            ))}
+            ))
+          ) : (
+            <div>No dependencies discovered yet</div>
+          )}
+        </div>
+      </div>
+
+      {/* Maximum turns reached - fixed container, content fades in */}
+      <div
+        style={{
+          textAlign: "center",
+          height: "72px",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          opacity: maxTurnsReached && isPlaying ? 1 : 0,
+          pointerEvents: maxTurnsReached && isPlaying ? "auto" : "none",
+          transition: "opacity 150ms ease-out",
+        }}
+      >
+        <p style={{ fontSize: "14px", color: C.textSecondary, marginBottom: "16px", margin: 0 }}>
+          Maximum turns reached. {completedCount} of 6 tasks completed.
+        </p>
+        <button
+          style={buttonStyle}
+          onClick={() => {
+            saveScore("tower", efficiency);
+            if (window.parent !== window) {
+              window.parent.postMessage({ type: "episodeComplete", envId: "tower", efficiency }, "*");
+            }
+            setPhase("reveal");
+          }}
+        >
+          View Results
+        </button>
+      </div>
+
+      {/* Reveal content overlay */}
+      <div
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          bottom: 0,
+          padding: "0 32px 48px",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          opacity: isReveal ? 1 : 0,
+          pointerEvents: isReveal ? "auto" : "none",
+          transition: "opacity 150ms ease-out",
+        }}
+      >
+        <div style={{ maxWidth: "640px", width: "100%" }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "8px",
+              marginBottom: "16px",
+            }}
+          >
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <MetricCard label="Turns Used" value={`${turns}`} />
+              <div style={{ fontSize: "9px", color: C.textTertiary, marginTop: "4px", textAlign: "center" }}>
+                Attempts to complete all tasks
+              </div>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <MetricCard label="Efficiency" value={`${efficiency}%`} />
+              <div style={{ fontSize: "9px", color: C.textTertiary, marginTop: "4px", textAlign: "center" }}>
+                Fewer turns = better planning
+              </div>
+            </div>
+          </div>
+
+          <div style={{ marginBottom: "16px" }}>
+            <LessonCard term="What this teaches">
+              <ul style={{ margin: 0, paddingLeft: "16px", lineHeight: 1.8 }}>
+                <li>Find hidden dependencies before they block you</li>
+                <li>Project launches need this exact skill</li>
+                <li>CI/CD pipelines are dependency puzzles</li>
+              </ul>
+            </LessonCard>
           </div>
         </div>
-      )}
-
-      {turns >= 12 && completedCount < 6 && (
-        <div style={{ textAlign: "center", marginTop: "24px" }}>
-          <p style={{ fontSize: "14px", color: C.textSecondary, marginBottom: "16px" }}>
-            Maximum turns reached. {completedCount} of 6 tasks completed.
-          </p>
-          <button style={buttonStyle} onClick={() => {
-            saveScore("tower", efficiency);
-            setPhase("reveal");
-          }}>
-            View Results
-          </button>
-        </div>
-      )}
+      </div>
     </Shell>
   );
 }

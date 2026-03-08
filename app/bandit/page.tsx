@@ -2,8 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { Shell, MetricCard, LessonCard } from "../shell";
-import { C, card, metaLabel, buttonStyle, ghostButton, saveScore, isDemoMode, getNextDemoPath, isAgentEmbed } from "../shared";
-import { RotateCcw, ArrowRight, Play } from "lucide-react";
+import { C, card, metaLabel, buttonStyle, saveScore } from "../shared";
 
 const SOURCE_NAMES = ["Alpha", "Beta", "Gamma", "Delta", "Epsilon", "Zeta"];
 const BASE_MEANS = [3.2, 5.8, 7.1, 4.5, 6.3, 2.9];
@@ -113,8 +112,6 @@ export default function BanditPage() {
   const [selectedSource, setSelectedSource] = useState<number | null>(null);
   const [agentMode, setAgentMode] = useState(false);
   const agentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [demoMode, setDemoMode] = useState(false);
-  const [agentEmbed, setAgentEmbed] = useState(false);
 
   // Agent auto-play
   useEffect(() => {
@@ -144,6 +141,9 @@ export default function BanditPage() {
             const optimal = computeOptimalScore(newSources);
             const efficiency = Math.round((newTotal / optimal) * 100);
             saveScore("bandit", efficiency);
+            if (window.parent !== window) {
+              window.parent.postMessage({ type: "episodeComplete", envId: "bandit", efficiency }, "*");
+            }
             setTimeout(() => setPhase("reveal"), 400);
           }
 
@@ -163,39 +163,12 @@ export default function BanditPage() {
     };
   }, [agentMode, phase, game.round, game.sources]);
 
-  // Check demo mode on mount
+  // Auto-start agent mode on mount
   useEffect(() => {
-    setDemoMode(isDemoMode());
-  }, []);
-
-  // Check agent embed mode on mount
-  useEffect(() => {
-    setAgentEmbed(isAgentEmbed());
-  }, []);
-
-  // Auto-start agent in demo
-  useEffect(() => {
-    if (demoMode && phase === "intro") {
+    if (phase === "intro") {
       handleBegin(true);
     }
-  }, [demoMode, phase]);
-
-  // Auto-start agent in embed mode
-  useEffect(() => {
-    if (agentEmbed && phase === "intro") {
-      handleBegin(true);
-    }
-  }, [agentEmbed, phase]);
-
-  // Auto-advance in demo after reveal
-  useEffect(() => {
-    if (demoMode && phase === "reveal") {
-      const timer = setTimeout(() => {
-        window.location.href = getNextDemoPath("bandit");
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [demoMode, phase]);
+  }, [phase]);
 
   const handleBegin = useCallback((withAgent: boolean = false) => {
     setGame(initGame());
@@ -223,6 +196,9 @@ export default function BanditPage() {
         const optimal = computeOptimalScore(newSources);
         const efficiency = Math.round((newTotal / optimal) * 100);
         saveScore("bandit", efficiency);
+        if (window.parent !== window) {
+          window.parent.postMessage({ type: "episodeComplete", envId: "bandit", efficiency }, "*");
+        }
         setTimeout(() => setPhase("reveal"), 300);
       }
 
@@ -252,56 +228,11 @@ export default function BanditPage() {
   const maxMean = useMemo(() => Math.max(...BASE_MEANS), []);
   const minMean = useMemo(() => Math.min(...BASE_MEANS), []);
 
-  if (phase === "intro") {
-    return (
-      <Shell env="The Bandit">
-        <div style={{ ...card, padding: "32px" }}>
-          <p
-            style={{
-              fontSize: "15px",
-              lineHeight: 1.7,
-              color: C.textSecondary,
-              margin: 0,
-              marginBottom: "24px",
-            }}
-          >
-            You have 25 rounds to maximize your total score. Six sources exist, each with a hidden
-            reward distribution. Some sources pay better on average than others. Each pull reveals
-            one sample from that source.
-          </p>
-          <p
-            style={{
-              fontSize: "15px",
-              lineHeight: 1.7,
-              color: C.textSecondary,
-              margin: 0,
-              marginBottom: "32px",
-            }}
-          >
-            The challenge: explore enough to find good sources, but not so much that you waste
-            pulls on bad ones. Exploit your best finds, but not so early that you miss something
-            better.
-          </p>
-          <div style={{ display: "flex", gap: "8px" }}>
-            <button style={buttonStyle} onClick={() => handleBegin(false)}>
-              Play
-              <ArrowRight size={16} strokeWidth={2} />
-            </button>
-            <button style={ghostButton} onClick={() => handleBegin(true)}>
-              <Play size={14} strokeWidth={2} />
-              Watch agent
-            </button>
-          </div>
-        </div>
-      </Shell>
-    );
-  }
-
   if (phase === "playing") {
     const progress = game.round / TOTAL_ROUNDS;
 
     return (
-      <Shell env="The Bandit">
+      <Shell env="bandit">
         <div
           style={{
             display: "flex",
@@ -408,56 +339,71 @@ export default function BanditPage() {
           })}
         </div>
 
-        {!agentMode && (
-          <button
-            style={{
-              ...buttonStyle,
-              width: "100%",
-              justifyContent: "center",
-              opacity: selectedSource === null ? 0.5 : 1,
-              cursor: selectedSource === null ? "not-allowed" : "pointer",
-              marginBottom: "24px",
-            }}
-            onClick={handlePull}
-            disabled={selectedSource === null}
-          >
-            Pull
-          </button>
-        )}
+        <div style={{ marginBottom: "24px", height: "44px" }}>
+          {!agentMode ? (
+            <button
+              style={{
+                ...buttonStyle,
+                width: "100%",
+                justifyContent: "center",
+                opacity: selectedSource === null ? 0.5 : 1,
+                cursor: selectedSource === null ? "not-allowed" : "pointer",
+              }}
+              onClick={handlePull}
+              disabled={selectedSource === null}
+            >
+              Pull
+            </button>
+          ) : (
+            <div
+              style={{
+                textAlign: "center",
+                fontSize: "12px",
+                color: C.textTertiary,
+                lineHeight: "44px",
+              }}
+            >
+              Epsilon-greedy agent training (e=0.15)
+            </div>
+          )}
+        </div>
 
-        {agentMode && (
-          <div
-            style={{
-              textAlign: "center",
-              fontSize: "12px",
-              color: C.textTertiary,
-              marginBottom: "24px",
-            }}
-          >
-            Epsilon-greedy agent training (e=0.15)
-          </div>
-        )}
-
-        {game.history.length > 0 && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
-            {game.history.map((h, i) => {
-              const normalizedReward = Math.max(0, Math.min(1, (h.reward - minMean) / (maxMean - minMean)));
-              return (
-                <div
-                  key={i}
-                  style={{
-                    width: "28px",
-                    height: "28px",
-                    borderRadius: "16px",
-                    background: C.accent,
-                    opacity: 0.2 + normalizedReward * 0.8,
-                  }}
-                  title={`${SOURCE_NAMES[h.sourceIndex]}: ${h.reward.toFixed(1)}`}
-                />
-              );
-            })}
-          </div>
-        )}
+        {/* Live reward chart */}
+        <div style={{ height: "80px", background: C.surface, border: `1px solid ${C.border}`, borderRadius: "12px", padding: "8px 12px", overflow: "hidden" }}>
+          {game.history.length > 0 ? (() => {
+            const w = 520, h = 56, pl = 4, pr = 4, pt = 4, pb = 4;
+            const cw = w - pl - pr, ch = h - pt - pb;
+            const yMin = 0, yMax = 10;
+            const points = game.history.map((hist, i) => {
+              const x = pl + (i / Math.max(TOTAL_ROUNDS - 1, 1)) * cw;
+              const y = pt + ch - ((Math.min(Math.max(hist.reward, yMin), yMax) - yMin) / (yMax - yMin)) * ch;
+              return { x, y, sourceIndex: hist.sourceIndex };
+            });
+            const polyline = points.map(p => `${p.x},${p.y}`).join(" ");
+            const last = points[points.length - 1];
+            return (
+              <svg viewBox={`0 0 ${w} ${h}`} style={{ width: "100%", height: "100%" }}>
+                {/* Grid lines */}
+                {[2, 4, 6, 8].map(v => {
+                  const y = pt + ch - ((v - yMin) / (yMax - yMin)) * ch;
+                  return <line key={v} x1={pl} y1={y} x2={w - pr} y2={y} stroke={C.border} strokeWidth={0.5} />;
+                })}
+                {/* Reward line */}
+                <polyline points={polyline} fill="none" stroke={C.accent} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+                {/* Dots colored by source */}
+                {points.map((p, i) => (
+                  <circle key={i} cx={p.x} cy={p.y} r={3} fill={C.accent} opacity={0.3 + (p.sourceIndex === game.history[i].sourceIndex ? 0.7 : 0.3)} />
+                ))}
+                {/* Current position glow */}
+                {last && <circle cx={last.x} cy={last.y} r={5} fill={C.accent} style={{ filter: `drop-shadow(0 0 4px ${C.accent})` }} />}
+              </svg>
+            );
+          })() : (
+            <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: C.textTertiary, fontSize: "11px" }}>
+              Reward chart builds as the agent trains
+            </div>
+          )}
+        </div>
       </Shell>
     );
   }
@@ -466,51 +412,36 @@ export default function BanditPage() {
   const top3Sources = sortedSourcesForReveal.slice(0, 3);
 
   return (
-    <Shell env="The Bandit">
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          gap: "8px",
-          marginBottom: "16px",
-        }}
-      >
-        <MetricCard label="Your score" value={game.totalScore.toFixed(1)} />
-        <MetricCard label="Perfect play" value={optimalScore.toFixed(1)} muted />
-        <MetricCard label="Efficiency" value={`${efficiency}%`} />
-      </div>
-
-      <div style={{ fontSize: "13px", color: C.textSecondary, marginBottom: "16px" }}>
-        <span style={{ fontWeight: 500, color: C.textPrimary }}>Top sources:</span>{" "}
-        {top3Sources.map((s, i) => (
-          <span key={s.index}>
-            {s.name} ({s.trueMean.toFixed(1)}){i < 2 ? ", " : ""}
-          </span>
-        ))}
+    <Shell env="bandit">
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px", marginBottom: "16px" }}>
+        <div>
+          <MetricCard label="Your score" value={game.totalScore.toFixed(1)} />
+          <div style={{ fontSize: "9px", color: C.textTertiary, marginTop: "6px", padding: "0 4px" }}>Total reward collected</div>
+        </div>
+        <div>
+          <MetricCard label="Perfect play" value={optimalScore.toFixed(1)} muted />
+          <div style={{ fontSize: "9px", color: C.textTertiary, marginTop: "6px", padding: "0 4px" }}>Best possible strategy</div>
+        </div>
+        <div>
+          <MetricCard label="Efficiency" value={`${efficiency}%`} />
+          <div style={{ fontSize: "9px", color: C.textTertiary, marginTop: "6px", padding: "0 4px" }}>How close to optimal</div>
+        </div>
       </div>
 
       <div style={{ marginBottom: "16px" }}>
-        <LessonCard term="In the real world">
-          Portfolio managers face this tradeoff daily: exploit a proven strategy or explore new markets. A/B testers balance it with every experiment. Autonomous trading agents must solve this at millisecond scale — the foundation of algorithmic market making.
-        </LessonCard>
-      </div>
-
-      {demoMode && (
-        <div style={{ fontSize: "12px", color: C.textTertiary, marginBottom: "16px" }}>
-          Advancing to next environment...
+        <div style={{ fontSize: "9px", color: C.textTertiary, marginBottom: "6px", letterSpacing: "0.04em" }}>The agent discovered which sources pay best.</div>
+        <div style={{ fontSize: "13px", color: C.textSecondary }}>
+          {top3Sources.map((s, i) => (
+            <span key={s.index}>{s.name} ({s.trueMean.toFixed(1)}){i < 2 ? " · " : ""}</span>
+          ))}
         </div>
-      )}
-
-      <div style={{ display: "flex", gap: "8px" }}>
-        <button style={buttonStyle} onClick={() => handleBegin(false)}>
-          <RotateCcw size={14} strokeWidth={2} />
-          Play again
-        </button>
-        <button style={ghostButton} onClick={() => handleBegin(true)}>
-          <Play size={14} strokeWidth={2} />
-          Watch agent
-        </button>
       </div>
+
+      <LessonCard term="What this teaches">
+        <span style={{ display: "block", marginBottom: "4px" }}>· Balance trying new things vs exploiting winners</span>
+        <span style={{ display: "block", marginBottom: "4px" }}>· Every A/B test is this exact tradeoff</span>
+        <span style={{ display: "block" }}>· Portfolio managers face this daily</span>
+      </LessonCard>
     </Shell>
   );
 }
