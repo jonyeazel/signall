@@ -81,6 +81,22 @@ export default function Home() {
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       if (e.key === "Escape") setExpandedCard(null);
+
+      // Number keys: 1-9 for envs 1-9, 0 for env 10
+      if (expandedCard === null && !e.metaKey && !e.ctrlKey) {
+        const num = e.key === "0" ? 10 : parseInt(e.key);
+        if (num >= 1 && num <= 10) {
+          const idx = num - 1;
+          if (viewMode === "slideshow") {
+            setSlideIndex(idx);
+            setCycleKey((k) => k + 1);
+          } else {
+            setExpandedCard(idx);
+          }
+        }
+      }
+
+      // Arrow keys for slideshow
       if (viewMode === "slideshow" && expandedCard === null) {
         if (e.key === "ArrowRight") {
           setSlideIndex((p) => (p + 1) % ENVIRONMENTS.length);
@@ -91,6 +107,11 @@ export default function Home() {
           setCycleKey((k) => k + 1);
         }
       }
+
+      // Toggle shortcuts
+      if (e.key === "g" && expandedCard === null) setViewMode("grid");
+      if (e.key === "s" && expandedCard === null) setViewMode("slideshow");
+      if (e.key === "t" && expandedCard === null) setIsDark((d) => !d);
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
@@ -277,18 +298,14 @@ export default function Home() {
           {/* ===== GRID VIEW ===== */}
           {viewMode === "grid" && (
             <>
-              <div style={{ textAlign: "center", maxWidth: "520px" }}>
-                <h1 style={{ fontSize: "34px", fontWeight: 600, color: t.textPrimary, letterSpacing: "-0.03em", lineHeight: 1.15, margin: "0 0 10px 0" }}>
-                  Train agents on the primitives.
-                  <br />
-                  <span style={{ color: t.accent }}>The rest transfers.</span>
+              <div style={{ textAlign: "center" }}>
+                <h1 style={{ fontSize: "28px", fontWeight: 600, color: t.textPrimary, letterSpacing: "-0.03em", lineHeight: 1.15, margin: "0 0 6px 0" }}>
+                  <span style={{ color: t.accent }}>10 cognitive primitives.</span>{" "}
+                  The rest transfers.
                 </h1>
-                <p style={{ fontSize: "13px", lineHeight: 1.6, color: t.textTertiary, margin: 0 }}>
-                  10 cognitive environments. Every economic skill decomposes into them.
-                </p>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "10px", width: "100%", maxWidth: "900px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "10px", width: "100%", maxWidth: "920px" }}>
                 {ENVIRONMENTS.map((env, i) => {
                   const envScore = scores[env.id];
                   const hasDone = !!envScore;
@@ -306,10 +323,11 @@ export default function Home() {
                         display: "flex",
                         flexDirection: "column",
                         cursor: "pointer",
-                        minHeight: "120px",
+                        minHeight: "130px",
+                        animation: `card-fade-in 300ms cubic-bezier(0.16, 1, 0.3, 1) ${i * 40}ms both`,
                       }}
                     >
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "auto" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                         <Avatar index={i} done={hasDone} t={t} />
                         <div style={{ minWidth: 0 }}>
                           <div style={{ fontSize: "12px", fontWeight: 600, color: t.textPrimary, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
@@ -320,11 +338,14 @@ export default function Home() {
                           </div>
                         </div>
                       </div>
-                      <div style={{ marginTop: "12px" }}>
+                      <div style={{ fontSize: "10px", color: t.textTertiary, lineHeight: 1.4, marginTop: "10px", flex: 1 }}>
+                        {env.capability}
+                      </div>
+                      <div style={{ marginTop: "8px" }}>
                         {hasDone ? (
-                          <div style={{ fontSize: "20px", fontWeight: 600, color: t.accent, letterSpacing: "-0.02em" }}>{envScore.best}%</div>
+                          <div style={{ fontSize: "18px", fontWeight: 600, color: t.accent, letterSpacing: "-0.02em" }}>{envScore.best}%</div>
                         ) : (
-                          <div style={{ fontSize: "11px", color: t.textTertiary }}>{env.station}</div>
+                          <div style={{ fontSize: "10px", color: t.textTertiary }}>{env.station}</div>
                         )}
                       </div>
                     </div>
