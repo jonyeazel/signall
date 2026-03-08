@@ -48,7 +48,7 @@ function DemoRail({ currentEnvId }: { currentEnvId: string }) {
             lineHeight: 1.2,
           }}
         >
-          Line S
+          Signall
         </div>
       </div>
 
@@ -171,7 +171,7 @@ function DemoRail({ currentEnvId }: { currentEnvId: string }) {
                   transition: "all 150ms ease-out",
                 }}
               >
-                {env.station}
+                {env.name}
               </div>
             </div>
           );
@@ -190,7 +190,7 @@ function DemoRail({ currentEnvId }: { currentEnvId: string }) {
           Now at
         </div>
         <div style={{ fontSize: "13px", fontWeight: 600, color: C.textPrimary, letterSpacing: "-0.01em" }}>
-          {ENVIRONMENTS[currentIndex]?.station}
+          {ENVIRONMENTS[currentIndex]?.name}
         </div>
       </div>
     </div>

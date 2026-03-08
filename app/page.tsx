@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState, useCallback, useRef } from "react";
 import {
-  Play, X, Zap, Activity, Sun, Moon, LayoutGrid, Presentation,
+  Play, X, Sun, Moon, LayoutGrid, Presentation,
   ChevronLeft, ChevronRight,
 } from "lucide-react";
 import {
@@ -71,8 +71,6 @@ export default function Home() {
   const [isDark, setIsDark] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [slideIndex, setSlideIndex] = useState(0);
-  const [cycleKey, setCycleKey] = useState(0);
-  const cycleRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const t = isDark ? darkPalette : lightC;
 
@@ -96,15 +94,15 @@ export default function Home() {
           const idx = num - 1;
           if (viewMode === "slideshow") {
             setSlideIndex(idx);
-            setCycleKey((k) => k + 1);
+            
           } else {
             setExpandedCard(idx);
           }
         }
       }
       if (viewMode === "slideshow" && expandedCard === null) {
-        if (e.key === "ArrowRight") { setSlideIndex((p) => (p + 1) % ENVIRONMENTS.length); setCycleKey((k) => k + 1); }
-        if (e.key === "ArrowLeft") { setSlideIndex((p) => (p - 1 + ENVIRONMENTS.length) % ENVIRONMENTS.length); setCycleKey((k) => k + 1); }
+        if (e.key === "ArrowRight") { setSlideIndex((p) => (p + 1) % ENVIRONMENTS.length);  }
+        if (e.key === "ArrowLeft") { setSlideIndex((p) => (p - 1 + ENVIRONMENTS.length) % ENVIRONMENTS.length);  }
       }
       if (e.key === "g" && expandedCard === null) setViewMode("grid");
       if (e.key === "s" && expandedCard === null) setViewMode("slideshow");
@@ -114,18 +112,7 @@ export default function Home() {
     return () => window.removeEventListener("keydown", h);
   }, [viewMode, expandedCard, closeExpanded]);
 
-  // Auto-cycle slideshow
-  useEffect(() => {
-    if (viewMode !== "slideshow" || expandedCard !== null) {
-      if (cycleRef.current) clearInterval(cycleRef.current);
-      return;
-    }
-    cycleRef.current = setInterval(() => {
-      setSlideIndex((p) => (p + 1) % ENVIRONMENTS.length);
-      setCycleKey((k) => k + 1);
-    }, 5000);
-    return () => { if (cycleRef.current) clearInterval(cycleRef.current); };
-  }, [viewMode, expandedCard]);
+  // No auto-cycle — slideshow only advances on user input
 
   const completedCount = ENVIRONMENTS.filter((e) => scores[e.id]).length;
   const totalRuns = Object.values(scores).reduce((s, v) => s + v.attempts, 0);
@@ -283,7 +270,6 @@ export default function Home() {
                 <Avatar index={expandedCard} />
                 <div>
                   <div style={{ fontSize: "11px", fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase", color: GOLD }}>{xGroup?.label}</div>
-                  <div style={{ fontSize: "13px", color: t.textTertiary }}>{xEnv.station}</div>
                 </div>
               </div>
 
@@ -421,7 +407,7 @@ export default function Home() {
                         <Avatar index={i} />
                         <div style={{ minWidth: 0 }}>
                           <div style={{ fontSize: "12px", fontWeight: 600, color: t.textPrimary, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                            {env.name.replace("The ", "")}
+                            {env.name}
                           </div>
                           <div style={{ fontSize: "9px", color: GOLD, letterSpacing: "0.04em", textTransform: "uppercase" }}>
                             {group?.label}
@@ -465,7 +451,7 @@ export default function Home() {
 
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "24px", width: "100%", margin: "0 auto" }}>
               <button
-                onClick={() => { setSlideIndex((p) => (p - 1 + ENVIRONMENTS.length) % ENVIRONMENTS.length); setCycleKey((k) => k + 1); }}
+                onClick={() => { setSlideIndex((p) => (p - 1 + ENVIRONMENTS.length) % ENVIRONMENTS.length);  }}
                 style={{ width: "40px", height: "40px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: t.surface, border: `1px solid ${t.border}`, color: t.textSecondary, flexShrink: 0 }}
               >
                 <ChevronLeft size={18} strokeWidth={1.5} />
@@ -500,7 +486,7 @@ export default function Home() {
                   <div>
                     <div style={{ fontSize: "12px", fontWeight: 600, color: t.textPrimary }}>{slideEnv.name}</div>
                     <div style={{ fontSize: "10px", color: GOLD, letterSpacing: "0.04em", textTransform: "uppercase" }}>
-                      {slideGroup?.label} · {slideEnv.station}
+                      {slideGroup?.label}
                     </div>
                   </div>
                 </div>
@@ -534,7 +520,7 @@ export default function Home() {
               </Link>
 
               <button
-                onClick={() => { setSlideIndex((p) => (p + 1) % ENVIRONMENTS.length); setCycleKey((k) => k + 1); }}
+                onClick={() => { setSlideIndex((p) => (p + 1) % ENVIRONMENTS.length);  }}
                 style={{ width: "40px", height: "40px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: t.surface, border: `1px solid ${t.border}`, color: t.textSecondary, flexShrink: 0 }}
               >
                 <ChevronRight size={18} strokeWidth={1.5} />
@@ -579,14 +565,14 @@ export default function Home() {
                   onClick={() => {
                     if (viewMode === "slideshow") {
                       setSlideIndex(i);
-                      setCycleKey((k) => k + 1);
+                      
                     } else {
                       setExpandedCard(i);
                     }
                   }}
                   onMouseEnter={() => setHoveredDock(i)}
                   onMouseLeave={() => setHoveredDock(null)}
-                  title={`${env.name} — ${env.station}`}
+                  title={env.name}
                   style={{
                     width: "36px",
                     height: "36px",
@@ -626,8 +612,7 @@ export default function Home() {
                       pointerEvents: "none",
                       zIndex: 50,
                     }}>
-                      {env.name.replace("The ", "")}
-                      <span style={{ color: GOLD, marginLeft: "6px" }}>{env.station}</span>
+                      {env.name}
                     </div>
                   )}
                 </button>
@@ -638,14 +623,10 @@ export default function Home() {
           {/* Gold divider */}
           <div style={{ width: "1px", height: "20px", background: GOLD_DIM, margin: "0 4px", flexShrink: 0 }} />
 
-          {/* Actions */}
-          <Link href="/bandit?demo=true" style={{ display: "flex", alignItems: "center", gap: "6px", padding: "0 14px", height: "36px", borderRadius: "14px", background: t.accent, color: "#fff", fontSize: "12px", fontWeight: 500, textDecoration: "none", flexShrink: 0, fontFamily: "inherit" }}>
-            <Zap size={12} strokeWidth={2} />
-            Demo
-          </Link>
-          <Link href="/train" style={{ display: "flex", alignItems: "center", gap: "6px", padding: "0 14px", height: "36px", borderRadius: "14px", background: t.surface, border: `1px solid ${t.border}`, color: t.textSecondary, fontSize: "12px", fontWeight: 500, textDecoration: "none", flexShrink: 0, fontFamily: "inherit" }}>
-            <Activity size={12} strokeWidth={2} />
-            Train
+          {/* Single CTA */}
+          <Link href="/bandit?demo=true" style={{ display: "flex", alignItems: "center", gap: "6px", padding: "0 16px", height: "36px", borderRadius: "14px", background: t.accent, color: "#fff", fontSize: "12px", fontWeight: 500, textDecoration: "none", flexShrink: 0, fontFamily: "inherit" }}>
+            <Play size={12} strokeWidth={2} />
+            Watch AI Learn
           </Link>
         </div>
       </div>
