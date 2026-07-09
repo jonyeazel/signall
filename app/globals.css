@@ -29,6 +29,15 @@ body {
 
 /* --- Scroll areas --- */
 
+.carousel-x {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.carousel-x::-webkit-scrollbar {
+  display: none;
+}
+
 .feed-scroll::-webkit-scrollbar {
   width: 8px;
 }

@@ -14,13 +14,12 @@ export default function Home() {
   const feedRef = useRef<HTMLElement>(null);
 
   const isMobile = useMediaQuery("(max-width: 640px)");
-  const twoCol = useMediaQuery("(min-width: 760px)");
 
   const selected = OFFERINGS.find((o) => o.id === selectedId) ?? null;
 
   const close = useCallback(() => setSelectedId(null), []);
 
-  // Lock scroll + Escape-to-close while a sheet is open.
+  // Escape-to-close while a sheet is open.
   useEffect(() => {
     if (!selected) return;
     const onKey = (e: KeyboardEvent) => {
@@ -34,9 +33,9 @@ export default function Home() {
     <div
       style={{
         position: "fixed",
-        inset: 12,
+        inset: isMobile ? 8 : 12,
         background: T.bg,
-        borderRadius: 24,
+        borderRadius: isMobile ? 20 : 24,
         border: `1px solid ${T.border}`,
         overflow: "hidden",
         display: "flex",
@@ -50,7 +49,7 @@ export default function Home() {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "16px 22px",
+          padding: "14px 20px",
           borderBottom: `1px solid ${T.border}`,
         }}
       >
@@ -97,26 +96,34 @@ export default function Home() {
           flex: 1,
           overflowY: selected ? "hidden" : "auto",
           minHeight: 0,
-          padding: isMobile ? "22px 18px 12px" : "40px 32px 20px",
+          padding: isMobile ? "16px 8px 8px" : "36px 32px 16px",
           WebkitOverflowScrolling: "touch",
+          scrollSnapType: isMobile ? "y proximity" : undefined,
         }}
       >
         {/* Hero */}
-        <div style={{ maxWidth: 760, margin: "0 auto", textAlign: "center", padding: "8px 0 30px" }}>
+        <div
+          style={{
+            maxWidth: 760,
+            margin: "0 auto",
+            textAlign: "center",
+            padding: isMobile ? "6px 8px 20px" : "8px 0 28px",
+          }}
+        >
           <motion.h1
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
             style={{
-              margin: "0 0 14px",
-              fontSize: "clamp(30px, 6vw, 44px)",
+              margin: "0 0 10px",
+              fontSize: "clamp(28px, 5.4vw, 40px)",
               fontWeight: 600,
               letterSpacing: "-0.035em",
               lineHeight: 1.08,
               color: T.textPrimary,
             }}
           >
-            Lorem ipsum dolor sit amet
+            Lorem ipsum dolor
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 16 }}
@@ -124,39 +131,75 @@ export default function Home() {
             transition={{ duration: 0.5, delay: 0.06, ease: [0.22, 1, 0.36, 1] }}
             style={{
               margin: "0 auto",
-              maxWidth: 520,
-              fontSize: "clamp(14px, 2.6vw, 16px)",
-              lineHeight: 1.6,
+              maxWidth: 380,
+              fontSize: "clamp(14px, 2.4vw, 15px)",
+              lineHeight: 1.55,
               color: T.textSecondary,
             }}
           >
-            Consectetur adipiscing elit. Tap any offering to expand it — every card
-            is a room, waiting to be decorated.
+            Tap any card to expand it.
           </motion.p>
         </div>
 
         {/* Cards */}
         <LayoutGroup>
-          <div
-            style={{
-              maxWidth: 760,
-              margin: "0 auto",
-              display: "grid",
-              gridTemplateColumns: twoCol ? "1fr 1fr" : "1fr",
-              gap: 16,
-              paddingBottom: 8,
-            }}
-          >
-            {OFFERINGS.map((offering, i) => (
-              <OfferingCard
-                key={offering.id}
-                offering={offering}
-                index={i}
-                rootRef={feedRef}
-                onOpen={() => setSelectedId(offering.id)}
-              />
-            ))}
-          </div>
+          {isMobile ? (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr",
+                gap: 12,
+                paddingBottom: 8,
+              }}
+            >
+              {OFFERINGS.map((offering, i) => (
+                <div
+                  key={offering.id}
+                  style={{ aspectRatio: "4 / 5", scrollSnapAlign: "start", scrollMarginTop: 12 }}
+                >
+                  <OfferingCard
+                    offering={offering}
+                    index={i}
+                    rootRef={feedRef}
+                    onOpen={() => setSelectedId(offering.id)}
+                  />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div
+              className="carousel-x"
+              style={{
+                display: "flex",
+                gap: 18,
+                overflowX: "auto",
+                scrollSnapType: "x mandatory",
+                padding: "4px 2px 20px",
+                margin: "0 -32px",
+                paddingLeft: 32,
+                paddingRight: 32,
+              }}
+            >
+              {OFFERINGS.map((offering, i) => (
+                <div
+                  key={offering.id}
+                  style={{
+                    width: 264,
+                    aspectRatio: "4 / 5",
+                    flexShrink: 0,
+                    scrollSnapAlign: "start",
+                  }}
+                >
+                  <OfferingCard
+                    offering={offering}
+                    index={i}
+                    rootRef={feedRef}
+                    onOpen={() => setSelectedId(offering.id)}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Expanded sheet */}
           <AnimatePresence>
@@ -172,18 +215,15 @@ export default function Home() {
         </LayoutGroup>
       </main>
 
-      {/* Dock: global AI composer */}
+      {/* Dock: full-width flush AI composer */}
       <div
         style={{
           flexShrink: 0,
-          padding: isMobile ? "10px 16px 16px" : "14px 32px 20px",
           borderTop: `1px solid ${T.border}`,
-          background: `linear-gradient(to top, ${T.bg}, ${T.bg})`,
-          display: "flex",
-          justifyContent: "center",
+          background: T.surface,
         }}
       >
-        <ChatComposer />
+        <ChatComposer flush />
       </div>
     </div>
   );

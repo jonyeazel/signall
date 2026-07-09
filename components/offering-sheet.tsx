@@ -5,6 +5,7 @@ import { X, Check, ArrowRight } from "lucide-react";
 import { type Offering } from "../lib/offerings";
 import { T, SPRING, SPRING_SOFT } from "../lib/theme";
 import { ChatComposer } from "./chat-composer";
+import { HatchPlaceholder } from "./hatch-placeholder";
 
 const content = {
   hidden: { opacity: 0, y: 14 },
@@ -24,8 +25,6 @@ export function OfferingSheet({
   isMobile: boolean;
   onClose: () => void;
 }) {
-  const Icon = offering.icon;
-
   const handleDragEnd = (_: unknown, info: PanInfo) => {
     if (info.offset.y > 120 || info.velocity.y > 500) onClose();
   };
@@ -91,69 +90,43 @@ export function OfferingSheet({
         <div
           style={{
             overflowY: "auto",
-            padding: isMobile ? "16px 22px 22px" : "26px 28px 28px",
+            padding: isMobile ? "0 20px 22px" : "0 28px 28px",
             display: "flex",
             flexDirection: "column",
-            gap: 22,
+            gap: 20,
           }}
         >
-          {/* Header */}
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 16, minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                <motion.div
-                  layoutId={`icon-${offering.id}`}
-                  style={{
-                    width: 54,
-                    height: 54,
-                    borderRadius: 15,
-                    background: T.ink,
-                    color: "#fff",
-                    display: "grid",
-                    placeItems: "center",
-                    flexShrink: 0,
-                  }}
-                >
-                  <Icon size={25} strokeWidth={1.6} />
-                </motion.div>
-                <motion.span
-                  layoutId={`index-${offering.id}`}
-                  style={{
-                    fontFamily: "var(--font-geist-mono), monospace",
-                    fontSize: 12,
-                    letterSpacing: "0.08em",
-                    color: T.textTertiary,
-                  }}
-                >
-                  {offering.index}
-                </motion.span>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <motion.h2
-                  layoutId={`title-${offering.id}`}
-                  style={{
-                    margin: 0,
-                    fontSize: 27,
-                    fontWeight: 600,
-                    letterSpacing: "-0.025em",
-                    color: T.textPrimary,
-                    lineHeight: 1.1,
-                  }}
-                >
-                  {offering.title}
-                </motion.h2>
-                <motion.p
-                  variants={content}
-                  initial="hidden"
-                  animate="show"
-                  custom={0}
-                  style={{ margin: 0, fontSize: 15, lineHeight: 1.55, color: T.textSecondary }}
-                >
-                  {offering.tagline}
-                </motion.p>
-              </div>
-            </div>
-
+          {/* Full-bleed morphing banner */}
+          <HatchPlaceholder
+            layoutId={`media-${offering.id}`}
+            radius={0}
+            style={{
+              height: isMobile ? 150 : 190,
+              marginLeft: isMobile ? -20 : -28,
+              marginRight: isMobile ? -20 : -28,
+              marginTop: isMobile ? 0 : 0,
+              width: "auto",
+            }}
+          >
+            <motion.span
+              layoutId={`index-${offering.id}`}
+              style={{
+                position: "absolute",
+                top: 14,
+                left: 15,
+                fontFamily: "var(--font-geist-mono), monospace",
+                fontSize: 11,
+                letterSpacing: "0.1em",
+                color: T.textTertiary,
+                background: "rgba(255,255,255,0.72)",
+                backdropFilter: "blur(4px)",
+                WebkitBackdropFilter: "blur(4px)",
+                padding: "3px 8px",
+                borderRadius: 999,
+              }}
+            >
+              {offering.index}
+            </motion.span>
             <motion.button
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -162,19 +135,49 @@ export function OfferingSheet({
               aria-label="Close"
               whileTap={{ scale: 0.9 }}
               style={{
-                width: 36,
-                height: 36,
+                position: "absolute",
+                top: 12,
+                right: 13,
+                width: 34,
+                height: 34,
                 borderRadius: "50%",
-                background: T.ghost,
+                background: "rgba(255,255,255,0.82)",
+                backdropFilter: "blur(4px)",
+                WebkitBackdropFilter: "blur(4px)",
                 border: `1px solid ${T.border}`,
                 color: T.textSecondary,
                 display: "grid",
                 placeItems: "center",
-                flexShrink: 0,
               }}
             >
               <X size={17} strokeWidth={1.9} />
             </motion.button>
+          </HatchPlaceholder>
+
+          {/* Title + tagline */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+            <motion.h2
+              layoutId={`title-${offering.id}`}
+              style={{
+                margin: 0,
+                fontSize: 25,
+                fontWeight: 600,
+                letterSpacing: "-0.025em",
+                color: T.textPrimary,
+                lineHeight: 1.1,
+              }}
+            >
+              {offering.title}
+            </motion.h2>
+            <motion.p
+              variants={content}
+              initial="hidden"
+              animate="show"
+              custom={0}
+              style={{ margin: 0, fontSize: 14.5, lineHeight: 1.55, color: T.textSecondary }}
+            >
+              {offering.tagline}
+            </motion.p>
           </div>
 
           {/* Description */}
