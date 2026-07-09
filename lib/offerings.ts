@@ -15,6 +15,7 @@ export type Offering = {
   icon: LucideIcon;
   title: string;
   tagline: string;
+  price: string;
   description: string;
   tags: string[];
   features: string[];
@@ -33,7 +34,8 @@ export const OFFERINGS: Offering[] = [
     index: "01",
     icon: Sparkles,
     title: "Lorem Lumen",
-    tagline: "Consectetur adipiscing elit sed do eiusmod.",
+    tagline: "Consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore.",
+    price: "$49/mo",
     description:
       "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate.",
     tags: ["Lorem", "Ipsum", "Dolor"],
@@ -55,7 +57,8 @@ export const OFFERINGS: Offering[] = [
     index: "02",
     icon: Layers,
     title: "Ipsum Strata",
-    tagline: "Tempor incididunt ut labore et dolore.",
+    tagline: "Tempor incididunt ut labore et dolore magna aliqua enim ad minim.",
+    price: "$120",
     description:
       "Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.",
     tags: ["Strata", "Nova", "Flux"],
@@ -77,7 +80,8 @@ export const OFFERINGS: Offering[] = [
     index: "03",
     icon: Orbit,
     title: "Dolor Orbit",
-    tagline: "Magna aliqua ut enim ad minim veniam.",
+    tagline: "Magna aliqua ut enim ad minim veniam, quis nostrud exercitation.",
+    price: "$89/mo",
     description:
       "Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla.",
     tags: ["Orbit", "Ring", "Path"],
@@ -99,7 +103,8 @@ export const OFFERINGS: Offering[] = [
     index: "04",
     icon: Compass,
     title: "Amet Compass",
-    tagline: "Quis nostrud exercitation ullamco laboris.",
+    tagline: "Quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea.",
+    price: "$240",
     description:
       "Et harum quidem rerum facilis est et expedita distinctio. Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime.",
     tags: ["Compass", "Guide", "True"],
@@ -121,7 +126,8 @@ export const OFFERINGS: Offering[] = [
     index: "05",
     icon: Boxes,
     title: "Elit Modules",
-    tagline: "Nisi ut aliquip ex ea commodo consequat.",
+    tagline: "Nisi ut aliquip ex ea commodo consequat duis aute irure dolor.",
+    price: "$32/mo",
     description:
       "Delectus, ut aut reiciendis voluptatibus maiores alias consequatur aut perferendis doloribus asperiores repellat. Sed ut perspiciatis unde omnis iste natus error.",
     tags: ["Modular", "Grid", "Kit"],
@@ -143,7 +149,8 @@ export const OFFERINGS: Offering[] = [
     index: "06",
     icon: Waves,
     title: "Sed Waves",
-    tagline: "Duis aute irure dolor in reprehenderit.",
+    tagline: "Duis aute irure dolor in reprehenderit in voluptate velit esse.",
+    price: "$75/mo",
     description:
       "Voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim.",
     tags: ["Waves", "Flow", "Calm"],
@@ -165,7 +172,8 @@ export const OFFERINGS: Offering[] = [
     index: "07",
     icon: Aperture,
     title: "Eiusmod Aperture",
-    tagline: "Ut labore et dolore magna aliqua enim.",
+    tagline: "Ut labore et dolore magna aliqua enim ad minim veniam quis.",
+    price: "$160",
     description:
       "Quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt neque porro quisquam est, qui dolorem ipsum quia dolor sit amet consectetur adipisci.",
     tags: ["Aperture", "Lens", "Focus"],

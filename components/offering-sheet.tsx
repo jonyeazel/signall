@@ -154,21 +154,35 @@ export function OfferingSheet({
             </motion.button>
           </HatchPlaceholder>
 
-          {/* Title + tagline */}
+          {/* Title + price + tagline */}
           <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-            <motion.h2
-              layoutId={`title-${offering.id}`}
-              style={{
-                margin: 0,
-                fontSize: 25,
-                fontWeight: 600,
-                letterSpacing: "-0.025em",
-                color: T.textPrimary,
-                lineHeight: 1.1,
-              }}
-            >
-              {offering.title}
-            </motion.h2>
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 14 }}>
+              <motion.h2
+                layoutId={`title-${offering.id}`}
+                style={{
+                  margin: 0,
+                  fontSize: 25,
+                  fontWeight: 600,
+                  letterSpacing: "-0.025em",
+                  color: T.textPrimary,
+                  lineHeight: 1.1,
+                }}
+              >
+                {offering.title}
+              </motion.h2>
+              <motion.span
+                layoutId={`price-${offering.id}`}
+                style={{
+                  fontSize: 20,
+                  fontWeight: 600,
+                  letterSpacing: "-0.02em",
+                  color: T.textPrimary,
+                  flexShrink: 0,
+                }}
+              >
+                {offering.price}
+              </motion.span>
+            </div>
             <motion.p
               variants={content}
               initial="hidden"

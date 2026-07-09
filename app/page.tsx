@@ -11,9 +11,21 @@ import { T } from "../lib/theme";
 
 export default function Home() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [viewportH, setViewportH] = useState(0);
   const feedRef = useRef<HTMLElement>(null);
 
   const isMobile = useMediaQuery("(max-width: 640px)");
+
+  // Measure the scroll viewport so mobile cards can fill it exactly for clean snap.
+  useEffect(() => {
+    const el = feedRef.current;
+    if (!el) return;
+    const measure = () => setViewportH(el.clientHeight);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const selected = OFFERINGS.find((o) => o.id === selectedId) ?? null;
 
@@ -96,9 +108,9 @@ export default function Home() {
           flex: 1,
           overflowY: selected ? "hidden" : "auto",
           minHeight: 0,
-          padding: isMobile ? "16px 8px 8px" : "36px 32px 16px",
+          padding: isMobile ? "0 8px" : "36px 32px 16px",
           WebkitOverflowScrolling: "touch",
-          scrollSnapType: isMobile ? "y proximity" : undefined,
+          scrollSnapType: isMobile ? "y mandatory" : undefined,
         }}
       >
         {/* Hero */}
@@ -107,7 +119,7 @@ export default function Home() {
             maxWidth: 760,
             margin: "0 auto",
             textAlign: "center",
-            padding: isMobile ? "6px 8px 20px" : "8px 0 28px",
+            padding: isMobile ? "22px 8px 16px" : "8px 0 28px",
           }}
         >
           <motion.h1
@@ -144,18 +156,17 @@ export default function Home() {
         {/* Cards */}
         <LayoutGroup>
           {isMobile ? (
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr",
-                gap: 12,
-                paddingBottom: 8,
-              }}
-            >
+            <div style={{ display: "flex", flexDirection: "column" }}>
               {OFFERINGS.map((offering, i) => (
                 <div
                   key={offering.id}
-                  style={{ aspectRatio: "4 / 5", scrollSnapAlign: "start", scrollMarginTop: 12 }}
+                  style={{
+                    height: viewportH ? viewportH : "82dvh",
+                    paddingBottom: 10,
+                    scrollSnapAlign: "start",
+                    scrollSnapStop: "always",
+                    display: "flex",
+                  }}
                 >
                   <OfferingCard
                     offering={offering}
@@ -215,15 +226,18 @@ export default function Home() {
         </LayoutGroup>
       </main>
 
-      {/* Dock: full-width flush AI composer */}
+      {/* Dock: flush full-width on mobile, centered on desktop */}
       <div
         style={{
           flexShrink: 0,
           borderTop: `1px solid ${T.border}`,
           background: T.surface,
+          padding: isMobile ? 0 : "14px 20px",
+          display: "flex",
+          justifyContent: "center",
         }}
       >
-        <ChatComposer flush />
+        <ChatComposer flush={isMobile} placeholder="Ask anything, or describe what to build…" />
       </div>
     </div>
   );

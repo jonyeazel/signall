@@ -76,8 +76,8 @@ export function OfferingCard({
         </HatchPlaceholder>
 
         {/* Content */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: "0 4px 4px" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "2px 4px 4px" }}>
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
             <motion.h3
               layoutId={`title-${offering.id}`}
               style={{
@@ -91,6 +91,55 @@ export function OfferingCard({
             >
               {offering.title}
             </motion.h3>
+            <motion.span
+              layoutId={`price-${offering.id}`}
+              style={{
+                fontSize: 15,
+                fontWeight: 600,
+                letterSpacing: "-0.01em",
+                color: T.textPrimary,
+                flexShrink: 0,
+              }}
+            >
+              {offering.price}
+            </motion.span>
+          </div>
+
+          {/* Two-line description */}
+          <p
+            style={{
+              margin: 0,
+              fontSize: 12.5,
+              lineHeight: 1.45,
+              color: T.textSecondary,
+              display: "-webkit-box",
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+            }}
+          >
+            {offering.tagline}
+          </p>
+
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginTop: 2 }}>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {offering.tags.slice(0, 2).map((tag) => (
+                <span
+                  key={tag}
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 500,
+                    color: T.textSecondary,
+                    background: T.bgSubtle,
+                    border: `1px solid ${T.border}`,
+                    borderRadius: 999,
+                    padding: "3px 9px",
+                  }}
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
             <div
               style={{
                 width: 30,
@@ -105,25 +154,6 @@ export function OfferingCard({
             >
               <ArrowUpRight size={15} strokeWidth={1.75} />
             </div>
-          </div>
-
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {offering.tags.slice(0, 2).map((tag) => (
-              <span
-                key={tag}
-                style={{
-                  fontSize: 11,
-                  fontWeight: 500,
-                  color: T.textSecondary,
-                  background: T.bgSubtle,
-                  border: `1px solid ${T.border}`,
-                  borderRadius: 999,
-                  padding: "3px 9px",
-                }}
-              >
-                {tag}
-              </span>
-            ))}
           </div>
         </div>
       </motion.button>
