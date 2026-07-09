@@ -1,207 +1,184 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import { ChatComposer } from "../components/chat-composer";
-
-// --- Greyscale template palette ---
-const t = {
-  gutter: "#EAEAEA",
-  bg: "#FAFAFA",
-  surface: "#FFFFFF",
-  border: "#E5E5E5",
-  borderActive: "#D0D0D0",
-  textPrimary: "#171717",
-  textSecondary: "#6E6E6E",
-  textTertiary: "#A0A0A0",
-  skeleton: "#EDEDED",
-};
-
-// Blank placeholder cards — the "rooms" waiting to be decorated.
-const CARDS = Array.from({ length: 7 }, (_, i) => i);
-
-const CARD_WIDTH = 322;
-const CARD_GAP = 16;
-const STRIDE = CARD_WIDTH + CARD_GAP; // 338
-const HALF_CARD = CARD_WIDTH / 2; // 161
-
-// A single blank card with a faint skeleton so it reads as "ready for content".
-function BlankCard({ active }: { active: boolean }) {
-  return (
-    <div
-      style={{
-        flexShrink: 0,
-        width: `${CARD_WIDTH}px`,
-        height: `${CARD_WIDTH}px`,
-        background: t.surface,
-        border: `1px solid ${active ? t.borderActive : t.border}`,
-        borderRadius: "16px",
-        padding: "24px",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between",
-        scrollSnapAlign: "center",
-        transform: active ? "scale(1)" : "scale(0.92)",
-        opacity: active ? 1 : 0.55,
-        transition:
-          "transform 150ms ease-out, opacity 150ms ease-out, border-color 150ms ease-out",
-      }}
-    >
-      {/* Top skeleton: avatar + title lines */}
-      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-        <div
-          style={{
-            width: "36px",
-            height: "36px",
-            borderRadius: "10px",
-            background: t.skeleton,
-            flexShrink: 0,
-          }}
-        />
-        <div style={{ display: "flex", flexDirection: "column", gap: "7px" }}>
-          <div style={{ width: "120px", height: "10px", borderRadius: "5px", background: t.skeleton }} />
-          <div style={{ width: "72px", height: "8px", borderRadius: "4px", background: t.skeleton }} />
-        </div>
-      </div>
-
-      {/* Bottom skeleton: body lines + chips */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-        <div style={{ width: "100%", height: "9px", borderRadius: "5px", background: t.skeleton }} />
-        <div style={{ width: "80%", height: "9px", borderRadius: "5px", background: t.skeleton }} />
-        <div style={{ display: "flex", gap: "6px", marginTop: "4px" }}>
-          <div style={{ width: "48px", height: "18px", borderRadius: "6px", background: t.skeleton }} />
-          <div style={{ width: "62px", height: "18px", borderRadius: "6px", background: t.skeleton }} />
-          <div style={{ width: "40px", height: "18px", borderRadius: "6px", background: t.skeleton }} />
-        </div>
-      </div>
-    </div>
-  );
-}
+import { OfferingCard } from "../components/offering-card";
+import { OfferingSheet } from "../components/offering-sheet";
+import { OFFERINGS } from "../lib/offerings";
+import { useMediaQuery } from "../hooks/use-media-query";
+import { T } from "../lib/theme";
 
 export default function Home() {
-  const [activeCardIndex, setActiveCardIndex] = useState(0);
-  const carouselRef = useRef<HTMLDivElement>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const feedRef = useRef<HTMLElement>(null);
 
-  const handleCarouselScroll = useCallback(() => {
-    if (!carouselRef.current) return;
-    const container = carouselRef.current;
-    const scrollCenter = container.scrollLeft + container.clientWidth / 2;
-    const paddingOffset = container.clientWidth / 2 - HALF_CARD;
-    const newIndex = Math.round((scrollCenter - paddingOffset) / STRIDE);
-    const clamped = Math.max(0, Math.min(CARDS.length - 1, newIndex));
-    if (clamped !== activeCardIndex) setActiveCardIndex(clamped);
-  }, [activeCardIndex]);
+  const isMobile = useMediaQuery("(max-width: 640px)");
+  const twoCol = useMediaQuery("(min-width: 760px)");
 
-  const scrollToCard = useCallback((index: number) => {
-    if (!carouselRef.current) return;
-    const paddingOffset = carouselRef.current.clientWidth / 2 - HALF_CARD;
-    carouselRef.current.scrollTo({
-      left: index * STRIDE - paddingOffset + HALF_CARD,
-      behavior: "smooth",
-    });
-  }, []);
+  const selected = OFFERINGS.find((o) => o.id === selectedId) ?? null;
+
+  const close = useCallback(() => setSelectedId(null), []);
+
+  // Lock scroll + Escape-to-close while a sheet is open.
+  useEffect(() => {
+    if (!selected) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") close();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selected, close]);
 
   return (
     <div
       style={{
         position: "fixed",
-        inset: "12px",
-        background: t.bg,
-        borderRadius: "24px",
-        border: `1px solid ${t.border}`,
+        inset: 12,
+        background: T.bg,
+        borderRadius: 24,
+        border: `1px solid ${T.border}`,
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
       }}
     >
-      {/* --- Main content --- */}
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-          gap: "24px",
-          padding: "24px 32px 0",
-          minHeight: 0,
-          overflow: "hidden",
-        }}
-      >
-        {/* Hero */}
-        <div style={{ textAlign: "center", maxWidth: "620px" }}>
-          <h1
-            style={{
-              fontSize: "38px",
-              fontWeight: 600,
-              color: t.textPrimary,
-              letterSpacing: "-0.03em",
-              lineHeight: 1.15,
-              margin: "0 0 12px 0",
-            }}
-          >
-            Lorem ipsum dolor sit amet
-          </h1>
-          <p
-            style={{
-              fontSize: "15px",
-              lineHeight: 1.6,
-              color: t.textSecondary,
-              margin: 0,
-            }}
-          >
-            Consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore
-            et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
-            exercitation.
-          </p>
-        </div>
-
-        {/* Carousel of blank cards */}
-        <div
-          ref={carouselRef}
-          className="carousel-scroll"
-          onScroll={handleCarouselScroll}
-          style={{
-            display: "flex",
-            gap: `${CARD_GAP}px`,
-            overflowX: "scroll",
-            scrollSnapType: "x mandatory",
-            scrollBehavior: "smooth",
-            padding: `0 calc(50% - ${HALF_CARD}px)`,
-            width: "100%",
-            WebkitOverflowScrolling: "touch",
-          }}
-        >
-          {CARDS.map((i) => (
-            <BlankCard key={i} active={activeCardIndex === i} />
-          ))}
-        </div>
-
-        {/* Carousel position dots */}
-        <div style={{ display: "flex", gap: "6px", justifyContent: "center" }}>
-          {CARDS.map((i) => (
-            <button
-              key={i}
-              aria-label={`Go to card ${i + 1}`}
-              onClick={() => scrollToCard(i)}
-              style={{
-                width: activeCardIndex === i ? "16px" : "6px",
-                height: "6px",
-                borderRadius: "3px",
-                background: activeCardIndex === i ? t.textPrimary : t.border,
-                border: "none",
-                padding: 0,
-                transition: "all 150ms ease-out",
-              }}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* --- Dock: AI chat composer --- */}
+      {/* Top bar */}
       <div
         style={{
           flexShrink: 0,
-          padding: "0 32px 20px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "16px 22px",
+          borderBottom: `1px solid ${T.border}`,
+        }}
+      >
+        <span
+          style={{
+            fontFamily: "var(--font-geist-mono), monospace",
+            fontSize: 12,
+            letterSpacing: "0.14em",
+            color: T.textSecondary,
+            textTransform: "uppercase",
+          }}
+        >
+          Template
+        </span>
+        <span style={{ display: "flex", alignItems: "center", gap: 7 }}>
+          <span
+            style={{
+              width: 7,
+              height: 7,
+              borderRadius: "50%",
+              background: "#22c55e",
+              boxShadow: "0 0 0 3px rgba(34,197,94,0.15)",
+            }}
+          />
+          <span
+            style={{
+              fontFamily: "var(--font-geist-mono), monospace",
+              fontSize: 11,
+              letterSpacing: "0.12em",
+              color: T.textTertiary,
+              textTransform: "uppercase",
+            }}
+          >
+            System Ready
+          </span>
+        </span>
+      </div>
+
+      {/* Scrollable feed */}
+      <main
+        ref={feedRef}
+        className="feed-scroll"
+        style={{
+          flex: 1,
+          overflowY: selected ? "hidden" : "auto",
+          minHeight: 0,
+          padding: isMobile ? "22px 18px 12px" : "40px 32px 20px",
+          WebkitOverflowScrolling: "touch",
+        }}
+      >
+        {/* Hero */}
+        <div style={{ maxWidth: 760, margin: "0 auto", textAlign: "center", padding: "8px 0 30px" }}>
+          <motion.h1
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            style={{
+              margin: "0 0 14px",
+              fontSize: "clamp(30px, 6vw, 44px)",
+              fontWeight: 600,
+              letterSpacing: "-0.035em",
+              lineHeight: 1.08,
+              color: T.textPrimary,
+            }}
+          >
+            Lorem ipsum dolor sit amet
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.06, ease: [0.22, 1, 0.36, 1] }}
+            style={{
+              margin: "0 auto",
+              maxWidth: 520,
+              fontSize: "clamp(14px, 2.6vw, 16px)",
+              lineHeight: 1.6,
+              color: T.textSecondary,
+            }}
+          >
+            Consectetur adipiscing elit. Tap any offering to expand it — every card
+            is a room, waiting to be decorated.
+          </motion.p>
+        </div>
+
+        {/* Cards */}
+        <LayoutGroup>
+          <div
+            style={{
+              maxWidth: 760,
+              margin: "0 auto",
+              display: "grid",
+              gridTemplateColumns: twoCol ? "1fr 1fr" : "1fr",
+              gap: 16,
+              paddingBottom: 8,
+            }}
+          >
+            {OFFERINGS.map((offering, i) => (
+              <OfferingCard
+                key={offering.id}
+                offering={offering}
+                index={i}
+                rootRef={feedRef}
+                onOpen={() => setSelectedId(offering.id)}
+              />
+            ))}
+          </div>
+
+          {/* Expanded sheet */}
+          <AnimatePresence>
+            {selected && (
+              <OfferingSheet
+                key={selected.id}
+                offering={selected}
+                isMobile={isMobile}
+                onClose={close}
+              />
+            )}
+          </AnimatePresence>
+        </LayoutGroup>
+      </main>
+
+      {/* Dock: global AI composer */}
+      <div
+        style={{
+          flexShrink: 0,
+          padding: isMobile ? "10px 16px 16px" : "14px 32px 20px",
+          borderTop: `1px solid ${T.border}`,
+          background: `linear-gradient(to top, ${T.bg}, ${T.bg})`,
           display: "flex",
           justifyContent: "center",
         }}
