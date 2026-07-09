@@ -5,6 +5,7 @@ import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import { ChatComposer } from "../components/chat-composer";
 import { OfferingCard } from "../components/offering-card";
 import { OfferingSheet } from "../components/offering-sheet";
+import { DesktopCarousel } from "../components/desktop-carousel";
 import { OFFERINGS } from "../lib/offerings";
 import { useMediaQuery } from "../hooks/use-media-query";
 import { T } from "../lib/theme";
@@ -103,7 +104,7 @@ export default function Home() {
       {/* Scrollable feed */}
       <main
         ref={feedRef}
-        className="feed-scroll"
+        className={isMobile ? "carousel-x" : "feed-scroll"}
         style={{
           flex: 1,
           overflowY: selected ? "hidden" : "auto",
@@ -178,37 +179,8 @@ export default function Home() {
               ))}
             </div>
           ) : (
-            <div
-              className="carousel-x"
-              style={{
-                display: "flex",
-                gap: 18,
-                overflowX: "auto",
-                scrollSnapType: "x mandatory",
-                padding: "4px 2px 20px",
-                margin: "0 -32px",
-                paddingLeft: 32,
-                paddingRight: 32,
-              }}
-            >
-              {OFFERINGS.map((offering, i) => (
-                <div
-                  key={offering.id}
-                  style={{
-                    width: 264,
-                    aspectRatio: "4 / 5",
-                    flexShrink: 0,
-                    scrollSnapAlign: "start",
-                  }}
-                >
-                  <OfferingCard
-                    offering={offering}
-                    index={i}
-                    rootRef={feedRef}
-                    onOpen={() => setSelectedId(offering.id)}
-                  />
-                </div>
-              ))}
+            <div style={{ margin: "0 -32px" }}>
+              <DesktopCarousel offerings={OFFERINGS} rootRef={feedRef} onOpen={setSelectedId} />
             </div>
           )}
 
@@ -226,13 +198,13 @@ export default function Home() {
         </LayoutGroup>
       </main>
 
-      {/* Dock: flush full-width on mobile, centered on desktop */}
+      {/* Dock: flush full-width on mobile, centered & transparent on desktop */}
       <div
         style={{
           flexShrink: 0,
-          borderTop: `1px solid ${T.border}`,
-          background: T.surface,
-          padding: isMobile ? 0 : "14px 20px",
+          borderTop: isMobile ? `1px solid ${T.border}` : "none",
+          background: isMobile ? T.surface : "transparent",
+          padding: isMobile ? 0 : "12px 20px 18px",
           display: "flex",
           justifyContent: "center",
         }}
