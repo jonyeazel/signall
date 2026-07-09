@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Signall — Cognitive Primitives",
-  description: "OpenEnv Agentic Training. 10 RL environments for autonomous economic agents.",
+  title: "Template",
+  description: "A clean, AI-ready starting point.",
 };
 
 export default function RootLayout({
@@ -26,7 +26,7 @@ export default function RootLayout({
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        style={{ background: "#ECEAE4", color: "#191919" }}
+        style={{ background: "#EAEAEA", color: "#171717" }}
       >
         {children}
       </body>
