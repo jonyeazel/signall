@@ -62,43 +62,112 @@ export default function Home() {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "14px 20px",
-          borderBottom: `1px solid ${T.border}`,
+          padding: isMobile ? "10px 10px 0" : "14px 20px",
+          borderBottom: isMobile ? "none" : `1px solid ${T.border}`,
         }}
       >
-        <span
-          style={{
-            fontFamily: "var(--font-geist-mono), monospace",
-            fontSize: 12,
-            letterSpacing: "0.14em",
-            color: T.textSecondary,
-            textTransform: "uppercase",
-          }}
-        >
-          Template
-        </span>
-        <span style={{ display: "flex", alignItems: "center", gap: 7 }}>
-          <span
-            style={{
-              width: 7,
-              height: 7,
-              borderRadius: "50%",
-              background: "#22c55e",
-              boxShadow: "0 0 0 3px rgba(34,197,94,0.15)",
-            }}
-          />
-          <span
-            style={{
-              fontFamily: "var(--font-geist-mono), monospace",
-              fontSize: 11,
-              letterSpacing: "0.12em",
-              color: T.textTertiary,
-              textTransform: "uppercase",
-            }}
-          >
-            System Ready
-          </span>
-        </span>
+        {isMobile ? (
+          <>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+              <div
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: "50%",
+                  background: T.ink,
+                  color: "#fff",
+                  display: "grid",
+                  placeItems: "center",
+                  fontSize: 15,
+                  fontWeight: 600,
+                  letterSpacing: "-0.02em",
+                  flexShrink: 0,
+                }}
+                aria-hidden
+              >
+                L
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+                <span
+                  style={{
+                    fontSize: 15,
+                    fontWeight: 600,
+                    letterSpacing: "-0.02em",
+                    color: T.textPrimary,
+                    lineHeight: 1.15,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Lorem Studio
+                </span>
+                <span
+                  style={{
+                    fontSize: 12,
+                    color: T.textTertiary,
+                    lineHeight: 1.2,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Ipsum dolor sit
+                </span>
+              </div>
+            </div>
+            <button
+              type="button"
+              style={{
+                flexShrink: 0,
+                height: 38,
+                padding: "0 18px",
+                borderRadius: 999,
+                background: T.ink,
+                color: "#fff",
+                border: "none",
+                fontSize: 13.5,
+                fontWeight: 600,
+                letterSpacing: "-0.01em",
+                cursor: "pointer",
+              }}
+            >
+              Get started
+            </button>
+          </>
+        ) : (
+          <>
+            <span
+              style={{
+                fontFamily: "var(--font-geist-mono), monospace",
+                fontSize: 12,
+                letterSpacing: "0.14em",
+                color: T.textSecondary,
+                textTransform: "uppercase",
+              }}
+            >
+              Template
+            </span>
+            <span style={{ display: "flex", alignItems: "center", gap: 7 }}>
+              <span
+                style={{
+                  width: 7,
+                  height: 7,
+                  borderRadius: "50%",
+                  background: "#22c55e",
+                  boxShadow: "0 0 0 3px rgba(34,197,94,0.15)",
+                }}
+              />
+              <span
+                style={{
+                  fontFamily: "var(--font-geist-mono), monospace",
+                  fontSize: 11,
+                  letterSpacing: "0.12em",
+                  color: T.textTertiary,
+                  textTransform: "uppercase",
+                }}
+              >
+                System Ready
+              </span>
+            </span>
+          </>
+        )}
       </div>
 
       {/* Scrollable feed */}
@@ -109,18 +178,19 @@ export default function Home() {
           flex: 1,
           overflowY: selected ? "hidden" : "auto",
           minHeight: 0,
-          padding: isMobile ? "0 8px" : "36px 32px 16px",
+          padding: isMobile ? "8px 8px 0" : "36px 32px 16px",
           WebkitOverflowScrolling: "touch",
           scrollSnapType: isMobile ? "y mandatory" : undefined,
         }}
       >
-        {/* Hero */}
+        {/* Hero (desktop only) */}
+        {!isMobile && (
         <div
           style={{
             maxWidth: 760,
             margin: "0 auto",
             textAlign: "center",
-            padding: isMobile ? "22px 8px 16px" : "8px 0 28px",
+            padding: "8px 0 28px",
           }}
         >
           <motion.h1
@@ -153,6 +223,7 @@ export default function Home() {
             Tap any card to expand it.
           </motion.p>
         </div>
+        )}
 
         {/* Cards */}
         <LayoutGroup>
@@ -163,7 +234,7 @@ export default function Home() {
                   key={offering.id}
                   style={{
                     height: viewportH ? viewportH : "82dvh",
-                    paddingBottom: 10,
+                    paddingBottom: 8,
                     scrollSnapAlign: "start",
                     scrollSnapStop: "always",
                     display: "flex",
