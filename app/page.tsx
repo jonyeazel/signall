@@ -255,12 +255,14 @@ export default function Home() {
           overflowY: selected ? "hidden" : "auto",
           overflowX: "hidden",
           minHeight: 0,
-          padding: isMobile ? "0 8px" : "0 32px",
+          padding: isMobile ? "0" : "0 32px",
           display: isMobile ? undefined : "flex",
           flexDirection: isMobile ? undefined : "column",
           justifyContent: isMobile ? undefined : "center",
           WebkitOverflowScrolling: "touch",
           scrollSnapType: isMobile ? "y mandatory" : undefined,
+          touchAction: isMobile ? "pan-y" : undefined,
+          overscrollBehaviorY: isMobile ? "contain" : undefined,
         }}
       >
         <LayoutGroup>
@@ -271,8 +273,6 @@ export default function Home() {
                   key={offering.id}
                   style={{
                     height: viewportH ? viewportH : "82dvh",
-                    paddingTop: 8,
-                    paddingBottom: 8,
                     scrollSnapAlign: "start",
                     scrollSnapStop: "always",
                     display: "flex",

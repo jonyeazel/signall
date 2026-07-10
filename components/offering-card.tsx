@@ -43,12 +43,13 @@ export function OfferingCard({
             width: "100%",
             height: "100%",
             background: T.surface,
-            border: `1px solid ${T.border}`,
-            borderRadius: 24,
             overflow: "hidden",
           }}
         >
-          {/* Full-bleed gallery */}
+          {/* Full-bleed gallery — native horizontal scroll-snap.
+              touch-action: pan-x on the track + pan-y on the feed lets the
+              browser axis-lock: swipe sideways browses images, swipe up/down
+              pages products. A tap (no scroll) opens the PDP. */}
           <div
             onClick={onOpen}
             style={{ position: "absolute", inset: 0, cursor: "pointer" }}
@@ -57,30 +58,17 @@ export function OfferingCard({
               layoutId={`media-${offering.id}`}
               images={offering.images}
               alt={offering.title}
-              radius={24}
-              dotBottom={150}
-              scrollable={false}
-              tapToBrowse
+              radius={0}
+              dotBottom={160}
+              scrollable
               style={{ height: "100%", width: "100%" }}
             />
           </div>
 
-          {/* Top veil — keeps the floating header legible over the image */}
-          <div
-            aria-hidden
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              height: 132,
-              background: "linear-gradient(to bottom, rgba(251,251,251,0.92), rgba(251,251,251,0))",
-              pointerEvents: "none",
-              zIndex: 1,
-            }}
-          />
-
-          {/* Bottom overlay — hook + social proof + buy row */}
+          {/* Bottom content — hook + social proof + action row.
+              No gradient fade: the container is pointer-transparent so swipes
+              pass through to the gallery; only the action row captures taps.
+              A soft white text-halo keeps copy legible over any image. */}
           <div
             style={{
               position: "absolute",
@@ -88,12 +76,11 @@ export function OfferingCard({
               right: 0,
               bottom: 0,
               zIndex: 2,
-              padding: "56px 12px 12px",
+              padding: "12px 12px 14px",
               display: "flex",
               flexDirection: "column",
-              gap: 10,
-              background:
-                "linear-gradient(to top, rgba(251,251,251,0.98) 0%, rgba(251,251,251,0.96) 42%, rgba(251,251,251,0) 100%)",
+              gap: 12,
+              pointerEvents: "none",
             }}
           >
             <div style={{ display: "flex", flexDirection: "column", gap: 4, padding: "0 4px" }}>
@@ -105,6 +92,7 @@ export function OfferingCard({
                   lineHeight: 1.35,
                   letterSpacing: "-0.01em",
                   color: T.textPrimary,
+                  textShadow: "0 1px 12px rgba(251,251,251,0.9), 0 0 4px rgba(251,251,251,0.9)",
                   display: "-webkit-box",
                   WebkitLineClamp: 2,
                   WebkitBoxOrient: "vertical",
@@ -115,13 +103,22 @@ export function OfferingCard({
               </p>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <Star size={13} strokeWidth={0} fill={T.ink} />
-                <span style={{ fontSize: 12.5, color: T.textSecondary, letterSpacing: "-0.01em" }}>
+                <span
+                  style={{
+                    fontSize: 12.5,
+                    color: T.textSecondary,
+                    letterSpacing: "-0.01em",
+                    textShadow: "0 1px 12px rgba(251,251,251,0.9), 0 0 4px rgba(251,251,251,0.9)",
+                  }}
+                >
                   {offering.rating.toFixed(1)} · {offering.reviews.toLocaleString()} reviews
                 </span>
               </div>
             </div>
 
-            <CardActionBar id={offering.id} title={offering.title} price={offering.price} onBuy={onOpen} />
+            <div style={{ pointerEvents: "auto" }}>
+              <CardActionBar id={offering.id} title={offering.title} onBuy={onOpen} />
+            </div>
           </div>
         </motion.div>
       </motion.div>

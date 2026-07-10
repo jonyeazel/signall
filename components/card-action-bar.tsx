@@ -8,23 +8,21 @@ import { T, SPRING } from "../lib/theme";
 /**
  * The product card's action row.
  *
- * Default: a near-full-width "Add to cart" CTA + a small circular AI button.
- * The first job is frictionless buying (tap, tap, buy); the AI is secondary.
+ * Default: a near-full-width "Learn more" CTA (opens the PDP) + a small
+ * circular AI button. Browsing is the first job; the AI is secondary.
  *
  * Tapping AI morphs the circle (shared layoutId="ai-surface") into a full-width
- * input — effectively a second version of the CTA row — while the buy button
+ * input — effectively a second version of the CTA row — while the CTA button
  * gracefully makes room. Tapping close morphs it back.
  */
 export function CardActionBar({
   id,
   title,
-  price,
   onBuy,
   onAsk,
 }: {
   id: string;
   title: string;
-  price?: string;
   onBuy?: () => void;
   onAsk?: (value: string) => void;
 }) {
@@ -99,13 +97,7 @@ export function CardActionBar({
               gap: 8,
             }}
           >
-            <span>Buy Now</span>
-            {price && (
-              <>
-                <span aria-hidden style={{ opacity: 0.4 }}>·</span>
-                <span style={{ opacity: 0.75, fontWeight: 500 }}>{price}</span>
-              </>
-            )}
+            <span>Learn more</span>
           </motion.button>
         )}
       </AnimatePresence>

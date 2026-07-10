@@ -88,9 +88,9 @@ export function MobileHeader({
               src={offering.images[0] || "/placeholder.svg"}
               alt=""
               style={{
-                width: 42,
-                height: 42,
-                borderRadius: 12,
+                width: 40,
+                height: 40,
+                borderRadius: "50%",
                 flexShrink: 0,
                 objectFit: "cover",
                 border: `1px solid ${T.border}`,
