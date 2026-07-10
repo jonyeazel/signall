@@ -27,15 +27,39 @@ body {
   background: rgba(0, 0, 0, 0.12);
 }
 
-/* --- Carousel --- */
+/* --- Scroll areas --- */
 
-.carousel-scroll::-webkit-scrollbar {
+.carousel-x {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.carousel-x::-webkit-scrollbar {
   display: none;
 }
 
-.carousel-scroll {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+.feed-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.feed-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.feed-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* --- Cursor --- */

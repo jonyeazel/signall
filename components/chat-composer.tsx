@@ -17,9 +17,11 @@ const t = {
 export function ChatComposer({
   placeholder = "Ask anything, or describe what you want to build...",
   onSubmit,
+  flush = false,
 }: {
   placeholder?: string;
   onSubmit?: (value: string) => void;
+  flush?: boolean;
 }) {
   const [value, setValue] = useState("");
   const [focused, setFocused] = useState(false);
@@ -60,17 +62,19 @@ export function ChatComposer({
     <div
       style={{
         width: "100%",
-        maxWidth: "720px",
+        maxWidth: flush ? "100%" : "720px",
         background: t.surface,
-        border: `1px solid ${focused ? t.borderActive : t.border}`,
-        borderRadius: "24px",
-        padding: "12px 12px 10px",
+        border: flush ? "none" : `1px solid ${focused ? t.borderActive : t.border}`,
+        borderRadius: flush ? "0px" : "24px",
+        padding: flush ? "12px 16px 14px" : "12px 12px 10px",
         display: "flex",
         flexDirection: "column",
         gap: "6px",
-        boxShadow: focused
-          ? "0 8px 28px rgba(0,0,0,0.08)"
-          : "0 2px 10px rgba(0,0,0,0.04)",
+        boxShadow: flush
+          ? "none"
+          : focused
+            ? "0 8px 28px rgba(0,0,0,0.08)"
+            : "0 2px 10px rgba(0,0,0,0.04)",
         transition: "border-color 150ms ease-out, box-shadow 150ms ease-out",
       }}
     >
