@@ -140,7 +140,7 @@ export default function Home() {
           overflowY: selected ? "hidden" : "auto",
           overflowX: "hidden",
           minHeight: 0,
-          padding: isMobile ? 0 : "36px 32px 16px",
+          padding: isMobile ? "0 8px" : "36px 32px 16px",
           WebkitOverflowScrolling: "touch",
           scrollSnapType: isMobile ? "y mandatory" : undefined,
         }}
