@@ -59,7 +59,8 @@ export function OfferingCard({
               alt={offering.title}
               radius={24}
               dotBottom={150}
-              scrollable={imageScrollable}
+              scrollable={false}
+              tapToBrowse
               style={{ height: "100%", width: "100%" }}
             />
           </div>

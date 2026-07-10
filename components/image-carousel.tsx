@@ -23,6 +23,7 @@ export function ImageCarousel({
   dots = true,
   dotBottom = 12,
   scrollable = true,
+  tapToBrowse = false,
   imageFit = "cover",
   style,
   children,
@@ -35,6 +36,7 @@ export function ImageCarousel({
   dots?: boolean;
   dotBottom?: number;
   scrollable?: boolean;
+  tapToBrowse?: boolean;
   imageFit?: "cover" | "contain";
   style?: CSSProperties;
   children?: ReactNode;
@@ -88,7 +90,7 @@ export function ImageCarousel({
           height: "100%",
           overflowX: scrollable ? "auto" : "hidden",
           scrollSnapType: scrollable ? "x mandatory" : undefined,
-          touchAction: scrollable ? "pan-x" : undefined,
+          touchAction: scrollable ? "pan-x" : "pan-y",
           transform: scrollable ? undefined : `translateX(-${active * 100}%)`,
           transition: scrollable ? undefined : "transform 420ms cubic-bezier(0.22,1,0.36,1)",
         }}
@@ -125,6 +127,56 @@ export function ImageCarousel({
           </div>
         ))}
       </div>
+
+      {/* Tap zones — advance images by tapping the left/right edges. Center is
+          left uncovered so a tap there falls through to open the PDP. Each zone
+          stops propagation so browsing images never opens the sheet. */}
+      {tapToBrowse && slides > 1 && (
+        <>
+          <button
+            type="button"
+            aria-label="Previous image"
+            disabled={active === 0}
+            onClick={(e) => {
+              e.stopPropagation();
+              goTo(Math.max(0, active - 1));
+            }}
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "28%",
+              height: "70%",
+              background: "transparent",
+              border: "none",
+              padding: 0,
+              zIndex: 1,
+              cursor: active === 0 ? "default" : "pointer",
+            }}
+          />
+          <button
+            type="button"
+            aria-label="Next image"
+            disabled={active === slides - 1}
+            onClick={(e) => {
+              e.stopPropagation();
+              goTo(Math.min(slides - 1, active + 1));
+            }}
+            style={{
+              position: "absolute",
+              top: 0,
+              right: 0,
+              width: "28%",
+              height: "70%",
+              background: "transparent",
+              border: "none",
+              padding: 0,
+              zIndex: 1,
+              cursor: active === slides - 1 ? "default" : "pointer",
+            }}
+          />
+        </>
+      )}
 
       {dots && slides > 1 && (
         <div
