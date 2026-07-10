@@ -185,6 +185,7 @@ export default function Home() {
           barRef={headerRef}
           offering={OFFERINGS[activeIndex] ?? OFFERINGS[0]}
           cartCount={cartCount}
+          hidden={!!selected}
           onOpenCart={() => setCartOpen(true)}
           onOpenOverview={() => setOverview(true)}
         />
@@ -220,7 +221,7 @@ export default function Home() {
               }}
               aria-hidden
             >
-              L
+              F
             </div>
             <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
               <span
@@ -233,10 +234,10 @@ export default function Home() {
                   whiteSpace: "nowrap",
                 }}
               >
-                Lorem Studio
+                Form
               </span>
               <span style={{ fontSize: 13, color: T.textTertiary, lineHeight: 1.2, whiteSpace: "nowrap" }}>
-                Ipsum dolor sit
+                Considered objects
               </span>
             </div>
           </div>

@@ -33,12 +33,14 @@ const roundBtn = {
 export function MobileHeader({
   offering,
   cartCount,
+  hidden = false,
   onOpenCart,
   onOpenOverview,
   barRef,
 }: {
   offering: Offering;
   cartCount: number;
+  hidden?: boolean;
   onOpenCart: () => void;
   onOpenOverview: () => void;
   barRef?: RefObject<HTMLDivElement | null>;
@@ -59,6 +61,9 @@ export function MobileHeader({
         padding: "20px 20px 0",
         background: "transparent",
         pointerEvents: "none",
+        opacity: hidden ? 0 : 1,
+        transform: hidden ? "translateY(-6px)" : "translateY(0)",
+        transition: "opacity 220ms ease, transform 220ms ease",
       }}
     >
       {/* Active product identity — crossfades as cards scroll into view */}
@@ -116,7 +121,7 @@ export function MobileHeader({
       </div>
 
       {/* Functional affordances */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0, pointerEvents: "auto" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0, pointerEvents: hidden ? "none" : "auto" }}>
         <motion.button
           type="button"
           onClick={onOpenOverview}
