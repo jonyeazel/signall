@@ -18,11 +18,13 @@ import { T, SPRING } from "../lib/theme";
 export function CardActionBar({
   id,
   title,
+  price,
   onBuy,
   onAsk,
 }: {
   id: string;
   title: string;
+  price?: string;
   onBuy?: () => void;
   onAsk?: (value: string) => void;
 }) {
@@ -91,9 +93,19 @@ export function CardActionBar({
               letterSpacing: "-0.01em",
               cursor: "pointer",
               WebkitTapHighlightColor: "transparent",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
             }}
           >
-            Buy Now
+            <span>Buy Now</span>
+            {price && (
+              <>
+                <span aria-hidden style={{ opacity: 0.4 }}>·</span>
+                <span style={{ opacity: 0.75, fontWeight: 500 }}>{price}</span>
+              </>
+            )}
           </motion.button>
         )}
       </AnimatePresence>

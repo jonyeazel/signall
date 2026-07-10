@@ -35,6 +35,24 @@ export function OfferingCard({
         scrollable={imageScrollable}
         style={{ height: "100%", width: "100%" }}
       />
+      {/* Legibility bed for the floating header — keeps the product name
+          readable over any image while still feeling part of the card. */}
+      {withComposer && (
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 92,
+            borderRadius: "14px 14px 0 0",
+            background: "linear-gradient(to bottom, rgba(251,251,251,0.92), rgba(251,251,251,0))",
+            pointerEvents: "none",
+            zIndex: 1,
+          }}
+        />
+      )}
     </div>
   );
 
@@ -55,31 +73,34 @@ export function OfferingCard({
         WebkitTapHighlightColor: "transparent",
       }}
     >
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, width: "100%" }}>
-        <h3
-          style={{
-            margin: 0,
-            fontSize: 20,
-            fontWeight: 600,
-            letterSpacing: "-0.02em",
-            color: T.textPrimary,
-            lineHeight: 1.15,
-          }}
-        >
-          {offering.title}
-        </h3>
-        <span
-          style={{
-            fontSize: 18,
-            fontWeight: 600,
-            letterSpacing: "-0.01em",
-            color: T.textPrimary,
-            flexShrink: 0,
-          }}
-        >
-          {offering.price}
-        </span>
-      </div>
+      {/* Title/price live in the floating header on mobile — show here only on desktop */}
+      {!withComposer && (
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, width: "100%" }}>
+          <h3
+            style={{
+              margin: 0,
+              fontSize: 20,
+              fontWeight: 600,
+              letterSpacing: "-0.02em",
+              color: T.textPrimary,
+              lineHeight: 1.15,
+            }}
+          >
+            {offering.title}
+          </h3>
+          <span
+            style={{
+              fontSize: 18,
+              fontWeight: 600,
+              letterSpacing: "-0.01em",
+              color: T.textPrimary,
+              flexShrink: 0,
+            }}
+          >
+            {offering.price}
+          </span>
+        </div>
+      )}
 
       {/* Two-line description */}
       <p
@@ -133,7 +154,7 @@ export function OfferingCard({
 
           {/* Action row — near-full CTA + small circular AI that morphs into an input */}
           <div style={{ padding: "0 12px 12px" }}>
-            <CardActionBar id={offering.id} title={offering.title} onBuy={onOpen} />
+            <CardActionBar id={offering.id} title={offering.title} price={offering.price} onBuy={onOpen} />
           </div>
         </motion.div>
       </motion.div>
