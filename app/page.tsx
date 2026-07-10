@@ -13,7 +13,9 @@ import { T } from "../lib/theme";
 export default function Home() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [viewportH, setViewportH] = useState(0);
+  const [headerH, setHeaderH] = useState(0);
   const feedRef = useRef<HTMLElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
 
   const isMobile = useMediaQuery("(max-width: 640px)");
 
@@ -22,6 +24,17 @@ export default function Home() {
     const el = feedRef.current;
     if (!el) return;
     const measure = () => setViewportH(el.clientHeight);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // Measure the header so the expanded sheet always stops just below it.
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+    const measure = () => setHeaderH(el.offsetHeight);
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
@@ -55,15 +68,19 @@ export default function Home() {
         flexDirection: "column",
       }}
     >
-      {/* Top bar — profile identity + CTA (both breakpoints) */}
+      {/* Top bar — profile identity + CTA (always visible, above the sheet) */}
       <div
+        ref={headerRef}
         style={{
+          position: "relative",
+          zIndex: 60,
           flexShrink: 0,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           gap: 12,
           padding: isMobile ? "12px 16px 10px" : "16px 18px",
+          background: T.bg,
           borderBottom: "none",
         }}
       >
@@ -225,6 +242,7 @@ export default function Home() {
                 key={selected.id}
                 offering={selected}
                 isMobile={isMobile}
+                topInset={headerH}
                 onClose={close}
               />
             )}

@@ -1,11 +1,10 @@
 "use client";
 
-import { motion, type PanInfo } from "motion/react";
-import { X, Check, ArrowRight } from "lucide-react";
+import { motion, useDragControls, type PanInfo } from "motion/react";
+import { X, Check, Star, ShoppingBag, Truck, ShieldCheck } from "lucide-react";
 import { type Offering } from "../lib/offerings";
 import { T, SPRING, SPRING_SOFT } from "../lib/theme";
-import { ChatComposer } from "./chat-composer";
-import { HatchPlaceholder } from "./hatch-placeholder";
+import { ImageCarousel } from "./image-carousel";
 
 const content = {
   hidden: { opacity: 0, y: 14 },
@@ -19,12 +18,16 @@ const content = {
 export function OfferingSheet({
   offering,
   isMobile,
+  topInset = 0,
   onClose,
 }: {
   offering: Offering;
   isMobile: boolean;
+  topInset?: number;
   onClose: () => void;
 }) {
+  const dragControls = useDragControls();
+
   const handleDragEnd = (_: unknown, info: PanInfo) => {
     if (info.offset.y > 120 || info.velocity.y > 500) onClose();
   };
@@ -39,6 +42,7 @@ export function OfferingSheet({
         alignItems: isMobile ? "flex-end" : "center",
         justifyContent: "center",
         padding: isMobile ? 0 : 24,
+        paddingTop: isMobile ? topInset + 8 : 24,
       }}
     >
       {/* Scrim */}
@@ -61,53 +65,74 @@ export function OfferingSheet({
       <motion.div
         layoutId={`card-${offering.id}`}
         drag={isMobile ? "y" : false}
+        dragListener={false}
+        dragControls={dragControls}
         dragConstraints={{ top: 0, bottom: 0 }}
-        dragElastic={{ top: 0, bottom: 0.55 }}
+        dragElastic={{ top: 0, bottom: 0.5 }}
         onDragEnd={handleDragEnd}
         transition={SPRING}
         style={{
           position: "relative",
           width: "100%",
           maxWidth: isMobile ? "100%" : 560,
-          maxHeight: isMobile ? "92vh" : "88vh",
+          maxHeight: isMobile ? `calc(100dvh - ${topInset + 16}px)` : "88vh",
           background: T.surface,
           border: `1px solid ${T.border}`,
-          borderRadius: isMobile ? "28px 28px 0 0" : 28,
+          borderRadius: isMobile ? "26px 26px 0 0" : 28,
           boxShadow: "0 -8px 40px -12px rgba(0,0,0,0.22), 0 30px 60px -20px rgba(0,0,0,0.3)",
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
         }}
       >
-        {/* Drag handle (mobile) */}
-        {isMobile && (
-          <div style={{ display: "grid", placeItems: "center", padding: "10px 0 2px" }}>
-            <div style={{ width: 38, height: 5, borderRadius: 999, background: T.borderActive }} />
-          </div>
-        )}
-
         {/* Scrollable body */}
         <div
+          className="feed-scroll"
           style={{
+            flex: 1,
+            minHeight: 0,
             overflowY: "auto",
-            padding: isMobile ? "0 20px 22px" : "0 28px 28px",
+            WebkitOverflowScrolling: "touch",
             display: "flex",
             flexDirection: "column",
-            gap: 20,
           }}
         >
-          {/* Full-bleed morphing banner */}
-          <HatchPlaceholder
+          {/* Hero image carousel — full-bleed, paginated */}
+          <ImageCarousel
             layoutId={`media-${offering.id}`}
+            count={4}
             radius={0}
-            style={{
-              height: isMobile ? 150 : 190,
-              flexShrink: 0,
-              marginLeft: isMobile ? -20 : -28,
-              marginRight: isMobile ? -20 : -28,
-              width: "auto",
-            }}
+            style={{ height: isMobile ? 320 : 300, width: "100%", flexShrink: 0 }}
           >
+            {/* Drag handle (mobile) — starts the dismiss gesture */}
+            {isMobile && (
+              <div
+                onPointerDown={(e) => dragControls.start(e)}
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: 34,
+                  display: "grid",
+                  placeItems: "center",
+                  cursor: "grab",
+                  touchAction: "none",
+                }}
+              >
+                <div
+                  style={{
+                    marginTop: 10,
+                    width: 40,
+                    height: 5,
+                    borderRadius: 999,
+                    background: "rgba(20,20,20,0.25)",
+                    boxShadow: "0 0 0 1px rgba(255,255,255,0.5)",
+                  }}
+                />
+              </div>
+            )}
+
             <motion.span
               layoutId={`index-${offering.id}`}
               style={{
@@ -123,10 +148,12 @@ export function OfferingSheet({
                 WebkitBackdropFilter: "blur(4px)",
                 padding: "3px 8px",
                 borderRadius: 999,
+                pointerEvents: "none",
               }}
             >
               {offering.index}
             </motion.span>
+
             <motion.button
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -141,7 +168,7 @@ export function OfferingSheet({
                 width: 34,
                 height: 34,
                 borderRadius: "50%",
-                background: "rgba(255,255,255,0.82)",
+                background: "rgba(255,255,255,0.9)",
                 backdropFilter: "blur(4px)",
                 WebkitBackdropFilter: "blur(4px)",
                 border: `1px solid ${T.border}`,
@@ -152,225 +179,221 @@ export function OfferingSheet({
             >
               <X size={17} strokeWidth={1.9} />
             </motion.button>
-          </HatchPlaceholder>
+          </ImageCarousel>
 
-          {/* Title + price + tagline */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 14 }}>
-              <motion.h2
-                layoutId={`title-${offering.id}`}
-                style={{
-                  margin: 0,
-                  fontSize: 25,
-                  fontWeight: 600,
-                  letterSpacing: "-0.025em",
-                  color: T.textPrimary,
-                  lineHeight: 1.1,
-                }}
+          {/* PDP content */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 18, padding: isMobile ? "18px 20px 24px" : "22px 28px 28px" }}>
+            {/* Title + price */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 14 }}>
+                <motion.h2
+                  layoutId={`title-${offering.id}`}
+                  style={{
+                    margin: 0,
+                    fontSize: 25,
+                    fontWeight: 600,
+                    letterSpacing: "-0.025em",
+                    color: T.textPrimary,
+                    lineHeight: 1.1,
+                  }}
+                >
+                  {offering.title}
+                </motion.h2>
+                <motion.span
+                  layoutId={`price-${offering.id}`}
+                  style={{
+                    fontSize: 20,
+                    fontWeight: 600,
+                    letterSpacing: "-0.02em",
+                    color: T.textPrimary,
+                    flexShrink: 0,
+                  }}
+                >
+                  {offering.price}
+                </motion.span>
+              </div>
+
+              {/* Review stars */}
+              <motion.div
+                variants={content}
+                initial="hidden"
+                animate="show"
+                custom={0}
+                style={{ display: "flex", alignItems: "center", gap: 8 }}
               >
-                {offering.title}
-              </motion.h2>
-              <motion.span
-                layoutId={`price-${offering.id}`}
-                style={{
-                  fontSize: 20,
-                  fontWeight: 600,
-                  letterSpacing: "-0.02em",
-                  color: T.textPrimary,
-                  flexShrink: 0,
-                }}
-              >
-                {offering.price}
-              </motion.span>
+                <div style={{ display: "flex", gap: 1 }}>
+                  {[0, 1, 2, 3, 4].map((i) => (
+                    <Star key={i} size={14} strokeWidth={0} fill={i < 5 ? T.ink : T.borderActive} />
+                  ))}
+                </div>
+                <span style={{ fontSize: 13, color: T.textSecondary }}>4.9 · 128 reviews</span>
+              </motion.div>
             </div>
+
+            {/* Description */}
             <motion.p
               variants={content}
               initial="hidden"
               animate="show"
-              custom={0}
-              style={{ margin: 0, fontSize: 14.5, lineHeight: 1.55, color: T.textSecondary }}
+              custom={1}
+              style={{ margin: 0, fontSize: 15, lineHeight: 1.65, color: T.inkSoft }}
             >
-              {offering.tagline}
+              {offering.description}
             </motion.p>
-          </div>
 
-          {/* Description */}
-          <motion.p
-            variants={content}
-            initial="hidden"
-            animate="show"
-            custom={1}
-            style={{ margin: 0, fontSize: 15, lineHeight: 1.65, color: T.inkSoft }}
-          >
-            {offering.description}
-          </motion.p>
-
-          {/* Image gallery — full-bleed, horizontal snap */}
-          <motion.div
-            variants={content}
-            initial="hidden"
-            animate="show"
-            custom={2}
-            style={{ display: "flex", flexDirection: "column", gap: 10 }}
-          >
-            <span style={{ fontSize: 12, fontWeight: 600, color: T.textTertiary, textTransform: "uppercase", letterSpacing: "0.07em" }}>
-              Gallery
-            </span>
-            <div
-              className="carousel-x"
-              style={{
-                display: "flex",
-                gap: 10,
-                overflowX: "auto",
-                scrollSnapType: "x mandatory",
-                marginLeft: isMobile ? -20 : -28,
-                marginRight: isMobile ? -20 : -28,
-                paddingLeft: isMobile ? 20 : 28,
-                paddingRight: isMobile ? 20 : 28,
-              }}
+            {/* Trust row */}
+            <motion.div
+              variants={content}
+              initial="hidden"
+              animate="show"
+              custom={2}
+              style={{ display: "flex", gap: 10 }}
             >
-              {[0, 1, 2, 3].map((i) => (
-                <HatchPlaceholder
-                  key={i}
-                  radius={14}
+              {[
+                { icon: Truck, label: "Fast shipping" },
+                { icon: ShieldCheck, label: "2-year warranty" },
+              ].map(({ icon: Icon, label }) => (
+                <div
+                  key={label}
                   style={{
-                    width: 168,
-                    height: 116,
-                    flexShrink: 0,
-                    scrollSnapAlign: "start",
+                    flex: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    padding: "10px 12px",
+                    background: T.bgSubtle,
                     border: `1px solid ${T.border}`,
+                    borderRadius: 12,
                   }}
                 >
-                  <span
-                    style={{
-                      position: "absolute",
-                      bottom: 9,
-                      left: 11,
-                      fontFamily: "var(--font-geist-mono), monospace",
-                      fontSize: 10,
-                      letterSpacing: "0.1em",
-                      color: T.textTertiary,
-                      background: "rgba(255,255,255,0.72)",
-                      backdropFilter: "blur(4px)",
-                      WebkitBackdropFilter: "blur(4px)",
-                      padding: "2px 7px",
-                      borderRadius: 999,
-                    }}
-                  >
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                </HatchPlaceholder>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* Stat band */}
-          <motion.div
-            variants={content}
-            initial="hidden"
-            animate="show"
-            custom={3}
-            style={{
-              display: "flex",
-              background: T.bgSubtle,
-              border: `1px solid ${T.border}`,
-              borderRadius: 16,
-              overflow: "hidden",
-            }}
-          >
-            {offering.stats.map((s, i) => (
-              <div
-                key={s.label}
-                style={{
-                  flex: 1,
-                  padding: "14px 12px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 3,
-                  alignItems: "center",
-                  borderLeft: i === 0 ? "none" : `1px solid ${T.border}`,
-                }}
-              >
-                <span style={{ fontSize: 19, fontWeight: 600, color: T.textPrimary, letterSpacing: "-0.02em" }}>
-                  {s.value}
-                </span>
-                <span style={{ fontSize: 11.5, color: T.textTertiary, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                  {s.label}
-                </span>
-              </div>
-            ))}
-          </motion.div>
-
-          {/* Features */}
-          <motion.div
-            variants={content}
-            initial="hidden"
-            animate="show"
-            custom={4}
-            style={{ display: "flex", flexDirection: "column", gap: 10 }}
-          >
-            <span style={{ fontSize: 12, fontWeight: 600, color: T.textTertiary, textTransform: "uppercase", letterSpacing: "0.07em" }}>
-              What&apos;s included
-            </span>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {offering.features.map((f) => (
-                <div key={f} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-                  <div
-                    style={{
-                      width: 20,
-                      height: 20,
-                      borderRadius: "50%",
-                      background: T.ink,
-                      color: "#fff",
-                      display: "grid",
-                      placeItems: "center",
-                      flexShrink: 0,
-                      marginTop: 1,
-                    }}
-                  >
-                    <Check size={12} strokeWidth={2.4} />
-                  </div>
-                  <span style={{ fontSize: 14, lineHeight: 1.5, color: T.inkSoft }}>{f}</span>
+                  <Icon size={16} strokeWidth={1.8} color={T.textSecondary} />
+                  <span style={{ fontSize: 12.5, fontWeight: 500, color: T.textSecondary }}>{label}</span>
                 </div>
               ))}
-            </div>
-          </motion.div>
+            </motion.div>
 
-          {/* Contextual AI composer */}
-          <motion.div variants={content} initial="hidden" animate="show" custom={5} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: T.textTertiary, textTransform: "uppercase", letterSpacing: "0.07em" }}>
-              Ask about this
+            {/* Stat band */}
+            <motion.div
+              variants={content}
+              initial="hidden"
+              animate="show"
+              custom={3}
+              style={{
+                display: "flex",
+                background: T.bgSubtle,
+                border: `1px solid ${T.border}`,
+                borderRadius: 16,
+                overflow: "hidden",
+              }}
+            >
+              {offering.stats.map((s, i) => (
+                <div
+                  key={s.label}
+                  style={{
+                    flex: 1,
+                    padding: "14px 12px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 3,
+                    alignItems: "center",
+                    borderLeft: i === 0 ? "none" : `1px solid ${T.border}`,
+                  }}
+                >
+                  <span style={{ fontSize: 19, fontWeight: 600, color: T.textPrimary, letterSpacing: "-0.02em" }}>
+                    {s.value}
+                  </span>
+                  <span style={{ fontSize: 11.5, color: T.textTertiary, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                    {s.label}
+                  </span>
+                </div>
+              ))}
+            </motion.div>
+
+            {/* Features */}
+            <motion.div
+              variants={content}
+              initial="hidden"
+              animate="show"
+              custom={4}
+              style={{ display: "flex", flexDirection: "column", gap: 12 }}
+            >
+              <span style={{ fontSize: 12, fontWeight: 600, color: T.textTertiary, textTransform: "uppercase", letterSpacing: "0.07em" }}>
+                What&apos;s included
+              </span>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {offering.features.map((f) => (
+                  <div key={f} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                    <div
+                      style={{
+                        width: 20,
+                        height: 20,
+                        borderRadius: "50%",
+                        background: T.ink,
+                        color: "#fff",
+                        display: "grid",
+                        placeItems: "center",
+                        flexShrink: 0,
+                        marginTop: 1,
+                      }}
+                    >
+                      <Check size={12} strokeWidth={2.4} />
+                    </div>
+                    <span style={{ fontSize: 14, lineHeight: 1.5, color: T.inkSoft }}>{f}</span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+        </div>
+
+        {/* Sticky buy bar — CRO-optimized PDP footer */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.28, ...SPRING_SOFT }}
+          style={{
+            flexShrink: 0,
+            display: "flex",
+            alignItems: "center",
+            gap: 14,
+            padding: isMobile ? "12px 16px calc(14px + env(safe-area-inset-bottom))" : "14px 20px",
+            borderTop: `1px solid ${T.border}`,
+            background: "rgba(255,255,255,0.9)",
+            backdropFilter: "blur(10px)",
+            WebkitBackdropFilter: "blur(10px)",
+          }}
+        >
+          <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.1 }}>
+            <span style={{ fontSize: 11, color: T.textTertiary, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              Price
             </span>
-            <ChatComposer placeholder={`Ask anything about ${offering.title}...`} />
-          </motion.div>
-
-          {/* CTA */}
+            <span style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.02em", color: T.textPrimary }}>
+              {offering.price}
+            </span>
+          </div>
           <motion.button
-            variants={content}
-            initial="hidden"
-            animate="show"
-            custom={6}
-            whileHover={{ scale: 1.01 }}
-            whileTap={{ scale: 0.99 }}
+            whileTap={{ scale: 0.98 }}
             style={{
+              flex: 1,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              gap: 8,
-              width: "100%",
-              padding: "15px 20px",
+              gap: 9,
+              height: 52,
               borderRadius: 14,
               background: T.ink,
               color: "#fff",
               border: "none",
-              fontSize: 15,
+              fontSize: 16,
               fontWeight: 600,
+              letterSpacing: "-0.01em",
+              cursor: "pointer",
             }}
           >
-            {offering.cta}
-            <ArrowRight size={17} strokeWidth={2} />
+            <ShoppingBag size={18} strokeWidth={2} />
+            Add to cart
           </motion.button>
-        </div>
+        </motion.div>
       </motion.div>
     </div>
   );
