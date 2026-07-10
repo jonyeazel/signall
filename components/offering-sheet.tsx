@@ -1,18 +1,19 @@
 "use client";
 
 import { motion, useDragControls, type PanInfo } from "motion/react";
+import { useState } from "react";
 import { X, Check, Star } from "lucide-react";
 import { type Offering } from "../lib/offerings";
-import { T, SPRING, SPRING_SOFT } from "../lib/theme";
+import { T, SPRING } from "../lib/theme";
 import { ImageCarousel } from "./image-carousel";
+import { CardChatDrawer } from "./card-chat-drawer";
 
+// Content is present immediately (no fade/stagger): during the shared-layout
+// morph, fading pieces in drew the eye to areas that made the grid transform
+// look less clean. Everything stays visible so the morph reads as one motion.
 const content = {
-  hidden: { opacity: 0, y: 14 },
-  show: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: { delay: 0.12 + i * 0.05, ...SPRING_SOFT },
-  }),
+  hidden: { opacity: 1, y: 0 },
+  show: () => ({ opacity: 1, y: 0 }),
 };
 
 export function OfferingSheet({
@@ -21,27 +22,37 @@ export function OfferingSheet({
   topInset = 0,
   onClose,
   onBuy,
+  onAddToCart,
 }: {
   offering: Offering;
   isMobile: boolean;
   topInset?: number;
   onClose: () => void;
   onBuy?: () => void;
+  onAddToCart?: () => void;
 }) {
   const dragControls = useDragControls();
+  const [chatOpen, setChatOpen] = useState(false);
 
   const handleDragEnd = (_: unknown, info: PanInfo) => {
     if (info.offset.y > 120 || info.velocity.y > 500) onClose();
   };
 
   // Hero image gallery — shared instance (keeps the layoutId morph intact).
+  // 1:1 aspect on both breakpoints so product imagery composes identically to
+  // the slideshow card; dots + horizontal scroll are enabled here for browsing.
   const hero = (
     <ImageCarousel
       layoutId={`media-${offering.id}`}
       images={offering.images}
       alt={offering.title}
       radius={0}
-      style={{ height: isMobile ? 340 : "100%", width: "100%", flexShrink: 0 }}
+      dotBottom={16}
+      style={
+        isMobile
+          ? { width: "100%", aspectRatio: "1 / 1", flexShrink: 0 }
+          : { width: "100%", height: "100%", flexShrink: 0 }
+      }
     >
       {/* Drag handle (mobile) — starts the dismiss gesture */}
       {isMobile && (
@@ -76,57 +87,45 @@ export function OfferingSheet({
   // PDP text content — shared between layouts.
   const body = (
     <div style={{ display: "flex", flexDirection: "column", gap: 18, padding: isMobile ? "18px 20px 24px" : "28px 30px 26px" }}>
-      {/* Title + price */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 14, paddingRight: isMobile ? 0 : 30 }}>
-          <motion.h2
-            variants={content}
-            initial="hidden"
-            animate="show"
-            custom={0}
-            style={{
-              margin: 0,
-              fontSize: 26,
-              fontWeight: 600,
-              letterSpacing: "-0.025em",
-              color: T.textPrimary,
-              lineHeight: 1.1,
-            }}
-          >
-            {offering.title}
-          </motion.h2>
-          <motion.span
-            variants={content}
-            initial="hidden"
-            animate="show"
-            custom={0}
-            style={{
-              fontSize: 20,
-              fontWeight: 600,
-              letterSpacing: "-0.02em",
-              color: T.textPrimary,
-              flexShrink: 0,
-            }}
-          >
-            {offering.price}
-          </motion.span>
-        </div>
+      {/* Title, price and rating — all left-aligned in one content column */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingRight: isMobile ? 0 : 30 }}>
+        <motion.h2
+          variants={content}
+          initial="hidden"
+          animate="show"
+          custom={0}
+          style={{
+            margin: 0,
+            fontSize: 26,
+            fontWeight: 600,
+            letterSpacing: "-0.025em",
+            color: T.textPrimary,
+            lineHeight: 1.1,
+          }}
+        >
+          {offering.title}
+        </motion.h2>
 
-        {/* Review stars */}
         <motion.div
           variants={content}
           initial="hidden"
           animate="show"
           custom={0}
-          style={{ display: "flex", alignItems: "center", gap: 8 }}
+          style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}
         >
-          <div style={{ display: "flex", gap: 1 }}>
-            {[0, 1, 2, 3, 4].map((i) => (
-              <Star key={i} size={14} strokeWidth={0} fill={i < Math.round(offering.rating) ? T.ink : T.borderActive} />
-            ))}
-          </div>
-          <span style={{ fontSize: 13, color: T.textSecondary }}>
-            {offering.rating.toFixed(1)} · {offering.reviews.toLocaleString()} reviews
+          <span style={{ fontSize: 20, fontWeight: 600, letterSpacing: "-0.02em", color: T.textPrimary }}>
+            {offering.price}
+          </span>
+          <span aria-hidden style={{ width: 1, height: 14, background: T.border }} />
+          <span style={{ display: "flex", alignItems: "center", gap: 7 }}>
+            <span style={{ display: "flex", gap: 1 }}>
+              {[0, 1, 2, 3, 4].map((i) => (
+                <Star key={i} size={14} strokeWidth={0} fill={i < Math.round(offering.rating) ? T.ink : T.borderActive} />
+              ))}
+            </span>
+            <span style={{ fontSize: 13, color: T.textSecondary }}>
+              {offering.rating.toFixed(1)} · {offering.reviews.toLocaleString()} reviews
+            </span>
           </span>
         </motion.div>
       </div>
@@ -160,17 +159,14 @@ export function OfferingSheet({
     </div>
   );
 
-  // Sticky buy bar — CRO-optimized PDP footer.
+  // Sticky action bar — Add to cart + Buy now + Ai, all in one row.
   const buyBar = (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.28, ...SPRING_SOFT }}
+    <div
       style={{
         flexShrink: 0,
         display: "flex",
         alignItems: "center",
-        gap: 14,
+        gap: 10,
         padding: isMobile ? "12px 16px calc(14px + env(safe-area-inset-bottom))" : "14px 20px",
         borderTop: `1px solid ${T.border}`,
         background: "rgba(255,255,255,0.9)",
@@ -178,14 +174,27 @@ export function OfferingSheet({
         WebkitBackdropFilter: "blur(10px)",
       }}
     >
-      <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.1 }}>
-        <span style={{ fontSize: 11, color: T.textTertiary, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-          Price
-        </span>
-        <span style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.02em", color: T.textPrimary }}>
-          {offering.price}
-        </span>
-      </div>
+      <motion.button
+        whileTap={{ scale: 0.98 }}
+        onClick={onAddToCart}
+        style={{
+          flex: 1,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          height: 52,
+          borderRadius: 999,
+          background: T.ghost,
+          color: T.textPrimary,
+          border: `1px solid ${T.border}`,
+          fontSize: 15.5,
+          fontWeight: 600,
+          letterSpacing: "-0.01em",
+          cursor: "pointer",
+        }}
+      >
+        Add to cart
+      </motion.button>
       <motion.button
         whileTap={{ scale: 0.98 }}
         onClick={onBuy}
@@ -199,22 +208,41 @@ export function OfferingSheet({
           background: T.ink,
           color: "#fff",
           border: "none",
-          fontSize: 16,
+          fontSize: 15.5,
           fontWeight: 600,
           letterSpacing: "-0.01em",
           cursor: "pointer",
         }}
       >
-        Buy Now
+        Buy now
       </motion.button>
-    </motion.div>
+      <motion.button
+        whileTap={{ scale: 0.94 }}
+        onClick={() => setChatOpen(true)}
+        aria-label={`Ask AI about ${offering.title}`}
+        style={{
+          width: 52,
+          height: 52,
+          flexShrink: 0,
+          display: "grid",
+          placeItems: "center",
+          borderRadius: "50%",
+          background: T.surface,
+          color: T.textPrimary,
+          border: `1px solid ${T.borderActive}`,
+          fontSize: 15,
+          fontWeight: 600,
+          letterSpacing: "-0.01em",
+          cursor: "pointer",
+        }}
+      >
+        Ai
+      </motion.button>
+    </div>
   );
 
   const closeButton = (
     <motion.button
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: 0.15 }}
       onClick={onClose}
       aria-label="Close"
       whileTap={{ scale: 0.9 }}
@@ -262,9 +290,9 @@ export function OfferingSheet({
         style={{
           position: "absolute",
           inset: 0,
-          background: "rgba(20,20,20,0.28)",
-          backdropFilter: "blur(6px)",
-          WebkitBackdropFilter: "blur(6px)",
+          background: "rgba(20,20,20,0.14)",
+          backdropFilter: "blur(8px)",
+          WebkitBackdropFilter: "blur(8px)",
         }}
       />
 
@@ -312,12 +340,41 @@ export function OfferingSheet({
               {body}
             </div>
             {buyBar}
+            {/* AI concierge — covers the full card on mobile */}
+            <CardChatDrawer offering={offering} open={chatOpen} onClose={() => setChatOpen(false)} />
           </>
         ) : (
           <>
-            {/* Two-column PDP: gallery left, scrollable content right */}
-            <div style={{ flex: "0 0 44%", position: "relative", overflow: "hidden" }}>{hero}</div>
-            <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
+            {/* Two-column PDP: padded square gallery left, content right.
+                The 12px inset + radius mirror the slideshow card so the image
+                composition stays consistent through the expand transition. */}
+            <div
+              style={{
+                flexShrink: 0,
+                height: "100%",
+                aspectRatio: "1 / 1",
+                padding: 12,
+                boxSizing: "border-box",
+              }}
+            >
+              {/* Inner radius = outer 28 − 12 padding, so the corners nest concentrically */}
+              <div style={{ position: "relative", height: "100%", width: "100%", borderRadius: 16, overflow: "hidden" }}>
+                {hero}
+              </div>
+            </div>
+            {/* Right column is its own section — a hairline divider joins the
+                image section and gives the buy bar's top border something to
+                meet. position:relative scopes the chat drawer to this panel. */}
+            <div
+              style={{
+                position: "relative",
+                flex: 1,
+                minWidth: 0,
+                display: "flex",
+                flexDirection: "column",
+                borderLeft: `1px solid ${T.border}`,
+              }}
+            >
               <div
                 className="feed-scroll"
                 style={{
@@ -330,6 +387,15 @@ export function OfferingSheet({
                 {body}
               </div>
               {buyBar}
+
+              {/* AI concierge — slides up over the text panel only, so the
+                  product gallery stays visible on the left while chatting. */}
+              <CardChatDrawer
+                offering={offering}
+                open={chatOpen}
+                heightPct="92%"
+                onClose={() => setChatOpen(false)}
+              />
             </div>
           </>
         )}

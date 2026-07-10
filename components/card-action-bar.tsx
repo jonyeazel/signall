@@ -8,25 +8,32 @@ import { T, SPRING } from "../lib/theme";
 /**
  * The product card's action row.
  *
- * Default: a near-full-width "Add to cart" CTA + a small circular AI button.
- * The first job is frictionless buying (tap, tap, buy); the AI is secondary.
+ * Default: a near-full-width "Learn more" CTA (opens the PDP) + a small
+ * circular AI button. Browsing is the first job; the AI is secondary.
  *
  * Tapping AI morphs the circle (shared layoutId="ai-surface") into a full-width
- * input — effectively a second version of the CTA row — while the buy button
+ * input — effectively a second version of the CTA row — while the CTA button
  * gracefully makes room. Tapping close morphs it back.
  */
 export function CardActionBar({
   id,
   title,
-  price,
   onBuy,
   onAsk,
+  onAi,
+  ctaLabel = "Learn more",
+  height = 54,
 }: {
   id: string;
   title: string;
-  price?: string;
   onBuy?: () => void;
   onAsk?: (value: string) => void;
+  /** When provided, the Ai button defers to this (e.g. open a chat drawer)
+   *  instead of morphing into the inline composer. */
+  onAi?: () => void;
+  ctaLabel?: string;
+  /** Row height. Desktop cards use a lighter 44 so the buttons don't dominate. */
+  height?: number;
 }) {
   const surfaceId = `ai-surface-${id}`;
   const [aiOpen, setAiOpen] = useState(false);
@@ -50,6 +57,9 @@ export function CardActionBar({
     if (!trimmed) return;
     onAsk?.(trimmed);
     setValue("");
+    // When a handler takes over (e.g. opens a chat drawer), collapse the
+    // inline composer back to the circle for a clean hand-off.
+    if (onAsk) setAiOpen(false);
   }, [value, onAsk]);
 
   const handleKeyDown = useCallback(
@@ -65,7 +75,7 @@ export function CardActionBar({
   );
 
   const hasText = value.trim().length > 0;
-  const H = 54;
+  const H = height;
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, width: "100%" }}>
@@ -99,13 +109,7 @@ export function CardActionBar({
               gap: 8,
             }}
           >
-            <span>Buy Now</span>
-            {price && (
-              <>
-                <span aria-hidden style={{ opacity: 0.4 }}>·</span>
-                <span style={{ opacity: 0.75, fontWeight: 500 }}>{price}</span>
-              </>
-            )}
+            <span>{ctaLabel}</span>
           </motion.button>
         )}
       </AnimatePresence>
@@ -115,8 +119,8 @@ export function CardActionBar({
         <motion.button
           key="ai-circle"
           type="button"
-          layoutId={surfaceId}
-          onClick={() => setAiOpen(true)}
+          layoutId={onAi ? undefined : surfaceId}
+          onClick={() => (onAi ? onAi() : setAiOpen(true))}
           transition={SPRING}
           whileTap={{ scale: 0.94 }}
           aria-label={`Ask AI about ${title}`}
@@ -191,7 +195,9 @@ export function CardActionBar({
               background: "transparent",
               color: T.textPrimary,
               fontFamily: "inherit",
-              fontSize: 14.5,
+              // 16px: iOS Safari zooms into any focused input below 16px,
+              // which would jarringly expand the fixed card layout.
+              fontSize: 16,
             }}
           />
           <motion.button
@@ -204,8 +210,8 @@ export function CardActionBar({
             transition={{ delay: 0.1 }}
             whileTap={{ scale: 0.92 }}
             style={{
-              width: 42,
-              height: 42,
+              width: H - 12,
+              height: H - 12,
               borderRadius: "50%",
               flexShrink: 0,
               background: hasText ? T.ink : T.ghost,

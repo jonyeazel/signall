@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import { ShoppingBag } from "lucide-react";
-import { ChatComposer } from "../components/chat-composer";
+import { PolicyLinks } from "../components/policy-links";
 import { OfferingCard } from "../components/offering-card";
 import { OfferingSheet } from "../components/offering-sheet";
 import { DesktopCarousel } from "../components/desktop-carousel";
@@ -93,9 +93,9 @@ export default function Home() {
   }, [viewportH]);
 
   const scrollToIndex = useCallback(
-    (i: number) => {
+    (i: number, behavior: ScrollBehavior = "smooth") => {
       const el = feedRef.current;
-      if (el && viewportH) el.scrollTo({ top: i * viewportH, behavior: "smooth" });
+      if (el && viewportH) el.scrollTo({ top: i * viewportH, behavior });
       setActiveIndex(i);
     },
     [viewportH],
@@ -170,10 +170,10 @@ export default function Home() {
     <div
       style={{
         position: "fixed",
-        inset: isMobile ? 0 : 12,
+        inset: 0,
         background: T.bg,
-        borderRadius: isMobile ? 0 : 24,
-        border: isMobile ? "none" : `1px solid ${T.border}`,
+        borderRadius: 0,
+        border: "none",
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
@@ -183,7 +183,6 @@ export default function Home() {
       {isMobile ? (
         <MobileHeader
           barRef={headerRef}
-          offering={OFFERINGS[activeIndex] ?? OFFERINGS[0]}
           cartCount={cartCount}
           hidden={!!selected}
           onOpenCart={() => setCartOpen(true)}
@@ -200,46 +199,36 @@ export default function Home() {
             alignItems: "center",
             justifyContent: "space-between",
             gap: 12,
-            padding: "16px 18px",
-            background: T.bg,
+            padding: "20px 28px",
+            // When a card is expanded the header background drops away so its
+            // content floats over the scrim and the card centers cleanly.
+            background: selected ? "transparent" : T.bg,
+            transition: "background 200ms ease",
           }}
         >
+          {/* Light wordmark lockup — a small ink dot + name + tagline, all
+              vertically centered on one axis. Far airier than the old avatar. */}
           <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
-            <div
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: "50%",
-                background: T.ink,
-                color: "#fff",
-                display: "grid",
-                placeItems: "center",
-                fontSize: 17,
-                fontWeight: 600,
-                letterSpacing: "-0.02em",
-                flexShrink: 0,
-              }}
+            <span
               aria-hidden
+              style={{ width: 7, height: 7, borderRadius: "50%", background: T.ink, flexShrink: 0, marginRight: -3 }}
+            />
+            <span
+              style={{
+                fontSize: 19,
+                fontWeight: 600,
+                letterSpacing: "-0.03em",
+                color: T.textPrimary,
+                lineHeight: 1,
+                whiteSpace: "nowrap",
+              }}
             >
-              F
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
-              <span
-                style={{
-                  fontSize: 17,
-                  fontWeight: 600,
-                  letterSpacing: "-0.02em",
-                  color: T.textPrimary,
-                  lineHeight: 1.15,
-                  whiteSpace: "nowrap",
-                }}
-              >
-                Form
-              </span>
-              <span style={{ fontSize: 13, color: T.textTertiary, lineHeight: 1.2, whiteSpace: "nowrap" }}>
-                Considered objects
-              </span>
-            </div>
+              Form
+            </span>
+            <span aria-hidden style={{ width: 1, height: 14, background: T.border, flexShrink: 0 }} />
+            <span style={{ fontSize: 13.5, color: T.textTertiary, lineHeight: 1, whiteSpace: "nowrap" }}>
+              Considered objects
+            </span>
           </div>
           {cartButton}
         </div>
@@ -255,12 +244,14 @@ export default function Home() {
           overflowY: selected ? "hidden" : "auto",
           overflowX: "hidden",
           minHeight: 0,
-          padding: isMobile ? "0 8px" : "0 32px",
+          padding: 0,
           display: isMobile ? undefined : "flex",
           flexDirection: isMobile ? undefined : "column",
           justifyContent: isMobile ? undefined : "center",
           WebkitOverflowScrolling: "touch",
           scrollSnapType: isMobile ? "y mandatory" : undefined,
+          touchAction: isMobile ? "pan-y" : undefined,
+          overscrollBehaviorY: isMobile ? "contain" : undefined,
         }}
       >
         <LayoutGroup>
@@ -271,8 +262,6 @@ export default function Home() {
                   key={offering.id}
                   style={{
                     height: viewportH ? viewportH : "82dvh",
-                    paddingTop: 8,
-                    paddingBottom: 8,
                     scrollSnapAlign: "start",
                     scrollSnapStop: "always",
                     display: "flex",
@@ -289,9 +278,7 @@ export default function Home() {
               ))}
             </div>
           ) : (
-            <div style={{ margin: "0 -32px" }}>
-              <DesktopCarousel offerings={OFFERINGS} rootRef={feedRef} onOpen={setSelectedId} />
-            </div>
+            <DesktopCarousel offerings={OFFERINGS} rootRef={feedRef} onOpen={setSelectedId} />
           )}
 
           {/* Expanded sheet */}
@@ -304,6 +291,7 @@ export default function Home() {
                 topInset={headerH}
                 onClose={close}
                 onBuy={() => handleBuy(selected.id)}
+                onAddToCart={() => addToCart(selected.id)}
               />
             )}
           </AnimatePresence>
@@ -317,8 +305,10 @@ export default function Home() {
             offerings={OFFERINGS}
             activeIndex={activeIndex}
             onPick={(i) => {
+              // Feed is positioned instantly under the full-screen zoom clone,
+              // so revealing it is a seamless hand-off (no visible scroll).
+              scrollToIndex(i, "auto");
               setOverview(false);
-              scrollToIndex(i);
             }}
             onClose={() => setOverview(false)}
           />
@@ -337,19 +327,20 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      {/* Dock: desktop only — on mobile the composer lives inside each card */}
+      {/* Dock: desktop only. The per-card AI concierge replaces the global
+          composer, so this space carries the store's policy links — keeping
+          the storefront compliant with Meta and other ad-platform review. */}
       {!isMobile && (
         <div
           style={{
             flexShrink: 0,
-            borderTop: "none",
             background: "transparent",
-            padding: "12px 20px 18px",
+            padding: "14px 20px 18px",
             display: "flex",
             justifyContent: "center",
           }}
         >
-          <ChatComposer placeholder="Ask anything, or describe what to build…" />
+          <PolicyLinks tone="dock" />
         </div>
       )}
     </div>

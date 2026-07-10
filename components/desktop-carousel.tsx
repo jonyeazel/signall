@@ -100,7 +100,6 @@ export function DesktopCarousel({
             }}
             style={{
               width: CARD_W,
-              aspectRatio: "4 / 5",
               flexShrink: 0,
               scrollSnapAlign: "center",
               transformOrigin: "center center",

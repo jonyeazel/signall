@@ -1,0 +1,390 @@
+"use client";
+
+import { useState, useRef, useEffect, useCallback, useMemo, type KeyboardEvent } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { Sparkles, ArrowUp, X } from "lucide-react";
+import { type Offering } from "../lib/offerings";
+import { T } from "../lib/theme";
+
+type Msg = { role: "user" | "assistant"; text: string };
+
+// A premium, overshoot-free slide for the drawer — glides up and settles.
+const DRAWER_SPRING = { type: "spring", stiffness: 320, damping: 36, mass: 0.85 } as const;
+
+/**
+ * A beautiful AI chat that slides up *inside* a product card.
+ *
+ * Rendered as an absolute overlay within a `position: relative; overflow:
+ * hidden` card, so it stays perfectly clipped to the card's rounded corners.
+ * The composer input is 16px so iOS never zooms (which would otherwise fight
+ * the card's fixed layout).
+ *
+ * Replies are generated locally from the product's own facts — deliberately
+ * factual, with no health/earnings/performance claims — so any store built on
+ * this template stays compliant with Meta and other ad-platform policies.
+ */
+export function CardChatDrawer({
+  offering,
+  open,
+  onClose,
+  initialMessage,
+  heightPct = "82%",
+}: {
+  offering: Offering;
+  open: boolean;
+  onClose: () => void;
+  /** When set, the drawer opens straight into a thread seeded with this
+   *  question (e.g. submitted from the card's inline composer). */
+  initialMessage?: string;
+  /** How much of the offset parent the drawer covers. Defaults to 82%
+   *  (leaves a sliver of the card); the expanded PDP passes a taller value. */
+  heightPct?: string;
+}) {
+  const [messages, setMessages] = useState<Msg[]>([]);
+  const [value, setValue] = useState("");
+  const [typing, setTyping] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const replyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const suggestions = useMemo(
+    () => ["What's it made of?", "Shipping & returns", "Is it right for me?"],
+    [],
+  );
+
+  // Focus the input when the drawer opens; reset the thread when it closes.
+  // preventScroll is essential: without it the browser scrolls the card into
+  // view to reveal the input, which shifts the shared-layout product image and
+  // makes the background "flip" as the drawer opens.
+  useEffect(() => {
+    if (open) {
+      const raf = requestAnimationFrame(() => inputRef.current?.focus({ preventScroll: true }));
+      return () => cancelAnimationFrame(raf);
+    }
+    const t = setTimeout(() => {
+      setMessages([]);
+      setValue("");
+      setTyping(false);
+    }, 260);
+    return () => clearTimeout(t);
+  }, [open]);
+
+  useEffect(() => {
+    return () => {
+      if (replyTimer.current) clearTimeout(replyTimer.current);
+    };
+  }, []);
+
+  // Auto-scroll to the latest message.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+  }, [messages, typing]);
+
+  const answer = useCallback(
+    (q: string): string => {
+      const s = q.toLowerCase();
+      if (/(material|made|build|construct|fabric)/.test(s)) {
+        return `${offering.title} is ${offering.features[1]?.toLowerCase() ?? offering.description.toLowerCase()}. ${offering.features[2] ?? ""}`.trim();
+      }
+      if (/(ship|deliver|return|refund|exchange|warranty)/.test(s)) {
+        return "Every order ships within 2 business days with tracking, and comes with free 30-day returns. See our Shipping and Returns policies in the footer for the full details.";
+      }
+      if (/(right for me|should i|fit|good for|worth|help)/.test(s)) {
+        return `If you value ${offering.tags.slice(0, 2).join(" and ").toLowerCase()}, ${offering.title} is a considered choice — ${offering.tagline.toLowerCase()} Happy to answer anything specific.`;
+      }
+      if (/(price|cost|how much)/.test(s)) {
+        return `${offering.title} is ${offering.price}. Tap Learn more for the full spec and to add it to your cart.`;
+      }
+      return `${offering.description} Anything specific you'd like to know?`;
+    },
+    [offering],
+  );
+
+  // Opened with a seed question → start the thread with it and its answer,
+  // skipping the welcome + suggestion chips.
+  useEffect(() => {
+    if (!open) return;
+    const seed = initialMessage?.trim();
+    if (!seed) return;
+    setMessages([{ role: "user", text: seed }]);
+    setTyping(true);
+    const t = setTimeout(() => {
+      setTyping(false);
+      setMessages([
+        { role: "user", text: seed },
+        { role: "assistant", text: answer(seed) },
+      ]);
+    }, 650);
+    return () => clearTimeout(t);
+  }, [open, initialMessage, answer]);
+
+  const send = useCallback(
+    (raw: string) => {
+      const text = raw.trim();
+      if (!text) return;
+      setValue("");
+      setMessages((m) => [...m, { role: "user", text }]);
+      setTyping(true);
+      replyTimer.current = setTimeout(() => {
+        setTyping(false);
+        setMessages((m) => [...m, { role: "assistant", text: answer(text) }]);
+      }, 650);
+    },
+    [answer],
+  );
+
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent<HTMLInputElement>) => {
+      if (e.nativeEvent.isComposing || e.keyCode === 229) return;
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        send(value);
+      }
+      if (e.key === "Escape") onClose();
+    },
+    [send, value, onClose],
+  );
+
+  const hasText = value.trim().length > 0;
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <>
+          {/* Scrim over the rest of the card — tap to dismiss */}
+          <motion.div
+            key="chat-scrim"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.24 }}
+            onClick={onClose}
+            style={{
+              position: "absolute",
+              inset: 0,
+              zIndex: 19,
+              background: "rgba(255,255,255,0.5)",
+              backdropFilter: "blur(3px)",
+              WebkitBackdropFilter: "blur(3px)",
+            }}
+          />
+          {/* The drawer — slides up to ~82% of the card height */}
+          <motion.div
+            key="chat-panel"
+            initial={{ y: "101%", opacity: 0.85 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: "101%", opacity: 0.85 }}
+            transition={DRAWER_SPRING}
+            style={{
+              position: "absolute",
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: heightPct,
+              zIndex: 20,
+              display: "flex",
+              flexDirection: "column",
+              background: "rgba(255,255,255,0.985)",
+              backdropFilter: "blur(28px) saturate(1.6)",
+              WebkitBackdropFilter: "blur(28px) saturate(1.6)",
+              borderTopLeftRadius: 20,
+              borderTopRightRadius: 20,
+              borderTop: `1px solid ${T.border}`,
+              boxShadow: "0 -14px 40px -14px rgba(0,0,0,0.2)",
+            }}
+          >
+          {/* Minimal top — just a grabber + close. No branding: it's the chat. */}
+          <div
+            style={{
+              position: "relative",
+              flexShrink: 0,
+              height: 42,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <span aria-hidden style={{ width: 38, height: 5, borderRadius: 999, background: T.borderActive }} />
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close chat"
+              style={{
+                position: "absolute",
+                right: 10,
+                top: 7,
+                width: 30,
+                height: 30,
+                borderRadius: "50%",
+                background: T.bgSubtle,
+                border: `1px solid ${T.border}`,
+                color: T.textSecondary,
+                display: "grid",
+                placeItems: "center",
+                cursor: "pointer",
+                WebkitTapHighlightColor: "transparent",
+              }}
+            >
+              <X size={16} strokeWidth={2} />
+            </button>
+          </div>
+
+          {/* Messages */}
+          <div
+            ref={scrollRef}
+            style={{
+              flex: 1,
+              minHeight: 0,
+              overflowY: "auto",
+              padding: "14px 12px",
+              display: "flex",
+              flexDirection: "column",
+              gap: 10,
+            }}
+          >
+            {/* Assistant welcome */}
+            <Bubble role="assistant">
+              Hi — I can help with materials, sizing, shipping, or whether {offering.title} is right for you.
+            </Bubble>
+
+            {messages.length === 0 && (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginTop: 2 }}>
+                {suggestions.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => send(s)}
+                    style={{
+                      fontSize: 13,
+                      color: T.textPrimary,
+                      background: T.surface,
+                      border: `1px solid ${T.border}`,
+                      borderRadius: 999,
+                      padding: "7px 12px",
+                      cursor: "pointer",
+                      WebkitTapHighlightColor: "transparent",
+                    }}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {messages.map((m, i) => (
+              <Bubble key={i} role={m.role}>
+                {m.text}
+              </Bubble>
+            ))}
+
+            {typing && (
+              <Bubble role="assistant">
+                <span className="chat-typing" style={{ display: "inline-flex", gap: 3 }}>
+                  <Dot /> <Dot /> <Dot />
+                </span>
+              </Bubble>
+            )}
+          </div>
+
+          {/* Composer */}
+          <div
+            style={{
+              flexShrink: 0,
+              padding: "10px 10px calc(10px + env(safe-area-inset-bottom))",
+              borderTop: `1px solid ${T.border}`,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                height: 48,
+                borderRadius: 999,
+                background: T.surface,
+                border: `1px solid ${T.borderActive}`,
+                paddingLeft: 16,
+                paddingRight: 6,
+              }}
+            >
+              <Sparkles size={16} strokeWidth={1.75} color={T.textTertiary} style={{ flexShrink: 0 }} />
+              <input
+                ref={inputRef}
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={`Message about ${offering.title}…`}
+                aria-label={`Message about ${offering.title}`}
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  border: "none",
+                  outline: "none",
+                  background: "transparent",
+                  color: T.textPrimary,
+                  fontFamily: "inherit",
+                  // 16px: prevents iOS Safari from auto-zooming on focus.
+                  fontSize: 16,
+                }}
+              />
+              <button
+                type="button"
+                aria-label="Send"
+                onClick={() => send(value)}
+                disabled={!hasText}
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: "50%",
+                  flexShrink: 0,
+                  background: hasText ? T.ink : T.ghost,
+                  border: `1px solid ${hasText ? T.ink : T.border}`,
+                  color: hasText ? "#FFFFFF" : T.textTertiary,
+                  display: "grid",
+                  placeItems: "center",
+                  cursor: hasText ? "pointer" : "default",
+                  transition: "background 150ms ease-out, color 150ms ease-out",
+                }}
+              >
+                <ArrowUp size={17} strokeWidth={2} />
+              </button>
+            </div>
+          </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}
+
+function Bubble({ role, children }: { role: "user" | "assistant"; children: React.ReactNode }) {
+  const isUser = role === "user";
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+      style={{
+        alignSelf: isUser ? "flex-end" : "flex-start",
+        maxWidth: "82%",
+        background: isUser ? T.ink : T.surface,
+        color: isUser ? "#FFFFFF" : T.textPrimary,
+        border: isUser ? "none" : `1px solid ${T.border}`,
+        borderRadius: 18,
+        borderBottomRightRadius: isUser ? 6 : 18,
+        borderBottomLeftRadius: isUser ? 18 : 6,
+        padding: "10px 13px",
+        fontSize: 14,
+        lineHeight: 1.45,
+        letterSpacing: "-0.01em",
+      }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+function Dot() {
+  return <span style={{ width: 6, height: 6, borderRadius: "50%", background: T.textTertiary, display: "inline-block" }} />;
+}
