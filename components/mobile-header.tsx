@@ -22,12 +22,6 @@ const roundBtn = {
   WebkitTapHighlightColor: "transparent",
 } as const;
 
-const HATCH = {
-  background: T.skeleton,
-  backgroundImage:
-    "repeating-linear-gradient(-45deg, rgba(0,0,0,0.05) 0px, rgba(0,0,0,0.05) 1.5px, transparent 1.5px, transparent 8px)",
-};
-
 /**
  * Floating, product-aware header for mobile.
  *
@@ -85,16 +79,18 @@ export function MobileHeader({
               minWidth: 0,
             }}
           >
-            <div
+            <img
+              src={offering.images[0] || "/placeholder.svg"}
+              alt=""
               style={{
                 width: 42,
                 height: 42,
                 borderRadius: 12,
                 flexShrink: 0,
+                objectFit: "cover",
                 border: `1px solid ${T.border}`,
-                ...HATCH,
+                background: T.skeleton,
               }}
-              aria-hidden
             />
             <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
               <span

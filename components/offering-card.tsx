@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
+import { Star } from "lucide-react";
 import { type RefObject } from "react";
 import { type Offering } from "../lib/offerings";
 import { T, SPRING } from "../lib/theme";
@@ -22,108 +23,9 @@ export function OfferingCard({
   withComposer?: boolean;
   imageScrollable?: boolean;
 }) {
-  // Shared morphing media — a swipeable image carousel with pagination dots.
-  const media = (
-    <div
-      onClick={onOpen}
-      style={{ flex: 1, minHeight: 0, width: "100%", cursor: "pointer", position: "relative" }}
-    >
-      <ImageCarousel
-        layoutId={`media-${offering.id}`}
-        count={4}
-        radius={14}
-        scrollable={imageScrollable}
-        style={{ height: "100%", width: "100%" }}
-      />
-      {/* Legibility bed for the floating header — keeps the product name
-          readable over any image while still feeling part of the card. */}
-      {withComposer && (
-        <div
-          aria-hidden
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 92,
-            borderRadius: "14px 14px 0 0",
-            background: "linear-gradient(to bottom, rgba(251,251,251,0.92), rgba(251,251,251,0))",
-            pointerEvents: "none",
-            zIndex: 1,
-          }}
-        />
-      )}
-    </div>
-  );
-
-  // Shared content block (title / price / description / tags / arrow)
-  const contentBlock = (
-    <button
-      onClick={onOpen}
-      style={{
-        textAlign: "left",
-        background: "transparent",
-        border: "none",
-        padding: "2px 4px 4px",
-        display: "flex",
-        flexDirection: "column",
-        gap: 8,
-        cursor: "pointer",
-        width: "100%",
-        WebkitTapHighlightColor: "transparent",
-      }}
-    >
-      {/* Title/price live in the floating header on mobile — show here only on desktop */}
-      {!withComposer && (
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, width: "100%" }}>
-          <h3
-            style={{
-              margin: 0,
-              fontSize: 20,
-              fontWeight: 600,
-              letterSpacing: "-0.02em",
-              color: T.textPrimary,
-              lineHeight: 1.15,
-            }}
-          >
-            {offering.title}
-          </h3>
-          <span
-            style={{
-              fontSize: 18,
-              fontWeight: 600,
-              letterSpacing: "-0.01em",
-              color: T.textPrimary,
-              flexShrink: 0,
-            }}
-          >
-            {offering.price}
-          </span>
-        </div>
-      )}
-
-      {/* Two-line description */}
-      <p
-        style={{
-          margin: 0,
-          fontSize: 14,
-          lineHeight: 1.5,
-          color: T.textSecondary,
-          display: "-webkit-box",
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: "vertical",
-          overflow: "hidden",
-        }}
-      >
-        {offering.tagline}
-      </p>
-    </button>
-  );
-
-  // Mobile: composer built into the card.
-  // NOTE: entrance is opacity-only (no y transform). A transform on this
-  // ancestor fights the action bar's layout/layoutId children (framer conflict),
-  // which made the AI button appear to "slide down" as later cards scrolled in.
+  // ---- Mobile: full-bleed immersive card ------------------------------------
+  // The product image fills the entire card; a soft legibility veil at the
+  // bottom carries the hook, rating and buy row. Feels like a premium reel.
   if (withComposer) {
     return (
       <motion.div
@@ -137,23 +39,87 @@ export function OfferingCard({
           layoutId={`card-${offering.id}`}
           transition={SPRING}
           style={{
+            position: "relative",
             width: "100%",
             height: "100%",
             background: T.surface,
             border: `1px solid ${T.border}`,
             borderRadius: 24,
-            display: "flex",
-            flexDirection: "column",
             overflow: "hidden",
           }}
         >
-          <div style={{ flex: 1, minHeight: 0, padding: 12, display: "flex", flexDirection: "column", gap: 12 }}>
-            {media}
-            {contentBlock}
+          {/* Full-bleed gallery */}
+          <div
+            onClick={onOpen}
+            style={{ position: "absolute", inset: 0, cursor: "pointer" }}
+          >
+            <ImageCarousel
+              layoutId={`media-${offering.id}`}
+              images={offering.images}
+              alt={offering.title}
+              radius={24}
+              dotBottom={150}
+              scrollable={imageScrollable}
+              style={{ height: "100%", width: "100%" }}
+            />
           </div>
 
-          {/* Action row — near-full CTA + small circular AI that morphs into an input */}
-          <div style={{ padding: "0 12px 12px" }}>
+          {/* Top veil — keeps the floating header legible over the image */}
+          <div
+            aria-hidden
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              height: 132,
+              background: "linear-gradient(to bottom, rgba(251,251,251,0.92), rgba(251,251,251,0))",
+              pointerEvents: "none",
+              zIndex: 1,
+            }}
+          />
+
+          {/* Bottom overlay — hook + social proof + buy row */}
+          <div
+            style={{
+              position: "absolute",
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 2,
+              padding: "56px 12px 12px",
+              display: "flex",
+              flexDirection: "column",
+              gap: 10,
+              background:
+                "linear-gradient(to top, rgba(251,251,251,0.98) 0%, rgba(251,251,251,0.96) 42%, rgba(251,251,251,0) 100%)",
+            }}
+          >
+            <div style={{ display: "flex", flexDirection: "column", gap: 4, padding: "0 4px" }}>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: 15,
+                  fontWeight: 500,
+                  lineHeight: 1.35,
+                  letterSpacing: "-0.01em",
+                  color: T.textPrimary,
+                  display: "-webkit-box",
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: "vertical",
+                  overflow: "hidden",
+                }}
+              >
+                {offering.tagline}
+              </p>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <Star size={13} strokeWidth={0} fill={T.ink} />
+                <span style={{ fontSize: 12.5, color: T.textSecondary, letterSpacing: "-0.01em" }}>
+                  {offering.rating.toFixed(1)} · {offering.reviews.toLocaleString()} reviews
+                </span>
+              </div>
+            </div>
+
             <CardActionBar id={offering.id} title={offering.title} price={offering.price} onBuy={onOpen} />
           </div>
         </motion.div>
@@ -161,7 +127,7 @@ export function OfferingCard({
     );
   }
 
-  // Desktop card
+  // ---- Desktop card ---------------------------------------------------------
   return (
     <motion.div
       initial={{ opacity: 0, y: 24 }}
@@ -186,8 +152,76 @@ export function OfferingCard({
           gap: 14,
         }}
       >
-        {media}
-        {contentBlock}
+        <div
+          onClick={onOpen}
+          style={{ flex: 1, minHeight: 0, width: "100%", cursor: "pointer" }}
+        >
+          <ImageCarousel
+            layoutId={`media-${offering.id}`}
+            images={offering.images}
+            alt={offering.title}
+            radius={14}
+            scrollable={imageScrollable}
+            style={{ height: "100%", width: "100%" }}
+          />
+        </div>
+
+        <button
+          onClick={onOpen}
+          style={{
+            textAlign: "left",
+            background: "transparent",
+            border: "none",
+            padding: "2px 4px 4px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 8,
+            cursor: "pointer",
+            width: "100%",
+            WebkitTapHighlightColor: "transparent",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, width: "100%" }}>
+            <h3
+              style={{
+                margin: 0,
+                fontSize: 20,
+                fontWeight: 600,
+                letterSpacing: "-0.02em",
+                color: T.textPrimary,
+                lineHeight: 1.15,
+              }}
+            >
+              {offering.title}
+            </h3>
+            <span
+              style={{
+                fontSize: 18,
+                fontWeight: 600,
+                letterSpacing: "-0.01em",
+                color: T.textPrimary,
+                flexShrink: 0,
+              }}
+            >
+              {offering.price}
+            </span>
+          </div>
+
+          <p
+            style={{
+              margin: 0,
+              fontSize: 14,
+              lineHeight: 1.5,
+              color: T.textSecondary,
+              display: "-webkit-box",
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+            }}
+          >
+            {offering.tagline}
+          </p>
+        </button>
       </motion.div>
     </motion.div>
   );

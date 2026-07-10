@@ -2,14 +2,9 @@
 
 import { useRef, useEffect, useCallback } from "react";
 import { motion } from "motion/react";
+import { Star } from "lucide-react";
 import { type Offering } from "../lib/offerings";
 import { T, SPRING } from "../lib/theme";
-
-const HATCH = {
-  background: T.skeleton,
-  backgroundImage:
-    "repeating-linear-gradient(-45deg, rgba(0,0,0,0.05) 0px, rgba(0,0,0,0.05) 1.5px, transparent 1.5px, transparent 11px)",
-};
 
 /**
  * iOS app-switcher style overview.
@@ -157,17 +152,15 @@ export function CardOverview({
                 transformOrigin: "center center",
               }}
             >
-              {/* Faithful scaled-down replica of the full mobile card */}
+              {/* Faithful scaled-down replica of the full-bleed mobile card */}
               <button
                 type="button"
                 onClick={() => onPick(i)}
                 style={{
+                  position: "relative",
                   width: "100%",
                   height: "min(78%, 460px)",
-                  padding: 12,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 11,
+                  padding: 0,
                   background: T.surface,
                   border: `1px solid ${T.border}`,
                   borderRadius: 24,
@@ -177,102 +170,88 @@ export function CardOverview({
                   WebkitTapHighlightColor: "transparent",
                 }}
               >
-                {/* Image */}
-                <div style={{ flex: 1, minHeight: 0, borderRadius: 14, position: "relative", ...HATCH }} aria-hidden>
-                  <div
-                    style={{
-                      position: "absolute",
-                      bottom: 12,
-                      left: "50%",
-                      transform: "translateX(-50%)",
-                      display: "flex",
-                      gap: 5,
-                    }}
-                  >
-                    {[0, 1, 2, 3].map((d) => (
-                      <span
-                        key={d}
-                        style={{
-                          width: d === 0 ? 16 : 5,
-                          height: 5,
-                          borderRadius: 999,
-                          background: d === 0 ? T.ink : "rgba(20,20,20,0.25)",
-                        }}
-                      />
-                    ))}
-                  </div>
-                </div>
+                {/* Full-bleed image */}
+                <img
+                  src={o.images[0] || "/placeholder.svg"}
+                  alt={o.title}
+                  style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+                />
 
-                {/* Title + price */}
-                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, padding: "0 4px" }}>
-                  <span
-                    style={{
-                      fontSize: 18,
-                      fontWeight: 600,
-                      letterSpacing: "-0.02em",
-                      color: T.textPrimary,
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                  >
-                    {o.title}
-                  </span>
-                  <span style={{ fontSize: 16, fontWeight: 600, color: T.textPrimary, flexShrink: 0 }}>
-                    {o.price}
-                  </span>
-                </div>
-
-                {/* Description */}
-                <p
+                {/* Bottom overlay — hook + rating + buy row */}
+                <div
                   style={{
-                    margin: 0,
-                    padding: "0 4px",
-                    fontSize: 12.5,
-                    lineHeight: 1.45,
-                    color: T.textSecondary,
-                    display: "-webkit-box",
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: "vertical",
-                    overflow: "hidden",
+                    position: "absolute",
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    padding: "48px 12px 12px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 9,
+                    background:
+                      "linear-gradient(to top, rgba(251,251,251,0.98) 0%, rgba(251,251,251,0.96) 42%, rgba(251,251,251,0) 100%)",
                   }}
                 >
-                  {o.tagline}
-                </p>
-
-                {/* Action row (visual replica of Buy Now + Ai) */}
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <div
-                    style={{
-                      flex: 1,
-                      height: 46,
-                      borderRadius: 999,
-                      background: T.ink,
-                      color: "#fff",
-                      display: "grid",
-                      placeItems: "center",
-                      fontSize: 14.5,
-                      fontWeight: 600,
-                    }}
-                  >
-                    Buy Now
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4, padding: "0 4px" }}>
+                    <span
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 500,
+                        letterSpacing: "-0.01em",
+                        color: T.textPrimary,
+                        lineHeight: 1.3,
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      {o.tagline}
+                    </span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <Star size={12} strokeWidth={0} fill={T.ink} />
+                      <span style={{ fontSize: 12, color: T.textSecondary }}>
+                        {o.rating.toFixed(1)} · {o.reviews.toLocaleString()}
+                      </span>
+                    </div>
                   </div>
-                  <div
-                    style={{
-                      width: 46,
-                      height: 46,
-                      borderRadius: 999,
-                      background: T.bgSubtle,
-                      border: `1px solid ${T.borderActive}`,
-                      display: "grid",
-                      placeItems: "center",
-                      fontSize: 15,
-                      fontWeight: 600,
-                      color: T.textPrimary,
-                      flexShrink: 0,
-                    }}
-                  >
-                    Ai
+
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div
+                      style={{
+                        flex: 1,
+                        height: 46,
+                        borderRadius: 999,
+                        background: T.ink,
+                        color: "#fff",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 7,
+                        fontSize: 14.5,
+                        fontWeight: 600,
+                      }}
+                    >
+                      <span>Buy Now</span>
+                      <span style={{ opacity: 0.4 }}>·</span>
+                      <span style={{ opacity: 0.75, fontWeight: 500 }}>{o.price}</span>
+                    </div>
+                    <div
+                      style={{
+                        width: 46,
+                        height: 46,
+                        borderRadius: 999,
+                        background: T.bgSubtle,
+                        border: `1px solid ${T.borderActive}`,
+                        display: "grid",
+                        placeItems: "center",
+                        fontSize: 15,
+                        fontWeight: 600,
+                        color: T.textPrimary,
+                        flexShrink: 0,
+                      }}
+                    >
+                      Ai
+                    </div>
                   </div>
                 </div>
               </button>

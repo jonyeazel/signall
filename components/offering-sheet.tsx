@@ -38,9 +38,10 @@ export function OfferingSheet({
   const hero = (
     <ImageCarousel
       layoutId={`media-${offering.id}`}
-      count={4}
+      images={offering.images}
+      alt={offering.title}
       radius={0}
-      style={{ height: isMobile ? 320 : "100%", width: "100%", flexShrink: 0 }}
+      style={{ height: isMobile ? 340 : "100%", width: "100%", flexShrink: 0 }}
     >
       {/* Drag handle (mobile) — starts the dismiss gesture */}
       {isMobile && (
@@ -121,10 +122,12 @@ export function OfferingSheet({
         >
           <div style={{ display: "flex", gap: 1 }}>
             {[0, 1, 2, 3, 4].map((i) => (
-              <Star key={i} size={14} strokeWidth={0} fill={i < 5 ? T.ink : T.borderActive} />
+              <Star key={i} size={14} strokeWidth={0} fill={i < Math.round(offering.rating) ? T.ink : T.borderActive} />
             ))}
           </div>
-          <span style={{ fontSize: 13, color: T.textSecondary }}>4.9 · 128 reviews</span>
+          <span style={{ fontSize: 13, color: T.textSecondary }}>
+            {offering.rating.toFixed(1)} · {offering.reviews.toLocaleString()} reviews
+          </span>
         </motion.div>
       </div>
 

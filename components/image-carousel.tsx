@@ -16,21 +16,30 @@ import { T, SPRING } from "../lib/theme";
  */
 export function ImageCarousel({
   layoutId,
+  images,
+  alt = "",
   count = 4,
   radius = 0,
   dots = true,
+  dotBottom = 12,
   scrollable = true,
+  imageFit = "cover",
   style,
   children,
 }: {
   layoutId?: string;
+  images?: string[];
+  alt?: string;
   count?: number;
   radius?: number;
   dots?: boolean;
+  dotBottom?: number;
   scrollable?: boolean;
+  imageFit?: "cover" | "contain";
   style?: CSSProperties;
   children?: ReactNode;
 }) {
+  const slides = images && images.length > 0 ? images.length : count;
   const trackRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
   const raf = useRef(0);
@@ -84,7 +93,7 @@ export function ImageCarousel({
           transition: scrollable ? undefined : "transform 420ms cubic-bezier(0.22,1,0.36,1)",
         }}
       >
-        {Array.from({ length: count }).map((_, i) => (
+        {Array.from({ length: slides }).map((_, i) => (
           <div
             key={i}
             style={{
@@ -92,27 +101,45 @@ export function ImageCarousel({
               width: "100%",
               height: "100%",
               scrollSnapAlign: "start",
+              position: "relative",
               background: T.skeleton,
-              backgroundImage:
-                "repeating-linear-gradient(-45deg, rgba(0,0,0,0.05) 0px, rgba(0,0,0,0.05) 1.5px, transparent 1.5px, transparent 11px)",
+              backgroundImage: images
+                ? undefined
+                : "repeating-linear-gradient(-45deg, rgba(0,0,0,0.05) 0px, rgba(0,0,0,0.05) 1.5px, transparent 1.5px, transparent 11px)",
             }}
-          />
+          >
+            {images && (
+              <img
+                src={images[i] || "/placeholder.svg"}
+                alt={alt}
+                draggable={false}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: imageFit,
+                  display: "block",
+                  userSelect: "none",
+                }}
+              />
+            )}
+          </div>
         ))}
       </div>
 
-      {dots && count > 1 && (
+      {dots && slides > 1 && (
         <div
           style={{
             position: "absolute",
-            bottom: 12,
+            bottom: dotBottom,
             left: 0,
             right: 0,
             display: "flex",
             justifyContent: "center",
             gap: 5,
+            zIndex: 2,
           }}
         >
-          {Array.from({ length: count }).map((_, i) => (
+          {Array.from({ length: slides }).map((_, i) => (
             <button
               key={i}
               type="button"
