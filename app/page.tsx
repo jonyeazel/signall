@@ -270,6 +270,7 @@ export default function Home() {
                   key={offering.id}
                   style={{
                     height: viewportH ? viewportH : "82dvh",
+                    paddingTop: 8,
                     paddingBottom: 8,
                     scrollSnapAlign: "start",
                     scrollSnapStop: "always",
