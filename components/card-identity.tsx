@@ -14,67 +14,71 @@ const HALO = "0 1px 12px rgba(251,251,251,0.92), 0 0 4px rgba(251,251,251,0.92)"
  */
 export function CardIdentity({ offering }: { offering: Offering }) {
   return (
-    // Avatar hangs to the left of a single text column, so the name,
-    // price·rating and description all share one clean left edge.
-    <div style={{ display: "flex", alignItems: "flex-start", gap: 11, padding: "0 4px" }}>
-      <img
-        src={offering.images[1] ?? offering.images[0] ?? "/placeholder.svg"}
-        alt=""
-        style={{
-          width: 40,
-          height: 40,
-          borderRadius: "50%",
-          flexShrink: 0,
-          objectFit: "cover",
-          border: "1px solid rgba(255,255,255,0.7)",
-          boxShadow: "0 2px 10px rgba(0,0,0,0.14)",
-        }}
-      />
-      <div style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
-        <span
+    // A single left-aligned column: the avatar+name row sits on top, and the
+    // description spans full width below it, so the avatar, name and
+    // description all share one clean left edge (matching the action row).
+    <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "0 4px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 11, minWidth: 0 }}>
+        <img
+          src={offering.images[1] ?? offering.images[0] ?? "/placeholder.svg"}
+          alt=""
           style={{
-            fontSize: 16,
-            fontWeight: 600,
-            letterSpacing: "-0.02em",
-            color: T.textPrimary,
-            lineHeight: 1.2,
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            textShadow: HALO,
+            width: 40,
+            height: 40,
+            borderRadius: "50%",
+            flexShrink: 0,
+            objectFit: "cover",
+            border: "1px solid rgba(255,255,255,0.7)",
+            boxShadow: "0 2px 10px rgba(0,0,0,0.14)",
           }}
-        >
-          {offering.title}
-        </span>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            fontSize: 13.5,
-            fontWeight: 600,
-            color: T.textPrimary,
-            whiteSpace: "nowrap",
-            textShadow: HALO,
-          }}
-        >
-          {offering.price}
+        />
+        <div style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
+          <span
+            style={{
+              fontSize: 16,
+              fontWeight: 600,
+              letterSpacing: "-0.02em",
+              color: T.textPrimary,
+              lineHeight: 1.2,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              textShadow: HALO,
+            }}
+          >
+            {offering.title}
+          </span>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              fontSize: 13.5,
+              fontWeight: 600,
+              color: T.textPrimary,
+              whiteSpace: "nowrap",
+              textShadow: HALO,
+            }}
+          >
+            {offering.price}
+          </div>
         </div>
-        <p
-          style={{
-            margin: "3px 0 0",
-            fontSize: 14,
-            lineHeight: 1.42,
-            color: T.textSecondary,
-            textShadow: HALO,
-            display: "-webkit-box",
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: "vertical",
-            overflow: "hidden",
-          }}
-        >
-          {offering.description}
-        </p>
       </div>
+
+      <p
+        style={{
+          margin: 0,
+          fontSize: 14,
+          lineHeight: 1.42,
+          color: T.textSecondary,
+          textShadow: HALO,
+          display: "-webkit-box",
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: "vertical",
+          overflow: "hidden",
+        }}
+      >
+        {offering.description}
+      </p>
     </div>
   );
 }
