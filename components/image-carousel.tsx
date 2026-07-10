@@ -93,8 +93,14 @@ export function ImageCarousel({
           width: "100%",
           height: "100%",
           overflowX: scrollable ? "auto" : "hidden",
+          overflowY: "hidden",
           scrollSnapType: scrollable ? "x mandatory" : undefined,
-          touchAction: scrollable ? "pan-x" : "pan-y",
+          // Allow BOTH axes so the browser axis-locks like Instagram Reels:
+          // a horizontal drag browses images here, while a vertical drag chains
+          // up to the product feed (the only vertical scroller) to page cards.
+          // Using only "pan-x" would lock the whole full-screen image to
+          // horizontal and kill vertical paging across the entire card.
+          touchAction: scrollable ? "pan-x pan-y" : "pan-y",
           transform: scrollable ? undefined : `translateX(-${active * 100}%)`,
           transition: scrollable ? undefined : "transform 420ms cubic-bezier(0.22,1,0.36,1)",
         }}
