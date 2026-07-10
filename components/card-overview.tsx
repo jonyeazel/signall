@@ -136,7 +136,7 @@ export function CardOverview({
             overflowX: "auto",
             overflowY: "hidden",
             scrollSnapType: "x mandatory",
-            paddingInline: "17%",
+            paddingInline: "12%",
           }}
         >
           {offerings.map((o, i) => (
@@ -146,7 +146,7 @@ export function CardOverview({
                 cardRefs.current[i] = el;
               }}
               style={{
-                flex: "0 0 66%",
+                flex: "0 0 76%",
                 height: "100%",
                 display: "flex",
                 alignItems: "center",
@@ -157,15 +157,17 @@ export function CardOverview({
                 transformOrigin: "center center",
               }}
             >
+              {/* Faithful scaled-down replica of the full mobile card */}
               <button
                 type="button"
                 onClick={() => onPick(i)}
                 style={{
                   width: "100%",
-                  height: "82%",
-                  padding: 0,
+                  height: "88%",
+                  padding: 12,
                   display: "flex",
                   flexDirection: "column",
+                  gap: 12,
                   background: T.surface,
                   border: `1px solid ${T.border}`,
                   borderRadius: 24,
@@ -175,20 +177,37 @@ export function CardOverview({
                   WebkitTapHighlightColor: "transparent",
                 }}
               >
-                <div style={{ flex: 1, minHeight: 0, ...HATCH }} aria-hidden />
-                <div
-                  style={{
-                    flexShrink: 0,
-                    padding: "14px 16px",
-                    display: "flex",
-                    alignItems: "baseline",
-                    justifyContent: "space-between",
-                    gap: 10,
-                  }}
-                >
+                {/* Image */}
+                <div style={{ flex: 1, minHeight: 0, borderRadius: 14, position: "relative", ...HATCH }} aria-hidden>
+                  <div
+                    style={{
+                      position: "absolute",
+                      bottom: 12,
+                      left: "50%",
+                      transform: "translateX(-50%)",
+                      display: "flex",
+                      gap: 5,
+                    }}
+                  >
+                    {[0, 1, 2, 3].map((d) => (
+                      <span
+                        key={d}
+                        style={{
+                          width: d === 0 ? 16 : 5,
+                          height: 5,
+                          borderRadius: 999,
+                          background: d === 0 ? T.ink : "rgba(20,20,20,0.25)",
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Title + price */}
+                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, padding: "0 4px" }}>
                   <span
                     style={{
-                      fontSize: 16,
+                      fontSize: 18,
                       fontWeight: 600,
                       letterSpacing: "-0.02em",
                       color: T.textPrimary,
@@ -199,9 +218,62 @@ export function CardOverview({
                   >
                     {o.title}
                   </span>
-                  <span style={{ fontSize: 15, fontWeight: 600, color: T.textPrimary, flexShrink: 0 }}>
+                  <span style={{ fontSize: 16, fontWeight: 600, color: T.textPrimary, flexShrink: 0 }}>
                     {o.price}
                   </span>
+                </div>
+
+                {/* Description */}
+                <p
+                  style={{
+                    margin: 0,
+                    padding: "0 4px",
+                    fontSize: 12.5,
+                    lineHeight: 1.45,
+                    color: T.textSecondary,
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                  }}
+                >
+                  {o.tagline}
+                </p>
+
+                {/* Action row (visual replica of Buy Now + Ai) */}
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div
+                    style={{
+                      flex: 1,
+                      height: 46,
+                      borderRadius: 999,
+                      background: T.ink,
+                      color: "#fff",
+                      display: "grid",
+                      placeItems: "center",
+                      fontSize: 14.5,
+                      fontWeight: 600,
+                    }}
+                  >
+                    Buy Now
+                  </div>
+                  <div
+                    style={{
+                      width: 46,
+                      height: 46,
+                      borderRadius: 999,
+                      background: T.bgSubtle,
+                      border: `1px solid ${T.borderActive}`,
+                      display: "grid",
+                      placeItems: "center",
+                      fontSize: 15,
+                      fontWeight: 600,
+                      color: T.textPrimary,
+                      flexShrink: 0,
+                    }}
+                  >
+                    Ai
+                  </div>
                 </div>
               </button>
             </div>

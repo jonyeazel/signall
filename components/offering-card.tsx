@@ -99,14 +99,17 @@ export function OfferingCard({
     </button>
   );
 
-  // Mobile: composer built into the card
+  // Mobile: composer built into the card.
+  // NOTE: entrance is opacity-only (no y transform). A transform on this
+  // ancestor fights the action bar's layout/layoutId children (framer conflict),
+  // which made the AI button appear to "slide down" as later cards scrolled in.
   if (withComposer) {
     return (
       <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        whileInView={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
         viewport={{ root: rootRef, once: true, amount: 0.2 }}
-        transition={SPRING}
+        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
         style={{ width: "100%", height: "100%" }}
       >
         <motion.div

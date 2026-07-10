@@ -6,12 +6,6 @@ import { type RefObject } from "react";
 import { type Offering } from "../lib/offerings";
 import { T, SPRING_SOFT } from "../lib/theme";
 
-const HATCH = {
-  background: T.skeleton,
-  backgroundImage:
-    "repeating-linear-gradient(-45deg, rgba(0,0,0,0.05) 0px, rgba(0,0,0,0.05) 1.5px, transparent 1.5px, transparent 8px)",
-};
-
 const roundBtn = {
   width: 40,
   height: 40,
@@ -60,11 +54,9 @@ export function MobileHeader({
         alignItems: "center",
         justifyContent: "space-between",
         gap: 10,
-        padding: "11px 14px",
-        background: "rgba(251,251,251,0.8)",
-        backdropFilter: "blur(16px) saturate(1.4)",
-        WebkitBackdropFilter: "blur(16px) saturate(1.4)",
-        borderBottom: `1px solid ${T.border}`,
+        padding: "14px 18px",
+        background: "transparent",
+        pointerEvents: "none",
       }}
     >
       {/* Active product identity — crossfades as cards scroll into view */}
@@ -81,21 +73,9 @@ export function MobileHeader({
               inset: 0,
               display: "flex",
               alignItems: "center",
-              gap: 11,
               minWidth: 0,
             }}
           >
-            <div
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: 11,
-                flexShrink: 0,
-                border: `1px solid ${T.border}`,
-                ...HATCH,
-              }}
-              aria-hidden
-            />
             <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
               <span
                 style={{
@@ -120,7 +100,7 @@ export function MobileHeader({
       </div>
 
       {/* Functional affordances */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0, pointerEvents: "auto" }}>
         <motion.button
           type="button"
           onClick={onOpenOverview}
