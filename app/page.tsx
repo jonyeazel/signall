@@ -206,28 +206,26 @@ export default function Home() {
             transition: "background 200ms ease",
           }}
         >
-          {/* Light wordmark lockup — a small ink dot + name + tagline, all on
-              one baseline. Far airier than the old filled-black avatar. */}
-          <div style={{ display: "flex", alignItems: "baseline", gap: 12, minWidth: 0 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-              <span
-                aria-hidden
-                style={{ width: 7, height: 7, borderRadius: "50%", background: T.ink, transform: "translateY(-1px)" }}
-              />
-              <span
-                style={{
-                  fontSize: 19,
-                  fontWeight: 600,
-                  letterSpacing: "-0.03em",
-                  color: T.textPrimary,
-                  lineHeight: 1,
-                  whiteSpace: "nowrap",
-                }}
-              >
-                Form
-              </span>
-            </div>
-            <span aria-hidden style={{ width: 1, height: 15, background: T.border, transform: "translateY(2px)" }} />
+          {/* Light wordmark lockup — a small ink dot + name + tagline, all
+              vertically centered on one axis. Far airier than the old avatar. */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+            <span
+              aria-hidden
+              style={{ width: 7, height: 7, borderRadius: "50%", background: T.ink, flexShrink: 0, marginRight: -3 }}
+            />
+            <span
+              style={{
+                fontSize: 19,
+                fontWeight: 600,
+                letterSpacing: "-0.03em",
+                color: T.textPrimary,
+                lineHeight: 1,
+                whiteSpace: "nowrap",
+              }}
+            >
+              Form
+            </span>
+            <span aria-hidden style={{ width: 1, height: 14, background: T.border, flexShrink: 0 }} />
             <span style={{ fontSize: 13.5, color: T.textTertiary, lineHeight: 1, whiteSpace: "nowrap" }}>
               Considered objects
             </span>
