@@ -156,7 +156,6 @@ function NavArrow({
         cursor: disabled ? "default" : "pointer",
         opacity: disabled ? 0 : 1,
         pointerEvents: disabled ? "none" : "auto",
-        boxShadow: "0 6px 20px -8px rgba(0,0,0,0.25)",
         transition: "opacity 220ms ease, transform 160ms ease, background 160ms ease",
         zIndex: 20,
       }}

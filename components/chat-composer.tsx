@@ -70,12 +70,7 @@ export function ChatComposer({
         display: "flex",
         flexDirection: "column",
         gap: "6px",
-        boxShadow: flush
-          ? "none"
-          : focused
-            ? "0 8px 28px rgba(0,0,0,0.08)"
-            : "0 2px 10px rgba(0,0,0,0.04)",
-        transition: "border-color 150ms ease-out, box-shadow 150ms ease-out",
+        transition: "border-color 150ms ease-out",
       }}
     >
       <textarea
