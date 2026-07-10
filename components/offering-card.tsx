@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "motion/react";
-import { ArrowUpRight } from "lucide-react";
 import { type RefObject } from "react";
 import { type Offering } from "../lib/offerings";
 import { T, SPRING } from "../lib/theme";
@@ -14,12 +13,14 @@ export function OfferingCard({
   rootRef,
   onOpen,
   withComposer = false,
+  imageScrollable = true,
 }: {
   offering: Offering;
   index: number;
   rootRef: RefObject<HTMLElement | null>;
   onOpen: () => void;
   withComposer?: boolean;
+  imageScrollable?: boolean;
 }) {
   // Shared morphing media — a swipeable image carousel with pagination dots.
   const media = (
@@ -31,6 +32,7 @@ export function OfferingCard({
         layoutId={`media-${offering.id}`}
         count={4}
         radius={14}
+        scrollable={imageScrollable}
         style={{ height: "100%", width: "100%" }}
       >
         <motion.span
@@ -118,39 +120,23 @@ export function OfferingCard({
         {offering.tagline}
       </p>
 
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginTop: 2, width: "100%" }}>
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-          {offering.tags.slice(0, 2).map((tag) => (
-            <span
-              key={tag}
-              style={{
-                fontSize: 11,
-                fontWeight: 500,
-                color: T.textSecondary,
-                background: T.bgSubtle,
-                border: `1px solid ${T.border}`,
-                borderRadius: 999,
-                padding: "3px 9px",
-              }}
-            >
-              {tag}
-            </span>
-          ))}
-        </div>
-        <div
-          style={{
-            width: 30,
-            height: 30,
-            borderRadius: "50%",
-            border: `1px solid ${T.borderStrong}`,
-            display: "grid",
-            placeItems: "center",
-            color: T.textPrimary,
-            flexShrink: 0,
-          }}
-        >
-          <ArrowUpRight size={15} strokeWidth={1.75} />
-        </div>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 2 }}>
+        {offering.tags.slice(0, 2).map((tag) => (
+          <span
+            key={tag}
+            style={{
+              fontSize: 11,
+              fontWeight: 500,
+              color: T.textSecondary,
+              background: T.bgSubtle,
+              border: `1px solid ${T.border}`,
+              borderRadius: 999,
+              padding: "3px 9px",
+            }}
+          >
+            {tag}
+          </span>
+        ))}
       </div>
     </button>
   );

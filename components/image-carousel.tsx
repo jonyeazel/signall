@@ -8,12 +8,18 @@ import { T } from "../lib/theme";
  * Full-width, horizontally-paged image carousel with pagination dots.
  * Slides are neutral diagonal-hatch placeholders (swap for real <img> later).
  * Pass `layoutId` so it can morph card -> sheet as a shared element.
+ *
+ * `scrollable` (default true) uses native touch scroll-snap — ideal on mobile.
+ * When false (desktop), the track is controlled via clickable dots and never
+ * hijacks trackpad/wheel gestures, so horizontal swipes scroll the parent
+ * card carousel instead of the inner gallery.
  */
 export function ImageCarousel({
   layoutId,
   count = 4,
   radius = 0,
   dots = true,
+  scrollable = true,
   style,
   children,
 }: {
@@ -21,6 +27,7 @@ export function ImageCarousel({
   count?: number;
   radius?: number;
   dots?: boolean;
+  scrollable?: boolean;
   style?: CSSProperties;
   children?: ReactNode;
 }) {
@@ -39,6 +46,17 @@ export function ImageCarousel({
     });
   }, []);
 
+  const goTo = useCallback(
+    (i: number) => {
+      const el = trackRef.current;
+      if (scrollable && el) {
+        el.scrollTo({ left: i * el.clientWidth, behavior: "smooth" });
+      }
+      setActive(i);
+    },
+    [scrollable],
+  );
+
   return (
     <motion.div
       layoutId={layoutId}
@@ -52,15 +70,17 @@ export function ImageCarousel({
     >
       <div
         ref={trackRef}
-        onScroll={onScroll}
+        onScroll={scrollable ? onScroll : undefined}
         className="carousel-x"
         style={{
           display: "flex",
           width: "100%",
           height: "100%",
-          overflowX: "auto",
-          scrollSnapType: "x mandatory",
-          touchAction: "pan-x",
+          overflowX: scrollable ? "auto" : "hidden",
+          scrollSnapType: scrollable ? "x mandatory" : undefined,
+          touchAction: scrollable ? "pan-x" : undefined,
+          transform: scrollable ? undefined : `translateX(-${active * 100}%)`,
+          transition: scrollable ? undefined : "transform 420ms cubic-bezier(0.22,1,0.36,1)",
         }}
       >
         {Array.from({ length: count }).map((_, i) => (
@@ -89,18 +109,26 @@ export function ImageCarousel({
             display: "flex",
             justifyContent: "center",
             gap: 5,
-            pointerEvents: "none",
           }}
         >
           {Array.from({ length: count }).map((_, i) => (
-            <span
+            <button
               key={i}
+              type="button"
+              aria-label={`View image ${i + 1}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                goTo(i);
+              }}
               style={{
                 width: active === i ? 16 : 6,
                 height: 6,
+                padding: 0,
+                border: "none",
                 borderRadius: 999,
                 background: active === i ? T.ink : "rgba(20,20,20,0.28)",
                 boxShadow: "0 0 0 1px rgba(255,255,255,0.4)",
+                cursor: "pointer",
                 transition: "width 220ms ease, background 220ms ease",
               }}
             />

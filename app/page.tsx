@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { AnimatePresence, LayoutGroup, motion } from "motion/react";
+import { AnimatePresence, LayoutGroup } from "motion/react";
 import { ChatComposer } from "../components/chat-composer";
 import { OfferingCard } from "../components/offering-card";
 import { OfferingSheet } from "../components/offering-sheet";
@@ -157,53 +157,14 @@ export default function Home() {
           overflowY: selected ? "hidden" : "auto",
           overflowX: "hidden",
           minHeight: 0,
-          padding: isMobile ? "0 8px" : "36px 32px 16px",
+          padding: isMobile ? "0 8px" : "0 32px",
+          display: isMobile ? undefined : "flex",
+          flexDirection: isMobile ? undefined : "column",
+          justifyContent: isMobile ? undefined : "center",
           WebkitOverflowScrolling: "touch",
           scrollSnapType: isMobile ? "y mandatory" : undefined,
         }}
       >
-        {/* Hero (desktop only) */}
-        {!isMobile && (
-        <div
-          style={{
-            maxWidth: 760,
-            margin: "0 auto",
-            textAlign: "center",
-            padding: "8px 0 28px",
-          }}
-        >
-          <motion.h1
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            style={{
-              margin: "0 0 10px",
-              fontSize: "clamp(28px, 5.4vw, 40px)",
-              fontWeight: 600,
-              letterSpacing: "-0.035em",
-              lineHeight: 1.08,
-              color: T.textPrimary,
-            }}
-          >
-            Lorem ipsum dolor
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.06, ease: [0.22, 1, 0.36, 1] }}
-            style={{
-              margin: "0 auto",
-              maxWidth: 380,
-              fontSize: "clamp(14px, 2.4vw, 15px)",
-              lineHeight: 1.55,
-              color: T.textSecondary,
-            }}
-          >
-            Tap any card to expand it.
-          </motion.p>
-        </div>
-        )}
-
         {/* Cards */}
         <LayoutGroup>
           {isMobile ? (
