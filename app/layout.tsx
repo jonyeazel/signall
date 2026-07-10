@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -15,6 +15,16 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Template",
   description: "A clean, AI-ready starting point.",
+};
+
+// viewport-fit=cover makes env(safe-area-inset-*) meaningful so the mobile
+// app-frame clears the notch/home indicator; themeColor matches the backdrop
+// gutter so the browser chrome blends into the framed look.
+export const viewport: Viewport = {
+  themeColor: "#EAEAEA",
+  viewportFit: "cover",
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({

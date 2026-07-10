@@ -169,11 +169,19 @@ export default function Home() {
   return (
     <div
       style={{
+        // Mobile: a rounded app-frame floating on the deeper body backdrop, so
+        // the phone's physical rounded screen corners clip only empty backdrop
+        // (invisible) instead of chopping the full-bleed card. The 8px gutter
+        // + safe-area insets keep it clear of the notch/home indicator.
         position: "fixed",
-        inset: 0,
+        top: isMobile ? "calc(8px + env(safe-area-inset-top))" : 0,
+        right: isMobile ? "calc(8px + env(safe-area-inset-right))" : 0,
+        bottom: isMobile ? "calc(8px + env(safe-area-inset-bottom))" : 0,
+        left: isMobile ? "calc(8px + env(safe-area-inset-left))" : 0,
         background: T.bg,
-        borderRadius: 0,
-        border: "none",
+        borderRadius: isMobile ? 30 : 0,
+        border: isMobile ? `1px solid ${T.border}` : "none",
+        boxShadow: isMobile ? "0 10px 34px -14px rgba(0,0,0,0.28)" : "none",
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
