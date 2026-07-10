@@ -77,10 +77,15 @@ export function CardChatDrawer({
     };
   }, []);
 
-  // Keep the sheet's bottom pinned above the on-screen keyboard so the
+  // Keep the sheet's bottom pinned flush above the on-screen keyboard so the
   // composer and newest messages are never hidden. iOS/iPadOS — and iOS Chrome,
   // which is WebKit — only shrink the visual viewport, not the layout viewport,
-  // so a fixed, bottom-anchored sheet would otherwise sit behind the keyboard.
+  // so a bottom-anchored sheet would otherwise sit behind the keyboard.
+  //
+  // Because the app-frame is full-bleed (inset:0), the panel's bottom:0 sits at
+  // the true screen bottom, so the keyboard height is simply the difference
+  // between the layout viewport and the (shrunken) visual viewport. This avoids
+  // fragile parent-rect measurement, which iOS reports inconsistently.
   useEffect(() => {
     const vv = typeof window !== "undefined" ? window.visualViewport : null;
     if (!open || !vv) {
@@ -88,10 +93,10 @@ export function CardChatDrawer({
       return;
     }
     const update = () => {
-      const parent = panelRef.current?.offsetParent as HTMLElement | null;
-      if (!parent) return;
-      const overlap = parent.getBoundingClientRect().bottom - (vv.offsetTop + vv.height);
-      setKb(Math.max(0, Math.round(overlap)));
+      const overlap = window.innerHeight - vv.height - vv.offsetTop;
+      // Ignore sub-keyboard jitter (URL-bar chrome, rounding) — a real keyboard
+      // is always well over 120px — so the sheet never nudges spuriously.
+      setKb(overlap > 120 ? Math.round(overlap) : 0);
     };
     update();
     vv.addEventListener("resize", update);
@@ -208,10 +213,11 @@ export function CardChatDrawer({
               WebkitBackdropFilter: "blur(3px)",
             }}
           />
-          {/* The drawer — slides up to ~82% of the card height. When the
-              keyboard opens, `bottom` rises by its height while `height`
-              shrinks by the same amount, so the top edge stays put and the
-              composer rides up on the keyboard (a proper bottom sheet). */}
+          {/* The drawer slides up to ~82% of the card at rest. When the
+              keyboard opens it rises flush against it (bottom: kb) AND expands
+              upward to a slim top peek, so the whole conversation uses the
+              space above the keyboard and the composer sits right on it — the
+              chat "comes to attention" as you type, and relaxes when done. */}
           <motion.div
             ref={panelRef}
             key="chat-panel"
@@ -224,8 +230,8 @@ export function CardChatDrawer({
               left: 0,
               right: 0,
               bottom: kb,
-              height: `calc(${heightPct} - ${kb}px)`,
-              transition: "bottom 0.22s ease, height 0.22s ease",
+              height: kb > 0 ? `calc(100% - ${kb}px - 44px)` : heightPct,
+              transition: "bottom 0.24s cubic-bezier(0.22,1,0.36,1), height 0.24s cubic-bezier(0.22,1,0.36,1)",
               zIndex: 20,
               display: "flex",
               flexDirection: "column",
@@ -281,6 +287,8 @@ export function CardChatDrawer({
               flex: 1,
               minHeight: 0,
               overflowY: "auto",
+              overscrollBehavior: "contain",
+              WebkitOverflowScrolling: "touch",
               padding: "14px 12px",
               display: "flex",
               flexDirection: "column",
