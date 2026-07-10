@@ -25,6 +25,10 @@ export const viewport: Viewport = {
   viewportFit: "cover",
   width: "device-width",
   initialScale: 1,
+  // On supporting browsers (Android Chrome) the keyboard resizes the layout
+  // viewport, so bottom-anchored UI stays above it natively. iOS/WebKit is
+  // handled in-app via the visualViewport keyboard offset in the chat drawer.
+  interactiveWidget: "resizes-content",
 };
 
 export default function RootLayout({

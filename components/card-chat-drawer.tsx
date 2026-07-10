@@ -43,8 +43,10 @@ export function CardChatDrawer({
   const [messages, setMessages] = useState<Msg[]>([]);
   const [value, setValue] = useState("");
   const [typing, setTyping] = useState(false);
+  const [kb, setKb] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const replyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const suggestions = useMemo(
@@ -75,11 +77,48 @@ export function CardChatDrawer({
     };
   }, []);
 
-  // Auto-scroll to the latest message.
+  // Keep the sheet's bottom pinned above the on-screen keyboard so the
+  // composer and newest messages are never hidden. iOS/iPadOS — and iOS Chrome,
+  // which is WebKit — only shrink the visual viewport, not the layout viewport,
+  // so a fixed, bottom-anchored sheet would otherwise sit behind the keyboard.
+  useEffect(() => {
+    const vv = typeof window !== "undefined" ? window.visualViewport : null;
+    if (!open || !vv) {
+      setKb(0);
+      return;
+    }
+    const update = () => {
+      const parent = panelRef.current?.offsetParent as HTMLElement | null;
+      if (!parent) return;
+      const overlap = parent.getBoundingClientRect().bottom - (vv.offsetTop + vv.height);
+      setKb(Math.max(0, Math.round(overlap)));
+    };
+    update();
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+    };
+  }, [open]);
+
+  // Pin to the bottom whenever the thread grows — rAF waits for the new bubble
+  // to lay out so the newest line is always fully in view.
   useEffect(() => {
     const el = scrollRef.current;
-    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    if (!el) return;
+    const id = requestAnimationFrame(() => {
+      el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    });
+    return () => cancelAnimationFrame(id);
   }, [messages, typing]);
+
+  // Re-pin instantly as the keyboard opens/closes (and on open) so the last
+  // line never slips behind the keyboard mid-animation.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el && open) el.scrollTo({ top: el.scrollHeight });
+  }, [kb, open]);
 
   const answer = useCallback(
     (q: string): string => {
@@ -169,8 +208,12 @@ export function CardChatDrawer({
               WebkitBackdropFilter: "blur(3px)",
             }}
           />
-          {/* The drawer — slides up to ~82% of the card height */}
+          {/* The drawer — slides up to ~82% of the card height. When the
+              keyboard opens, `bottom` rises by its height while `height`
+              shrinks by the same amount, so the top edge stays put and the
+              composer rides up on the keyboard (a proper bottom sheet). */}
           <motion.div
+            ref={panelRef}
             key="chat-panel"
             initial={{ y: "101%", opacity: 0.85 }}
             animate={{ y: 0, opacity: 1 }}
@@ -180,8 +223,9 @@ export function CardChatDrawer({
               position: "absolute",
               left: 0,
               right: 0,
-              bottom: 0,
-              height: heightPct,
+              bottom: kb,
+              height: `calc(${heightPct} - ${kb}px)`,
+              transition: "bottom 0.22s ease, height 0.22s ease",
               zIndex: 20,
               display: "flex",
               flexDirection: "column",
@@ -291,7 +335,9 @@ export function CardChatDrawer({
           <div
             style={{
               flexShrink: 0,
-              padding: "10px 10px calc(10px + env(safe-area-inset-bottom))",
+              // When lifted above the keyboard the home-indicator inset no
+              // longer applies, so drop it to keep the composer snug.
+              padding: kb > 0 ? "10px 10px" : "10px 10px calc(10px + env(safe-area-inset-bottom))",
               borderTop: `1px solid ${T.border}`,
             }}
           >
