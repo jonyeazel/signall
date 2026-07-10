@@ -115,29 +115,23 @@ export function CardActionBar({
             background: T.bgSubtle,
             border: `1px solid ${T.borderActive}`,
             color: T.textPrimary,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 1,
+            display: "grid",
+            placeItems: "center",
             flexShrink: 0,
             cursor: "pointer",
             WebkitTapHighlightColor: "transparent",
           }}
         >
-          <motion.span layout style={{ display: "grid", placeItems: "center" }}>
-            <Sparkles size={17} strokeWidth={1.75} />
-          </motion.span>
           <motion.span
             layout
             style={{
-              fontSize: 9.5,
+              fontSize: 17,
               fontWeight: 600,
-              letterSpacing: "0.06em",
-              color: T.textSecondary,
+              letterSpacing: "-0.01em",
+              color: T.textPrimary,
             }}
           >
-            AI
+            Ai
           </motion.span>
         </motion.button>
       ) : (
