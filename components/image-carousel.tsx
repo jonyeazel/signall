@@ -126,8 +126,7 @@ export function ImageCarousel({
                 padding: 0,
                 border: "none",
                 borderRadius: 999,
-                background: active === i ? T.ink : "rgba(20,20,20,0.28)",
-                boxShadow: "0 0 0 1px rgba(255,255,255,0.4)",
+                background: active === i ? T.ink : "rgba(20,20,20,0.25)",
                 cursor: "pointer",
                 transition: "width 220ms ease, background 220ms ease",
               }}

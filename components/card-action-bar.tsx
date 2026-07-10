@@ -93,7 +93,7 @@ export function CardActionBar({
               WebkitTapHighlightColor: "transparent",
             }}
           >
-            Add to cart
+            Buy Now
           </motion.button>
         )}
       </AnimatePresence>

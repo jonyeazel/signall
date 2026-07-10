@@ -34,28 +34,7 @@ export function OfferingCard({
         radius={14}
         scrollable={imageScrollable}
         style={{ height: "100%", width: "100%" }}
-      >
-        <motion.span
-          layoutId={`index-${offering.id}`}
-          style={{
-            position: "absolute",
-            top: 12,
-            left: 13,
-            fontFamily: "var(--font-geist-mono), monospace",
-            fontSize: 11,
-            letterSpacing: "0.1em",
-            color: T.textTertiary,
-            background: "rgba(255,255,255,0.72)",
-            backdropFilter: "blur(4px)",
-            WebkitBackdropFilter: "blur(4px)",
-            padding: "3px 8px",
-            borderRadius: 999,
-            pointerEvents: "none",
-          }}
-        >
-          {offering.index}
-        </motion.span>
-      </ImageCarousel>
+      />
     </div>
   );
 

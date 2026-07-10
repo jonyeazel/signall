@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useDragControls, type PanInfo } from "motion/react";
-import { X, Check, Star, ShoppingBag, Truck, ShieldCheck } from "lucide-react";
+import { X, Check, Star } from "lucide-react";
 import { type Offering } from "../lib/offerings";
 import { T, SPRING, SPRING_SOFT } from "../lib/theme";
 import { ImageCarousel } from "./image-carousel";
@@ -62,33 +62,11 @@ export function OfferingSheet({
               width: 40,
               height: 5,
               borderRadius: 999,
-              background: "rgba(20,20,20,0.25)",
-              boxShadow: "0 0 0 1px rgba(255,255,255,0.5)",
+              background: "rgba(20,20,20,0.28)",
             }}
           />
         </div>
       )}
-
-      <motion.span
-        layoutId={`index-${offering.id}`}
-        style={{
-          position: "absolute",
-          top: 14,
-          left: 15,
-          fontFamily: "var(--font-geist-mono), monospace",
-          fontSize: 11,
-          letterSpacing: "0.1em",
-          color: T.textTertiary,
-          background: "rgba(255,255,255,0.72)",
-          backdropFilter: "blur(4px)",
-          WebkitBackdropFilter: "blur(4px)",
-          padding: "3px 8px",
-          borderRadius: 999,
-          pointerEvents: "none",
-        }}
-      >
-        {offering.index}
-      </motion.span>
     </ImageCarousel>
   );
 
@@ -154,112 +132,25 @@ export function OfferingSheet({
         initial="hidden"
         animate="show"
         custom={1}
-        style={{ margin: 0, fontSize: 15, lineHeight: 1.65, color: T.inkSoft }}
+        style={{ margin: 0, fontSize: 15, lineHeight: 1.6, color: T.inkSoft }}
       >
         {offering.description}
       </motion.p>
 
-      {/* Trust row */}
+      {/* Clean feature list — no blocks */}
       <motion.div
         variants={content}
         initial="hidden"
         animate="show"
         custom={2}
-        style={{ display: "flex", gap: 10 }}
+        style={{ display: "flex", flexDirection: "column", gap: 11 }}
       >
-        {[
-          { icon: Truck, label: "Fast shipping" },
-          { icon: ShieldCheck, label: "2-year warranty" },
-        ].map(({ icon: Icon, label }) => (
-          <div
-            key={label}
-            style={{
-              flex: 1,
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              padding: "10px 12px",
-              background: T.bgSubtle,
-              border: `1px solid ${T.border}`,
-              borderRadius: 12,
-            }}
-          >
-            <Icon size={16} strokeWidth={1.8} color={T.textSecondary} />
-            <span style={{ fontSize: 12.5, fontWeight: 500, color: T.textSecondary }}>{label}</span>
+        {offering.features.map((f) => (
+          <div key={f} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+            <Check size={17} strokeWidth={2.4} color={T.ink} style={{ flexShrink: 0, marginTop: 1 }} />
+            <span style={{ fontSize: 14.5, lineHeight: 1.45, color: T.inkSoft }}>{f}</span>
           </div>
         ))}
-      </motion.div>
-
-      {/* Stat band */}
-      <motion.div
-        variants={content}
-        initial="hidden"
-        animate="show"
-        custom={3}
-        style={{
-          display: "flex",
-          background: T.bgSubtle,
-          border: `1px solid ${T.border}`,
-          borderRadius: 16,
-          overflow: "hidden",
-        }}
-      >
-        {offering.stats.map((s, i) => (
-          <div
-            key={s.label}
-            style={{
-              flex: 1,
-              padding: "14px 12px",
-              display: "flex",
-              flexDirection: "column",
-              gap: 3,
-              alignItems: "center",
-              borderLeft: i === 0 ? "none" : `1px solid ${T.border}`,
-            }}
-          >
-            <span style={{ fontSize: 19, fontWeight: 600, color: T.textPrimary, letterSpacing: "-0.02em" }}>
-              {s.value}
-            </span>
-            <span style={{ fontSize: 11.5, color: T.textTertiary, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-              {s.label}
-            </span>
-          </div>
-        ))}
-      </motion.div>
-
-      {/* Features */}
-      <motion.div
-        variants={content}
-        initial="hidden"
-        animate="show"
-        custom={4}
-        style={{ display: "flex", flexDirection: "column", gap: 12 }}
-      >
-        <span style={{ fontSize: 12, fontWeight: 600, color: T.textTertiary, textTransform: "uppercase", letterSpacing: "0.07em" }}>
-          What&apos;s included
-        </span>
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {offering.features.map((f) => (
-            <div key={f} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-              <div
-                style={{
-                  width: 20,
-                  height: 20,
-                  borderRadius: "50%",
-                  background: T.ink,
-                  color: "#fff",
-                  display: "grid",
-                  placeItems: "center",
-                  flexShrink: 0,
-                  marginTop: 1,
-                }}
-              >
-                <Check size={12} strokeWidth={2.4} />
-              </div>
-              <span style={{ fontSize: 14, lineHeight: 1.5, color: T.inkSoft }}>{f}</span>
-            </div>
-          ))}
-        </div>
       </motion.div>
     </div>
   );
@@ -297,9 +188,8 @@ export function OfferingSheet({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          gap: 9,
           height: 52,
-          borderRadius: 14,
+          borderRadius: 999,
           background: T.ink,
           color: "#fff",
           border: "none",
@@ -309,8 +199,7 @@ export function OfferingSheet({
           cursor: "pointer",
         }}
       >
-        <ShoppingBag size={18} strokeWidth={2} />
-        Add to cart
+        Buy Now
       </motion.button>
     </motion.div>
   );
@@ -392,7 +281,6 @@ export function OfferingSheet({
           background: T.surface,
           border: `1px solid ${T.border}`,
           borderRadius: isMobile ? "26px 26px 0 0" : 28,
-          boxShadow: "0 -8px 40px -12px rgba(0,0,0,0.22), 0 30px 60px -20px rgba(0,0,0,0.3)",
           display: "flex",
           flexDirection: isMobile ? "column" : "row",
           overflow: "hidden",
