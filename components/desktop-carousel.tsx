@@ -73,7 +73,7 @@ export function DesktopCarousel({
         gap: 28,
         overflowX: "auto",
         scrollSnapType: "x mandatory",
-        paddingBlock: "10px 24px",
+        paddingBlock: "44px 44px",
         paddingInline: "calc(50% - 170px)",
       }}
     >

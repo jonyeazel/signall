@@ -46,10 +46,10 @@ export default function Home() {
     <div
       style={{
         position: "fixed",
-        inset: isMobile ? 8 : 12,
+        inset: isMobile ? 0 : 12,
         background: T.bg,
-        borderRadius: isMobile ? 20 : 24,
-        border: `1px solid ${T.border}`,
+        borderRadius: isMobile ? 0 : 24,
+        border: isMobile ? "none" : `1px solid ${T.border}`,
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
@@ -63,7 +63,7 @@ export default function Home() {
           alignItems: "center",
           justifyContent: "space-between",
           gap: 12,
-          padding: isMobile ? "10px 8px 8px" : "16px 18px",
+          padding: isMobile ? "12px 16px 10px" : "16px 18px",
           borderBottom: "none",
         }}
       >
@@ -138,8 +138,9 @@ export default function Home() {
         style={{
           flex: 1,
           overflowY: selected ? "hidden" : "auto",
+          overflowX: "hidden",
           minHeight: 0,
-          padding: isMobile ? "0 8px" : "36px 32px 16px",
+          padding: isMobile ? 0 : "36px 32px 16px",
           WebkitOverflowScrolling: "touch",
           scrollSnapType: isMobile ? "y mandatory" : undefined,
         }}
@@ -206,6 +207,7 @@ export default function Home() {
                     index={i}
                     rootRef={feedRef}
                     onOpen={() => setSelectedId(offering.id)}
+                    withComposer
                   />
                 </div>
               ))}
@@ -230,19 +232,21 @@ export default function Home() {
         </LayoutGroup>
       </main>
 
-      {/* Dock: flush full-width on mobile, centered & transparent on desktop */}
-      <div
-        style={{
-          flexShrink: 0,
-          borderTop: isMobile ? `1px solid ${T.border}` : "none",
-          background: isMobile ? T.surface : "transparent",
-          padding: isMobile ? 0 : "12px 20px 18px",
-          display: "flex",
-          justifyContent: "center",
-        }}
-      >
-        <ChatComposer flush={isMobile} placeholder="Ask anything, or describe what to build…" />
-      </div>
+      {/* Dock: desktop only — on mobile the composer lives inside each card */}
+      {!isMobile && (
+        <div
+          style={{
+            flexShrink: 0,
+            borderTop: "none",
+            background: "transparent",
+            padding: "12px 20px 18px",
+            display: "flex",
+            justifyContent: "center",
+          }}
+        >
+          <ChatComposer placeholder="Ask anything, or describe what to build…" />
+        </div>
+      )}
     </div>
   );
 }
