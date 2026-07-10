@@ -99,7 +99,10 @@ export function OfferingSheet({
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 14, paddingRight: isMobile ? 0 : 30 }}>
           <motion.h2
-            layoutId={`title-${offering.id}`}
+            variants={content}
+            initial="hidden"
+            animate="show"
+            custom={0}
             style={{
               margin: 0,
               fontSize: 26,
@@ -112,7 +115,10 @@ export function OfferingSheet({
             {offering.title}
           </motion.h2>
           <motion.span
-            layoutId={`price-${offering.id}`}
+            variants={content}
+            initial="hidden"
+            animate="show"
+            custom={0}
             style={{
               fontSize: 20,
               fontWeight: 600,

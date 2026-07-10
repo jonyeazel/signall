@@ -77,8 +77,7 @@ export function OfferingCard({
       }}
     >
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, width: "100%" }}>
-        <motion.h3
-          layoutId={`title-${offering.id}`}
+        <h3
           style={{
             margin: 0,
             fontSize: 20,
@@ -89,9 +88,8 @@ export function OfferingCard({
           }}
         >
           {offering.title}
-        </motion.h3>
-        <motion.span
-          layoutId={`price-${offering.id}`}
+        </h3>
+        <span
           style={{
             fontSize: 18,
             fontWeight: 600,
@@ -101,7 +99,7 @@ export function OfferingCard({
           }}
         >
           {offering.price}
-        </motion.span>
+        </span>
       </div>
 
       {/* Two-line description */}
