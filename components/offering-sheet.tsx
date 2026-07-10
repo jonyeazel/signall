@@ -102,9 +102,9 @@ export function OfferingSheet({
             radius={0}
             style={{
               height: isMobile ? 150 : 190,
+              flexShrink: 0,
               marginLeft: isMobile ? -20 : -28,
               marginRight: isMobile ? -20 : -28,
-              marginTop: isMobile ? 0 : 0,
               width: "auto",
             }}
           >
@@ -205,12 +205,71 @@ export function OfferingSheet({
             {offering.description}
           </motion.p>
 
-          {/* Stat band */}
+          {/* Image gallery — full-bleed, horizontal snap */}
           <motion.div
             variants={content}
             initial="hidden"
             animate="show"
             custom={2}
+            style={{ display: "flex", flexDirection: "column", gap: 10 }}
+          >
+            <span style={{ fontSize: 12, fontWeight: 600, color: T.textTertiary, textTransform: "uppercase", letterSpacing: "0.07em" }}>
+              Gallery
+            </span>
+            <div
+              className="carousel-x"
+              style={{
+                display: "flex",
+                gap: 10,
+                overflowX: "auto",
+                scrollSnapType: "x mandatory",
+                marginLeft: isMobile ? -20 : -28,
+                marginRight: isMobile ? -20 : -28,
+                paddingLeft: isMobile ? 20 : 28,
+                paddingRight: isMobile ? 20 : 28,
+              }}
+            >
+              {[0, 1, 2, 3].map((i) => (
+                <HatchPlaceholder
+                  key={i}
+                  radius={14}
+                  style={{
+                    width: 168,
+                    height: 116,
+                    flexShrink: 0,
+                    scrollSnapAlign: "start",
+                    border: `1px solid ${T.border}`,
+                  }}
+                >
+                  <span
+                    style={{
+                      position: "absolute",
+                      bottom: 9,
+                      left: 11,
+                      fontFamily: "var(--font-geist-mono), monospace",
+                      fontSize: 10,
+                      letterSpacing: "0.1em",
+                      color: T.textTertiary,
+                      background: "rgba(255,255,255,0.72)",
+                      backdropFilter: "blur(4px)",
+                      WebkitBackdropFilter: "blur(4px)",
+                      padding: "2px 7px",
+                      borderRadius: 999,
+                    }}
+                  >
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                </HatchPlaceholder>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Stat band */}
+          <motion.div
+            variants={content}
+            initial="hidden"
+            animate="show"
+            custom={3}
             style={{
               display: "flex",
               background: T.bgSubtle,
@@ -247,7 +306,7 @@ export function OfferingSheet({
             variants={content}
             initial="hidden"
             animate="show"
-            custom={3}
+            custom={4}
             style={{ display: "flex", flexDirection: "column", gap: 10 }}
           >
             <span style={{ fontSize: 12, fontWeight: 600, color: T.textTertiary, textTransform: "uppercase", letterSpacing: "0.07em" }}>
@@ -278,7 +337,7 @@ export function OfferingSheet({
           </motion.div>
 
           {/* Contextual AI composer */}
-          <motion.div variants={content} initial="hidden" animate="show" custom={4} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <motion.div variants={content} initial="hidden" animate="show" custom={5} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <span style={{ fontSize: 12, fontWeight: 600, color: T.textTertiary, textTransform: "uppercase", letterSpacing: "0.07em" }}>
               Ask about this
             </span>
@@ -290,7 +349,7 @@ export function OfferingSheet({
             variants={content}
             initial="hidden"
             animate="show"
-            custom={5}
+            custom={6}
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.99 }}
             style={{

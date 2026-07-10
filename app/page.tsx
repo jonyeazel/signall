@@ -55,119 +55,80 @@ export default function Home() {
         flexDirection: "column",
       }}
     >
-      {/* Top bar */}
+      {/* Top bar — profile identity + CTA (both breakpoints) */}
       <div
         style={{
           flexShrink: 0,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: isMobile ? "10px 10px 0" : "14px 20px",
-          borderBottom: isMobile ? "none" : `1px solid ${T.border}`,
+          gap: 12,
+          padding: isMobile ? "10px 8px 8px" : "16px 18px",
+          borderBottom: "none",
         }}
       >
-        {isMobile ? (
-          <>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-              <div
-                style={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: "50%",
-                  background: T.ink,
-                  color: "#fff",
-                  display: "grid",
-                  placeItems: "center",
-                  fontSize: 15,
-                  fontWeight: 600,
-                  letterSpacing: "-0.02em",
-                  flexShrink: 0,
-                }}
-                aria-hidden
-              >
-                L
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
-                <span
-                  style={{
-                    fontSize: 15,
-                    fontWeight: 600,
-                    letterSpacing: "-0.02em",
-                    color: T.textPrimary,
-                    lineHeight: 1.15,
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  Lorem Studio
-                </span>
-                <span
-                  style={{
-                    fontSize: 12,
-                    color: T.textTertiary,
-                    lineHeight: 1.2,
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  Ipsum dolor sit
-                </span>
-              </div>
-            </div>
-            <button
-              type="button"
-              style={{
-                flexShrink: 0,
-                height: 38,
-                padding: "0 18px",
-                borderRadius: 999,
-                background: T.ink,
-                color: "#fff",
-                border: "none",
-                fontSize: 13.5,
-                fontWeight: 600,
-                letterSpacing: "-0.01em",
-                cursor: "pointer",
-              }}
-            >
-              Get started
-            </button>
-          </>
-        ) : (
-          <>
+        <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 10 : 12, minWidth: 0 }}>
+          <div
+            style={{
+              width: isMobile ? 38 : 44,
+              height: isMobile ? 38 : 44,
+              borderRadius: "50%",
+              background: T.ink,
+              color: "#fff",
+              display: "grid",
+              placeItems: "center",
+              fontSize: isMobile ? 15 : 17,
+              fontWeight: 600,
+              letterSpacing: "-0.02em",
+              flexShrink: 0,
+            }}
+            aria-hidden
+          >
+            L
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
             <span
               style={{
-                fontFamily: "var(--font-geist-mono), monospace",
-                fontSize: 12,
-                letterSpacing: "0.14em",
-                color: T.textSecondary,
-                textTransform: "uppercase",
+                fontSize: isMobile ? 15 : 17,
+                fontWeight: 600,
+                letterSpacing: "-0.02em",
+                color: T.textPrimary,
+                lineHeight: 1.15,
+                whiteSpace: "nowrap",
               }}
             >
-              Template
+              Lorem Studio
             </span>
-            <span style={{ display: "flex", alignItems: "center", gap: 7 }}>
-              <span
-                style={{
-                  width: 7,
-                  height: 7,
-                  borderRadius: "50%",
-                  background: "#22c55e",
-                  boxShadow: "0 0 0 3px rgba(34,197,94,0.15)",
-                }}
-              />
-              <span
-                style={{
-                  fontFamily: "var(--font-geist-mono), monospace",
-                  fontSize: 11,
-                  letterSpacing: "0.12em",
-                  color: T.textTertiary,
-                  textTransform: "uppercase",
-                }}
-              >
-                System Ready
-              </span>
+            <span
+              style={{
+                fontSize: isMobile ? 12 : 13,
+                color: T.textTertiary,
+                lineHeight: 1.2,
+                whiteSpace: "nowrap",
+              }}
+            >
+              Ipsum dolor sit
             </span>
-          </>
-        )}
+          </div>
+        </div>
+        <button
+          type="button"
+          style={{
+            flexShrink: 0,
+            height: isMobile ? 38 : 42,
+            padding: isMobile ? "0 18px" : "0 22px",
+            borderRadius: 999,
+            background: T.ink,
+            color: "#fff",
+            border: "none",
+            fontSize: isMobile ? 13.5 : 14.5,
+            fontWeight: 600,
+            letterSpacing: "-0.01em",
+            cursor: "pointer",
+          }}
+        >
+          Get started
+        </button>
       </div>
 
       {/* Scrollable feed */}
@@ -178,7 +139,7 @@ export default function Home() {
           flex: 1,
           overflowY: selected ? "hidden" : "auto",
           minHeight: 0,
-          padding: isMobile ? "8px 8px 0" : "36px 32px 16px",
+          padding: isMobile ? "0 8px" : "36px 32px 16px",
           WebkitOverflowScrolling: "touch",
           scrollSnapType: isMobile ? "y mandatory" : undefined,
         }}
