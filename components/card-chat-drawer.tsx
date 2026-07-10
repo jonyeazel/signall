@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback, useMemo, type KeyboardEvent }
 import { AnimatePresence, motion } from "motion/react";
 import { Sparkles, ArrowUp, X } from "lucide-react";
 import { type Offering } from "../lib/offerings";
-import { T, SPRING } from "../lib/theme";
+import { T, SPRING_SOFT } from "../lib/theme";
 
 type Msg = { role: "user" | "assistant"; text: string };
 
@@ -24,10 +24,14 @@ export function CardChatDrawer({
   offering,
   open,
   onClose,
+  initialMessage,
 }: {
   offering: Offering;
   open: boolean;
   onClose: () => void;
+  /** When set, the drawer opens straight into a thread seeded with this
+   *  question (e.g. submitted from the card's inline composer). */
+  initialMessage?: string;
 }) {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [value, setValue] = useState("");
@@ -87,6 +91,24 @@ export function CardChatDrawer({
     [offering],
   );
 
+  // Opened with a seed question → start the thread with it and its answer,
+  // skipping the welcome + suggestion chips.
+  useEffect(() => {
+    if (!open) return;
+    const seed = initialMessage?.trim();
+    if (!seed) return;
+    setMessages([{ role: "user", text: seed }]);
+    setTyping(true);
+    const t = setTimeout(() => {
+      setTyping(false);
+      setMessages([
+        { role: "user", text: seed },
+        { role: "assistant", text: answer(seed) },
+      ]);
+    }, 650);
+    return () => clearTimeout(t);
+  }, [open, initialMessage, answer]);
+
   const send = useCallback(
     (raw: string) => {
       const text = raw.trim();
@@ -119,22 +141,49 @@ export function CardChatDrawer({
   return (
     <AnimatePresence>
       {open && (
-        <motion.div
-          initial={{ y: "100%" }}
-          animate={{ y: 0 }}
-          exit={{ y: "100%" }}
-          transition={SPRING}
-          style={{
-            position: "absolute",
-            inset: 0,
-            zIndex: 20,
-            display: "flex",
-            flexDirection: "column",
-            background: "rgba(255,255,255,0.86)",
-            backdropFilter: "blur(24px) saturate(1.5)",
-            WebkitBackdropFilter: "blur(24px) saturate(1.5)",
-          }}
-        >
+        <>
+          {/* Scrim over the rest of the card — tap to dismiss */}
+          <motion.div
+            key="chat-scrim"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.24 }}
+            onClick={onClose}
+            style={{
+              position: "absolute",
+              inset: 0,
+              zIndex: 19,
+              background: "rgba(255,255,255,0.5)",
+              backdropFilter: "blur(3px)",
+              WebkitBackdropFilter: "blur(3px)",
+            }}
+          />
+          {/* The drawer — slides up to ~82% of the card height */}
+          <motion.div
+            key="chat-panel"
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={SPRING_SOFT}
+            style={{
+              position: "absolute",
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: "82%",
+              zIndex: 20,
+              display: "flex",
+              flexDirection: "column",
+              background: "rgba(255,255,255,0.95)",
+              backdropFilter: "blur(24px) saturate(1.5)",
+              WebkitBackdropFilter: "blur(24px) saturate(1.5)",
+              borderTopLeftRadius: 20,
+              borderTopRightRadius: 20,
+              borderTop: `1px solid ${T.border}`,
+              boxShadow: "0 -14px 40px -14px rgba(0,0,0,0.2)",
+            }}
+          >
           {/* Header */}
           <div
             style={{
@@ -300,7 +349,8 @@ export function CardChatDrawer({
               </button>
             </div>
           </div>
-        </motion.div>
+          </motion.div>
+        </>
       )}
     </AnimatePresence>
   );

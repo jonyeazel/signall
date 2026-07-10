@@ -22,6 +22,7 @@ export function CardActionBar({
   onAsk,
   onAi,
   ctaLabel = "Learn more",
+  height = 54,
 }: {
   id: string;
   title: string;
@@ -31,6 +32,8 @@ export function CardActionBar({
    *  instead of morphing into the inline composer. */
   onAi?: () => void;
   ctaLabel?: string;
+  /** Row height. Desktop cards use a lighter 44 so the buttons don't dominate. */
+  height?: number;
 }) {
   const surfaceId = `ai-surface-${id}`;
   const [aiOpen, setAiOpen] = useState(false);
@@ -54,6 +57,9 @@ export function CardActionBar({
     if (!trimmed) return;
     onAsk?.(trimmed);
     setValue("");
+    // When a handler takes over (e.g. opens a chat drawer), collapse the
+    // inline composer back to the circle for a clean hand-off.
+    if (onAsk) setAiOpen(false);
   }, [value, onAsk]);
 
   const handleKeyDown = useCallback(
@@ -69,7 +75,7 @@ export function CardActionBar({
   );
 
   const hasText = value.trim().length > 0;
-  const H = 54;
+  const H = height;
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, width: "100%" }}>
@@ -204,8 +210,8 @@ export function CardActionBar({
             transition={{ delay: 0.1 }}
             whileTap={{ scale: 0.92 }}
             style={{
-              width: 42,
-              height: 42,
+              width: H - 12,
+              height: H - 12,
               borderRadius: "50%",
               flexShrink: 0,
               background: hasText ? T.ink : T.ghost,
