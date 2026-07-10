@@ -6,7 +6,7 @@ import { type RefObject } from "react";
 import { type Offering } from "../lib/offerings";
 import { T, SPRING } from "../lib/theme";
 import { ImageCarousel } from "./image-carousel";
-import { ChatComposer } from "./chat-composer";
+import { CardActionBar } from "./card-action-bar";
 
 export function OfferingCard({
   offering,
@@ -177,7 +177,6 @@ export function OfferingCard({
             display: "flex",
             flexDirection: "column",
             overflow: "hidden",
-            boxShadow: "0 1px 2px rgba(0,0,0,0.03), 0 12px 32px -22px rgba(0,0,0,0.3)",
           }}
         >
           <div style={{ flex: 1, minHeight: 0, padding: 12, display: "flex", flexDirection: "column", gap: 12 }}>
@@ -185,9 +184,9 @@ export function OfferingCard({
             {contentBlock}
           </div>
 
-          {/* Inline composer — feels native to the product card */}
-          <div style={{ borderTop: `1px solid ${T.border}`, background: T.bgSubtle }}>
-            <ChatComposer flush placeholder={`Ask about ${offering.title}…`} />
+          {/* Action row — near-full CTA + small circular AI that morphs into an input */}
+          <div style={{ padding: "0 12px 12px" }}>
+            <CardActionBar id={offering.id} title={offering.title} onBuy={onOpen} />
           </div>
         </motion.div>
       </motion.div>
@@ -217,7 +216,6 @@ export function OfferingCard({
           display: "flex",
           flexDirection: "column",
           gap: 14,
-          boxShadow: "0 1px 2px rgba(0,0,0,0.03), 0 8px 24px -18px rgba(0,0,0,0.25)",
         }}
       >
         {media}
