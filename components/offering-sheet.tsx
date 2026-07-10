@@ -1,11 +1,12 @@
 "use client";
 
 import { motion, useDragControls, type PanInfo } from "motion/react";
-import { X, Check, Star } from "lucide-react";
+import { useState } from "react";
+import { X, Check, Star, Sparkles } from "lucide-react";
 import { type Offering } from "../lib/offerings";
 import { T, SPRING, SPRING_SOFT } from "../lib/theme";
 import { ImageCarousel } from "./image-carousel";
-import { PolicyLinks } from "./policy-links";
+import { CardChatDrawer } from "./card-chat-drawer";
 
 const content = {
   hidden: { opacity: 0, y: 14 },
@@ -22,27 +23,37 @@ export function OfferingSheet({
   topInset = 0,
   onClose,
   onBuy,
+  onAddToCart,
 }: {
   offering: Offering;
   isMobile: boolean;
   topInset?: number;
   onClose: () => void;
   onBuy?: () => void;
+  onAddToCart?: () => void;
 }) {
   const dragControls = useDragControls();
+  const [chatOpen, setChatOpen] = useState(false);
 
   const handleDragEnd = (_: unknown, info: PanInfo) => {
     if (info.offset.y > 120 || info.velocity.y > 500) onClose();
   };
 
   // Hero image gallery — shared instance (keeps the layoutId morph intact).
+  // 1:1 aspect on both breakpoints so product imagery composes identically to
+  // the slideshow card; dots + horizontal scroll are enabled here for browsing.
   const hero = (
     <ImageCarousel
       layoutId={`media-${offering.id}`}
       images={offering.images}
       alt={offering.title}
       radius={0}
-      style={{ height: isMobile ? 340 : "100%", width: "100%", flexShrink: 0 }}
+      dotBottom={16}
+      style={
+        isMobile
+          ? { width: "100%", aspectRatio: "1 / 1", flexShrink: 0 }
+          : { width: "100%", height: "100%", flexShrink: 0 }
+      }
     >
       {/* Drag handle (mobile) — starts the dismiss gesture */}
       {isMobile && (
@@ -158,15 +169,10 @@ export function OfferingSheet({
           </div>
         ))}
       </motion.div>
-
-      {/* Policy links — keeps the storefront ad-platform compliant on every device */}
-      <div style={{ marginTop: 4, paddingTop: 18, borderTop: `1px solid ${T.border}` }}>
-        <PolicyLinks tone="inline" />
-      </div>
     </div>
   );
 
-  // Sticky buy bar — CRO-optimized PDP footer.
+  // Sticky action bar — Add to cart + Buy now + Ai, all in one row.
   const buyBar = (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -176,7 +182,7 @@ export function OfferingSheet({
         flexShrink: 0,
         display: "flex",
         alignItems: "center",
-        gap: 14,
+        gap: 10,
         padding: isMobile ? "12px 16px calc(14px + env(safe-area-inset-bottom))" : "14px 20px",
         borderTop: `1px solid ${T.border}`,
         background: "rgba(255,255,255,0.9)",
@@ -184,14 +190,27 @@ export function OfferingSheet({
         WebkitBackdropFilter: "blur(10px)",
       }}
     >
-      <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.1 }}>
-        <span style={{ fontSize: 11, color: T.textTertiary, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-          Price
-        </span>
-        <span style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.02em", color: T.textPrimary }}>
-          {offering.price}
-        </span>
-      </div>
+      <motion.button
+        whileTap={{ scale: 0.98 }}
+        onClick={onAddToCart}
+        style={{
+          flex: 1,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          height: 52,
+          borderRadius: 999,
+          background: T.ghost,
+          color: T.textPrimary,
+          border: `1px solid ${T.border}`,
+          fontSize: 15.5,
+          fontWeight: 600,
+          letterSpacing: "-0.01em",
+          cursor: "pointer",
+        }}
+      >
+        Add to cart
+      </motion.button>
       <motion.button
         whileTap={{ scale: 0.98 }}
         onClick={onBuy}
@@ -205,13 +224,32 @@ export function OfferingSheet({
           background: T.ink,
           color: "#fff",
           border: "none",
-          fontSize: 16,
+          fontSize: 15.5,
           fontWeight: 600,
           letterSpacing: "-0.01em",
           cursor: "pointer",
         }}
       >
-        Buy Now
+        Buy now
+      </motion.button>
+      <motion.button
+        whileTap={{ scale: 0.94 }}
+        onClick={() => setChatOpen(true)}
+        aria-label={`Ask AI about ${offering.title}`}
+        style={{
+          width: 52,
+          height: 52,
+          flexShrink: 0,
+          display: "grid",
+          placeItems: "center",
+          borderRadius: "50%",
+          background: T.surface,
+          color: T.textPrimary,
+          border: `1px solid ${T.borderActive}`,
+          cursor: "pointer",
+        }}
+      >
+        <Sparkles size={19} strokeWidth={1.8} />
       </motion.button>
     </motion.div>
   );
@@ -321,8 +359,22 @@ export function OfferingSheet({
           </>
         ) : (
           <>
-            {/* Two-column PDP: gallery left, scrollable content right */}
-            <div style={{ flex: "0 0 44%", position: "relative", overflow: "hidden" }}>{hero}</div>
+            {/* Two-column PDP: padded square gallery left, content right.
+                The 12px inset + radius mirror the slideshow card so the image
+                composition stays consistent through the expand transition. */}
+            <div
+              style={{
+                flexShrink: 0,
+                height: "100%",
+                aspectRatio: "1 / 1",
+                padding: 12,
+                boxSizing: "border-box",
+              }}
+            >
+              <div style={{ position: "relative", height: "100%", width: "100%", borderRadius: 12, overflow: "hidden" }}>
+                {hero}
+              </div>
+            </div>
             <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
               <div
                 className="feed-scroll"
@@ -339,6 +391,9 @@ export function OfferingSheet({
             </div>
           </>
         )}
+
+        {/* AI concierge — slides up inside the expanded card */}
+        <CardChatDrawer offering={offering} open={chatOpen} onClose={() => setChatOpen(false)} />
       </motion.div>
     </div>
   );

@@ -24,8 +24,11 @@ export function OfferingCard({
   withComposer?: boolean;
   imageScrollable?: boolean;
 }) {
-  // Desktop cards open the AI concierge as a drawer that slides up inside the card.
+  // Desktop cards open the AI concierge as a drawer that slides up inside the
+  // card — but only once the shopper submits a question. Tapping Ai first
+  // expands the inline composer (like mobile); submitting seeds the drawer.
   const [chatOpen, setChatOpen] = useState(false);
+  const [chatSeed, setChatSeed] = useState<string | undefined>(undefined);
 
   // ---- Mobile: full-bleed immersive card ------------------------------------
   // The product image fills the entire card; a soft legibility veil at the
@@ -105,7 +108,7 @@ export function OfferingCard({
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ root: rootRef, once: true, amount: 0.2 }}
       transition={{ ...SPRING, delay: Math.min(index * 0.04, 0.2) }}
-      style={{ width: "100%", height: "100%" }}
+      style={{ width: "100%" }}
     >
       <motion.div
         layoutId={`card-${offering.id}`}
@@ -114,7 +117,6 @@ export function OfferingCard({
         style={{
           position: "relative",
           width: "100%",
-          height: "100%",
           background: T.surface,
           border: `1px solid ${T.border}`,
           borderRadius: 20,
@@ -127,14 +129,18 @@ export function OfferingCard({
       >
         <div
           onClick={onOpen}
-          style={{ flex: 1, minHeight: 0, width: "100%", cursor: "pointer" }}
+          style={{ width: "100%", aspectRatio: "1 / 1", flexShrink: 0, cursor: "pointer" }}
         >
+          {/* Slideshow view: a single 1:1 hero, no dots and not scrollable —
+              browsing images belongs to the expanded card, so this never
+              hijacks the horizontal slide between products. */}
           <ImageCarousel
             layoutId={`media-${offering.id}`}
             images={offering.images}
             alt={offering.title}
             radius={12}
-            scrollable={imageScrollable}
+            dots={false}
+            scrollable={false}
             style={{ height: "100%", width: "100%" }}
           />
         </div>
@@ -196,16 +202,30 @@ export function OfferingCard({
           </p>
         </button>
 
-        {/* Action row — mirrors the mobile card. Ai opens the in-card drawer. */}
+        {/* Action row — lighter than mobile so it doesn't dominate the card.
+            Tapping Ai expands the inline composer; submitting a question seeds
+            and opens the chat drawer. */}
         <CardActionBar
           id={offering.id}
           title={offering.title}
+          height={44}
           onBuy={onOpen}
-          onAi={() => setChatOpen(true)}
+          onAsk={(q) => {
+            setChatSeed(q);
+            setChatOpen(true);
+          }}
         />
 
         {/* AI concierge — slides up inside the card, clipped to its corners */}
-        <CardChatDrawer offering={offering} open={chatOpen} onClose={() => setChatOpen(false)} />
+        <CardChatDrawer
+          offering={offering}
+          open={chatOpen}
+          initialMessage={chatSeed}
+          onClose={() => {
+            setChatOpen(false);
+            setChatSeed(undefined);
+          }}
+        />
       </motion.div>
     </motion.div>
   );

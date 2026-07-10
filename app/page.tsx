@@ -303,6 +303,7 @@ export default function Home() {
                 topInset={headerH}
                 onClose={close}
                 onBuy={() => handleBuy(selected.id)}
+                onAddToCart={() => addToCart(selected.id)}
               />
             )}
           </AnimatePresence>
