@@ -93,9 +93,9 @@ export default function Home() {
   }, [viewportH]);
 
   const scrollToIndex = useCallback(
-    (i: number) => {
+    (i: number, behavior: ScrollBehavior = "smooth") => {
       const el = feedRef.current;
-      if (el && viewportH) el.scrollTo({ top: i * viewportH, behavior: "smooth" });
+      if (el && viewportH) el.scrollTo({ top: i * viewportH, behavior });
       setActiveIndex(i);
     },
     [viewportH],
@@ -317,8 +317,10 @@ export default function Home() {
             offerings={OFFERINGS}
             activeIndex={activeIndex}
             onPick={(i) => {
+              // Feed is positioned instantly under the full-screen zoom clone,
+              // so revealing it is a seamless hand-off (no visible scroll).
+              scrollToIndex(i, "auto");
               setOverview(false);
-              scrollToIndex(i);
             }}
             onClose={() => setOverview(false)}
           />
