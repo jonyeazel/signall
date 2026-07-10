@@ -111,6 +111,7 @@ export function OfferingCard({
             offering={offering}
             open={chatOpen}
             initialMessage={chatSeed}
+            flatTop
             onClose={() => {
               setChatOpen(false);
               setChatSeed(undefined);

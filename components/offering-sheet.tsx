@@ -314,7 +314,7 @@ export function OfferingSheet({
           maxHeight: isMobile ? `calc(100dvh - ${topInset + 16}px)` : "86vh",
           background: T.surface,
           border: `1px solid ${T.border}`,
-          borderRadius: isMobile ? "26px 26px 0 0" : 28,
+          borderRadius: isMobile ? 0 : 28,
           display: "flex",
           flexDirection: isMobile ? "column" : "row",
           overflow: "hidden",
@@ -341,7 +341,7 @@ export function OfferingSheet({
             </div>
             {buyBar}
             {/* AI concierge — covers the full card on mobile */}
-            <CardChatDrawer offering={offering} open={chatOpen} onClose={() => setChatOpen(false)} />
+            <CardChatDrawer offering={offering} open={chatOpen} flatTop onClose={() => setChatOpen(false)} />
           </>
         ) : (
           <>

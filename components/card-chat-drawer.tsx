@@ -29,6 +29,7 @@ export function CardChatDrawer({
   onClose,
   initialMessage,
   heightPct = "82%",
+  flatTop = false,
 }: {
   offering: Offering;
   open: boolean;
@@ -39,6 +40,8 @@ export function CardChatDrawer({
   /** How much of the offset parent the drawer covers. Defaults to 82%
    *  (leaves a sliver of the card); the expanded PDP passes a taller value. */
   heightPct?: string;
+  /** Square off the top corners (mobile full-bleed) instead of rounding them. */
+  flatTop?: boolean;
 }) {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [value, setValue] = useState("");
@@ -238,8 +241,8 @@ export function CardChatDrawer({
               background: "rgba(255,255,255,0.985)",
               backdropFilter: "blur(28px) saturate(1.6)",
               WebkitBackdropFilter: "blur(28px) saturate(1.6)",
-              borderTopLeftRadius: 20,
-              borderTopRightRadius: 20,
+              borderTopLeftRadius: flatTop ? 0 : 20,
+              borderTopRightRadius: flatTop ? 0 : 20,
               borderTop: `1px solid ${T.border}`,
               boxShadow: "0 -14px 40px -14px rgba(0,0,0,0.2)",
             }}
