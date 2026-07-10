@@ -200,7 +200,10 @@ export default function Home() {
             justifyContent: "space-between",
             gap: 12,
             padding: "20px 28px",
-            background: T.bg,
+            // When a card is expanded the header background drops away so its
+            // content floats over the scrim and the card centers cleanly.
+            background: selected ? "transparent" : T.bg,
+            transition: "background 200ms ease",
           }}
         >
           {/* Light wordmark lockup — a small ink dot + name + tagline, all on

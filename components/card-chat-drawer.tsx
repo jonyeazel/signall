@@ -28,6 +28,7 @@ export function CardChatDrawer({
   open,
   onClose,
   initialMessage,
+  heightPct = "82%",
 }: {
   offering: Offering;
   open: boolean;
@@ -35,6 +36,9 @@ export function CardChatDrawer({
   /** When set, the drawer opens straight into a thread seeded with this
    *  question (e.g. submitted from the card's inline composer). */
   initialMessage?: string;
+  /** How much of the offset parent the drawer covers. Defaults to 82%
+   *  (leaves a sliver of the card); the expanded PDP passes a taller value. */
+  heightPct?: string;
 }) {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [value, setValue] = useState("");
@@ -49,9 +53,12 @@ export function CardChatDrawer({
   );
 
   // Focus the input when the drawer opens; reset the thread when it closes.
+  // preventScroll is essential: without it the browser scrolls the card into
+  // view to reveal the input, which shifts the shared-layout product image and
+  // makes the background "flip" as the drawer opens.
   useEffect(() => {
     if (open) {
-      const raf = requestAnimationFrame(() => inputRef.current?.focus());
+      const raf = requestAnimationFrame(() => inputRef.current?.focus({ preventScroll: true }));
       return () => cancelAnimationFrame(raf);
     }
     const t = setTimeout(() => {
@@ -174,7 +181,7 @@ export function CardChatDrawer({
               left: 0,
               right: 0,
               bottom: 0,
-              height: "82%",
+              height: heightPct,
               zIndex: 20,
               display: "flex",
               flexDirection: "column",

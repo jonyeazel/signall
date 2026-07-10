@@ -347,6 +347,8 @@ export function OfferingSheet({
               {body}
             </div>
             {buyBar}
+            {/* AI concierge — covers the full card on mobile */}
+            <CardChatDrawer offering={offering} open={chatOpen} onClose={() => setChatOpen(false)} />
           </>
         ) : (
           <>
@@ -367,7 +369,19 @@ export function OfferingSheet({
                 {hero}
               </div>
             </div>
-            <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
+            {/* Right column is its own section — a hairline divider joins the
+                image section and gives the buy bar's top border something to
+                meet. position:relative scopes the chat drawer to this panel. */}
+            <div
+              style={{
+                position: "relative",
+                flex: 1,
+                minWidth: 0,
+                display: "flex",
+                flexDirection: "column",
+                borderLeft: `1px solid ${T.border}`,
+              }}
+            >
               <div
                 className="feed-scroll"
                 style={{
@@ -380,12 +394,18 @@ export function OfferingSheet({
                 {body}
               </div>
               {buyBar}
+
+              {/* AI concierge — slides up over the text panel only, so the
+                  product gallery stays visible on the left while chatting. */}
+              <CardChatDrawer
+                offering={offering}
+                open={chatOpen}
+                heightPct="92%"
+                onClose={() => setChatOpen(false)}
+              />
             </div>
           </>
         )}
-
-        {/* AI concierge — slides up inside the expanded card */}
-        <CardChatDrawer offering={offering} open={chatOpen} onClose={() => setChatOpen(false)} />
       </motion.div>
     </div>
   );
