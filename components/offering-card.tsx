@@ -1,12 +1,12 @@
 "use client";
 
 import { motion } from "motion/react";
-import { Star } from "lucide-react";
 import { type RefObject } from "react";
 import { type Offering } from "../lib/offerings";
 import { T, SPRING } from "../lib/theme";
 import { ImageCarousel } from "./image-carousel";
 import { CardActionBar } from "./card-action-bar";
+import { CardIdentity } from "./card-identity";
 
 export function OfferingCard({
   offering,
@@ -65,10 +65,10 @@ export function OfferingCard({
             />
           </div>
 
-          {/* Bottom content — hook + social proof + action row.
+          {/* Bottom content — classic profile block + action row.
               No gradient fade: the container is pointer-transparent so swipes
               pass through to the gallery; only the action row captures taps.
-              A soft white text-halo keeps copy legible over any image. */}
+              Soft white text-halos keep copy legible over the image. */}
           <div
             style={{
               position: "absolute",
@@ -83,38 +83,7 @@ export function OfferingCard({
               pointerEvents: "none",
             }}
           >
-            <div style={{ display: "flex", flexDirection: "column", gap: 4, padding: "0 4px" }}>
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: 15,
-                  fontWeight: 500,
-                  lineHeight: 1.35,
-                  letterSpacing: "-0.01em",
-                  color: T.textPrimary,
-                  textShadow: "0 1px 12px rgba(251,251,251,0.9), 0 0 4px rgba(251,251,251,0.9)",
-                  display: "-webkit-box",
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: "vertical",
-                  overflow: "hidden",
-                }}
-              >
-                {offering.tagline}
-              </p>
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <Star size={13} strokeWidth={0} fill={T.ink} />
-                <span
-                  style={{
-                    fontSize: 12.5,
-                    color: T.textSecondary,
-                    letterSpacing: "-0.01em",
-                    textShadow: "0 1px 12px rgba(251,251,251,0.9), 0 0 4px rgba(251,251,251,0.9)",
-                  }}
-                >
-                  {offering.rating.toFixed(1)} · {offering.reviews.toLocaleString()} reviews
-                </span>
-              </div>
-            </div>
+            <CardIdentity offering={offering} />
 
             <div style={{ pointerEvents: "auto" }}>
               <CardActionBar id={offering.id} title={offering.title} onBuy={onOpen} />
@@ -143,7 +112,7 @@ export function OfferingCard({
           height: "100%",
           background: T.surface,
           border: `1px solid ${T.border}`,
-          borderRadius: 22,
+          borderRadius: 0,
           padding: 12,
           display: "flex",
           flexDirection: "column",
@@ -158,7 +127,7 @@ export function OfferingCard({
             layoutId={`media-${offering.id}`}
             images={offering.images}
             alt={offering.title}
-            radius={14}
+            radius={0}
             scrollable={imageScrollable}
             style={{ height: "100%", width: "100%" }}
           />

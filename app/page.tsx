@@ -183,7 +183,6 @@ export default function Home() {
       {isMobile ? (
         <MobileHeader
           barRef={headerRef}
-          offering={OFFERINGS[activeIndex] ?? OFFERINGS[0]}
           cartCount={cartCount}
           hidden={!!selected}
           onOpenCart={() => setCartOpen(true)}

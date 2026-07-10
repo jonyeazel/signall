@@ -2,9 +2,9 @@
 
 import { useRef, useEffect, useLayoutEffect, useState, useCallback } from "react";
 import { motion } from "motion/react";
-import { Star } from "lucide-react";
 import { type Offering } from "../lib/offerings";
 import { T, SPRING } from "../lib/theme";
+import { CardIdentity } from "./card-identity";
 
 type Dims = { w: number; h: number; pad: number; vw: number; vh: number; f: number };
 
@@ -44,38 +44,7 @@ function CardFace({ offering, vw, vh, f }: { offering: Offering; vw: number; vh:
             gap: 12,
           }}
         >
-          <div style={{ display: "flex", flexDirection: "column", gap: 4, padding: "0 4px" }}>
-            <p
-              style={{
-                margin: 0,
-                fontSize: 15,
-                fontWeight: 500,
-                lineHeight: 1.35,
-                letterSpacing: "-0.01em",
-                color: T.textPrimary,
-                textShadow: "0 1px 12px rgba(251,251,251,0.9), 0 0 4px rgba(251,251,251,0.9)",
-                display: "-webkit-box",
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: "vertical",
-                overflow: "hidden",
-              }}
-            >
-              {offering.tagline}
-            </p>
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <Star size={13} strokeWidth={0} fill={T.ink} />
-              <span
-                style={{
-                  fontSize: 12.5,
-                  color: T.textSecondary,
-                  letterSpacing: "-0.01em",
-                  textShadow: "0 1px 12px rgba(251,251,251,0.9), 0 0 4px rgba(251,251,251,0.9)",
-                }}
-              >
-                {offering.rating.toFixed(1)} · {offering.reviews.toLocaleString()} reviews
-              </span>
-            </div>
-          </div>
+          <CardIdentity offering={offering} />
 
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div
@@ -315,10 +284,10 @@ export function CardOverview({
                     padding: 0,
                     background: T.surface,
                     border: `1px solid ${T.border}`,
-                    borderRadius: 24,
+                    borderRadius: 0,
                     overflow: "hidden",
                     cursor: "pointer",
-                    boxShadow: "0 12px 32px -12px rgba(0,0,0,0.22)",
+                    boxShadow: "0 18px 40px -16px rgba(0,0,0,0.28)",
                     WebkitTapHighlightColor: "transparent",
                   }}
                 >
