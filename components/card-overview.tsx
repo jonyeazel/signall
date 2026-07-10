@@ -8,6 +8,10 @@ import { CardIdentity } from "./card-identity";
 
 type Dims = { w: number; h: number; pad: number; vw: number; vh: number; f: number };
 
+// Corner radius applied to the miniature cards in THIS slideshow view only.
+// The live full-bleed cards stay square.
+const CARD_RADIUS = 28;
+
 /**
  * A pixel-perfect miniature of the full-bleed product card. It is rendered at
  * the real viewport size (vw × vh) and uniformly scaled down, so proportions
@@ -111,6 +115,7 @@ export function CardOverview({
   const raf = useRef(0);
   const [dims, setDims] = useState<Dims | null>(null);
   const [picked, setPicked] = useState<{ i: number; rect: DOMRect } | null>(null);
+  const [current, setCurrent] = useState(activeIndex);
   const pickedRef = useRef(false);
 
   // Size the miniature to the live card's exact aspect ratio (vw : vh), filling
@@ -122,9 +127,11 @@ export function CardOverview({
       const vw = window.innerWidth;
       const vh = window.innerHeight;
       const ratio = vw / vh;
-      let h = sc.clientHeight * 0.94;
+      let h = sc.clientHeight * 0.92;
       let w = h * ratio;
-      const maxW = vw * 0.86;
+      // Slightly narrower so a clear sliver of the neighbouring cards shows —
+      // a natural affordance that there's more to scroll.
+      const maxW = vw * 0.8;
       if (w > maxW) {
         w = maxW;
         h = w / ratio;
@@ -142,13 +149,21 @@ export function CardOverview({
     const sc = scrollerRef.current;
     if (!sc) return;
     const center = sc.scrollLeft + sc.clientWidth / 2;
-    cardRefs.current.forEach((el) => {
+    let nearest = 0;
+    let nearestDist = Infinity;
+    cardRefs.current.forEach((el, i) => {
       if (!el) return;
       const cardCenter = el.offsetLeft + el.offsetWidth / 2;
-      const t = Math.min(Math.abs(center - cardCenter) / sc.clientWidth, 1);
+      const dist = Math.abs(center - cardCenter);
+      const t = Math.min(dist / sc.clientWidth, 1);
       el.style.transform = `scale(${1 - t * 0.14})`;
       el.style.opacity = String(1 - t * 0.42);
+      if (dist < nearestDist) {
+        nearestDist = dist;
+        nearest = i;
+      }
     });
+    setCurrent((prev) => (prev === nearest ? prev : nearest));
   }, []);
 
   const onScroll = useCallback(() => {
@@ -284,10 +299,9 @@ export function CardOverview({
                     padding: 0,
                     background: T.surface,
                     border: `1px solid ${T.border}`,
-                    borderRadius: 0,
+                    borderRadius: CARD_RADIUS,
                     overflow: "hidden",
                     cursor: "pointer",
-                    boxShadow: "0 18px 40px -16px rgba(0,0,0,0.28)",
                     WebkitTapHighlightColor: "transparent",
                   }}
                 >
@@ -298,26 +312,39 @@ export function CardOverview({
         </div>
       </motion.div>
 
+      {/* Pagination dots — reflect the centered card as you scroll */}
       <div
         style={{
           flexShrink: 0,
-          textAlign: "center",
-          padding: "4px 0 calc(16px + env(safe-area-inset-bottom))",
-          fontSize: 12.5,
-          color: T.textTertiary,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 6,
+          padding: "6px 0 calc(18px + env(safe-area-inset-bottom))",
           opacity: picked ? 0 : 1,
           transition: "opacity 0.2s ease",
         }}
       >
-        Tap a product to open it
+        {offerings.map((o, i) => (
+          <span
+            key={o.id}
+            style={{
+              width: i === current ? 20 : 6,
+              height: 6,
+              borderRadius: 999,
+              background: i === current ? T.ink : T.borderActive,
+              transition: "width 0.28s ease, background 0.28s ease",
+            }}
+          />
+        ))}
       </div>
 
       {/* Zoom-to-open: the tapped miniature grows uniformly from its spot to
           full-bleed, then hands off to the feed already positioned on it. */}
       {picked && dims && (
         <motion.div
-          initial={{ x: picked.rect.left, y: picked.rect.top, scale: picked.rect.width / dims.vw }}
-          animate={{ x: 0, y: 0, scale: 1 }}
+          initial={{ x: picked.rect.left, y: picked.rect.top, scale: picked.rect.width / dims.vw, borderRadius: CARD_RADIUS }}
+          animate={{ x: 0, y: 0, scale: 1, borderRadius: 0 }}
           transition={SPRING}
           onAnimationComplete={() => onPick(picked.i)}
           style={{
