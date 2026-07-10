@@ -2,7 +2,7 @@
 
 import { motion } from "motion/react";
 import { useRef, useState, useCallback, type CSSProperties, type ReactNode } from "react";
-import { T } from "../lib/theme";
+import { T, SPRING } from "../lib/theme";
 
 /**
  * Full-width, horizontally-paged image carousel with pagination dots.
@@ -60,6 +60,7 @@ export function ImageCarousel({
   return (
     <motion.div
       layoutId={layoutId}
+      transition={SPRING}
       style={{
         position: "relative",
         borderRadius: radius,

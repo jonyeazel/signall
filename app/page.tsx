@@ -1,21 +1,30 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { AnimatePresence, LayoutGroup } from "motion/react";
+import { AnimatePresence, LayoutGroup, motion } from "motion/react";
+import { ShoppingBag } from "lucide-react";
 import { ChatComposer } from "../components/chat-composer";
 import { OfferingCard } from "../components/offering-card";
 import { OfferingSheet } from "../components/offering-sheet";
 import { DesktopCarousel } from "../components/desktop-carousel";
+import { MobileHeader } from "../components/mobile-header";
+import { CardOverview } from "../components/card-overview";
+import { CartSheet, type CartLine } from "../components/cart-sheet";
 import { OFFERINGS } from "../lib/offerings";
 import { useMediaQuery } from "../hooks/use-media-query";
-import { T } from "../lib/theme";
+import { T, SPRING_SOFT } from "../lib/theme";
 
 export default function Home() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [viewportH, setViewportH] = useState(0);
   const [headerH, setHeaderH] = useState(0);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [overview, setOverview] = useState(false);
+  const [cartOpen, setCartOpen] = useState(false);
+  const [cart, setCart] = useState<Record<string, number>>({});
   const feedRef = useRef<HTMLElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
+  const scrollRaf = useRef(0);
 
   const isMobile = useMediaQuery("(max-width: 640px)");
 
@@ -39,21 +48,123 @@ export default function Home() {
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-  }, []);
+  }, [isMobile]);
 
   const selected = OFFERINGS.find((o) => o.id === selectedId) ?? null;
-
   const close = useCallback(() => setSelectedId(null), []);
 
-  // Escape-to-close while a sheet is open.
+  const cartCount = Object.values(cart).reduce((n, q) => n + q, 0);
+  const cartItems: CartLine[] = Object.entries(cart)
+    .map(([id, qty]) => ({ offering: OFFERINGS.find((o) => o.id === id)!, qty }))
+    .filter((l) => l.offering);
+
+  const addToCart = useCallback((id: string) => {
+    setCart((c) => ({ ...c, [id]: (c[id] ?? 0) + 1 }));
+  }, []);
+  const removeFromCart = useCallback((id: string) => {
+    setCart((c) => {
+      const next = { ...c };
+      delete next[id];
+      return next;
+    });
+  }, []);
+
+  // Buy Now (from the PDP) → add to cart, close the PDP, reveal the cart.
+  const handleBuy = useCallback(
+    (id: string) => {
+      addToCart(id);
+      setSelectedId(null);
+      setCartOpen(true);
+    },
+    [addToCart],
+  );
+
+  // Track which card is centered so the floating header can adopt its identity.
+  const onFeedScroll = useCallback(() => {
+    if (scrollRaf.current) return;
+    scrollRaf.current = requestAnimationFrame(() => {
+      scrollRaf.current = 0;
+      const el = feedRef.current;
+      if (!el || !viewportH) return;
+      const i = Math.round(el.scrollTop / viewportH);
+      const clamped = Math.max(0, Math.min(OFFERINGS.length - 1, i));
+      setActiveIndex((prev) => (prev === clamped ? prev : clamped));
+    });
+  }, [viewportH]);
+
+  const scrollToIndex = useCallback(
+    (i: number) => {
+      const el = feedRef.current;
+      if (el && viewportH) el.scrollTo({ top: i * viewportH, behavior: "smooth" });
+      setActiveIndex(i);
+    },
+    [viewportH],
+  );
+
+  // Escape-to-close: cart, then overview, then sheet.
   useEffect(() => {
-    if (!selected) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
+      if (e.key !== "Escape") return;
+      if (cartOpen) setCartOpen(false);
+      else if (overview) setOverview(false);
+      else if (selected) close();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [selected, close]);
+  }, [cartOpen, overview, selected, close]);
+
+  const cartButton = (
+    <motion.button
+      type="button"
+      onClick={() => setCartOpen(true)}
+      whileTap={{ scale: 0.94 }}
+      aria-label={`Cart, ${cartCount} item${cartCount === 1 ? "" : "s"}`}
+      style={{
+        position: "relative",
+        flexShrink: 0,
+        width: 44,
+        height: 44,
+        borderRadius: "50%",
+        background: T.surface,
+        border: `1px solid ${T.border}`,
+        color: T.textPrimary,
+        display: "grid",
+        placeItems: "center",
+        cursor: "pointer",
+      }}
+    >
+      <ShoppingBag size={20} strokeWidth={1.9} />
+      <AnimatePresence>
+        {cartCount > 0 && (
+          <motion.span
+            key={cartCount}
+            initial={{ scale: 0.4, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.4, opacity: 0 }}
+            transition={SPRING_SOFT}
+            style={{
+              position: "absolute",
+              top: -2,
+              right: -2,
+              minWidth: 19,
+              height: 19,
+              padding: "0 5px",
+              borderRadius: 999,
+              background: T.ink,
+              color: "#fff",
+              fontSize: 11,
+              fontWeight: 700,
+              display: "grid",
+              placeItems: "center",
+              border: "2px solid #FBFBFB",
+            }}
+          >
+            {cartCount}
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </motion.button>
+  );
 
   return (
     <div
@@ -68,89 +179,75 @@ export default function Home() {
         flexDirection: "column",
       }}
     >
-      {/* Top bar — profile identity + CTA (always visible, above the sheet) */}
-      <div
-        ref={headerRef}
-        style={{
-          position: "relative",
-          zIndex: 60,
-          flexShrink: 0,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 12,
-          padding: isMobile ? "12px 16px 10px" : "16px 18px",
-          background: T.bg,
-          borderBottom: "none",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 10 : 12, minWidth: 0 }}>
-          <div
-            style={{
-              width: isMobile ? 38 : 44,
-              height: isMobile ? 38 : 44,
-              borderRadius: "50%",
-              background: T.ink,
-              color: "#fff",
-              display: "grid",
-              placeItems: "center",
-              fontSize: isMobile ? 15 : 17,
-              fontWeight: 600,
-              letterSpacing: "-0.02em",
-              flexShrink: 0,
-            }}
-            aria-hidden
-          >
-            L
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
-            <span
-              style={{
-                fontSize: isMobile ? 15 : 17,
-                fontWeight: 600,
-                letterSpacing: "-0.02em",
-                color: T.textPrimary,
-                lineHeight: 1.15,
-                whiteSpace: "nowrap",
-              }}
-            >
-              Lorem Studio
-            </span>
-            <span
-              style={{
-                fontSize: isMobile ? 12 : 13,
-                color: T.textTertiary,
-                lineHeight: 1.2,
-                whiteSpace: "nowrap",
-              }}
-            >
-              Ipsum dolor sit
-            </span>
-          </div>
-        </div>
-        <button
-          type="button"
+      {/* Header: floating & product-aware on mobile, identity bar on desktop */}
+      {isMobile ? (
+        <MobileHeader
+          barRef={headerRef}
+          offering={OFFERINGS[activeIndex] ?? OFFERINGS[0]}
+          cartCount={cartCount}
+          onOpenCart={() => setCartOpen(true)}
+          onOpenOverview={() => setOverview(true)}
+        />
+      ) : (
+        <div
+          ref={headerRef}
           style={{
+            position: "relative",
+            zIndex: 60,
             flexShrink: 0,
-            height: isMobile ? 38 : 42,
-            padding: isMobile ? "0 18px" : "0 22px",
-            borderRadius: 999,
-            background: T.ink,
-            color: "#fff",
-            border: "none",
-            fontSize: isMobile ? 13.5 : 14.5,
-            fontWeight: 600,
-            letterSpacing: "-0.01em",
-            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+            padding: "16px 18px",
+            background: T.bg,
           }}
         >
-          Get started
-        </button>
-      </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+            <div
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: "50%",
+                background: T.ink,
+                color: "#fff",
+                display: "grid",
+                placeItems: "center",
+                fontSize: 17,
+                fontWeight: 600,
+                letterSpacing: "-0.02em",
+                flexShrink: 0,
+              }}
+              aria-hidden
+            >
+              L
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+              <span
+                style={{
+                  fontSize: 17,
+                  fontWeight: 600,
+                  letterSpacing: "-0.02em",
+                  color: T.textPrimary,
+                  lineHeight: 1.15,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Lorem Studio
+              </span>
+              <span style={{ fontSize: 13, color: T.textTertiary, lineHeight: 1.2, whiteSpace: "nowrap" }}>
+                Ipsum dolor sit
+              </span>
+            </div>
+          </div>
+          {cartButton}
+        </div>
+      )}
 
       {/* Scrollable feed */}
       <main
         ref={feedRef}
+        onScroll={isMobile ? onFeedScroll : undefined}
         className={isMobile ? "carousel-x" : "feed-scroll"}
         style={{
           flex: 1,
@@ -165,7 +262,6 @@ export default function Home() {
           scrollSnapType: isMobile ? "y mandatory" : undefined,
         }}
       >
-        {/* Cards */}
         <LayoutGroup>
           {isMobile ? (
             <div style={{ display: "flex", flexDirection: "column" }}>
@@ -205,11 +301,39 @@ export default function Home() {
                 isMobile={isMobile}
                 topInset={headerH}
                 onClose={close}
+                onBuy={() => handleBuy(selected.id)}
               />
             )}
           </AnimatePresence>
         </LayoutGroup>
       </main>
+
+      {/* iOS-style overview deck (mobile) */}
+      <AnimatePresence>
+        {isMobile && overview && (
+          <CardOverview
+            offerings={OFFERINGS}
+            activeIndex={activeIndex}
+            onPick={(i) => {
+              setOverview(false);
+              scrollToIndex(i);
+            }}
+            onClose={() => setOverview(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Cart */}
+      <AnimatePresence>
+        {cartOpen && (
+          <CartSheet
+            items={cartItems}
+            isMobile={isMobile}
+            onRemove={removeFromCart}
+            onClose={() => setCartOpen(false)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Dock: desktop only — on mobile the composer lives inside each card */}
       {!isMobile && (

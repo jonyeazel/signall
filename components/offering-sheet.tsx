@@ -20,11 +20,13 @@ export function OfferingSheet({
   isMobile,
   topInset = 0,
   onClose,
+  onBuy,
 }: {
   offering: Offering;
   isMobile: boolean;
   topInset?: number;
   onClose: () => void;
+  onBuy?: () => void;
 }) {
   const dragControls = useDragControls();
 
@@ -183,6 +185,7 @@ export function OfferingSheet({
       </div>
       <motion.button
         whileTap={{ scale: 0.98 }}
+        onClick={onBuy}
         style={{
           flex: 1,
           display: "flex",
