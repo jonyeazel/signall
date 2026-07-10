@@ -81,7 +81,7 @@ export function OfferingCard({
           layoutId={`title-${offering.id}`}
           style={{
             margin: 0,
-            fontSize: 17,
+            fontSize: 20,
             fontWeight: 600,
             letterSpacing: "-0.02em",
             color: T.textPrimary,
@@ -93,7 +93,7 @@ export function OfferingCard({
         <motion.span
           layoutId={`price-${offering.id}`}
           style={{
-            fontSize: 15,
+            fontSize: 18,
             fontWeight: 600,
             letterSpacing: "-0.01em",
             color: T.textPrimary,
@@ -108,8 +108,8 @@ export function OfferingCard({
       <p
         style={{
           margin: 0,
-          fontSize: 12.5,
-          lineHeight: 1.45,
+          fontSize: 14,
+          lineHeight: 1.5,
           color: T.textSecondary,
           display: "-webkit-box",
           WebkitLineClamp: 2,
@@ -119,25 +119,6 @@ export function OfferingCard({
       >
         {offering.tagline}
       </p>
-
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 2 }}>
-        {offering.tags.slice(0, 2).map((tag) => (
-          <span
-            key={tag}
-            style={{
-              fontSize: 11,
-              fontWeight: 500,
-              color: T.textSecondary,
-              background: T.bgSubtle,
-              border: `1px solid ${T.border}`,
-              borderRadius: 999,
-              padding: "3px 9px",
-            }}
-          >
-            {tag}
-          </span>
-        ))}
-      </div>
     </button>
   );
 
