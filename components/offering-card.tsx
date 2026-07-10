@@ -112,10 +112,11 @@ export function OfferingCard({
     >
       <motion.div
         layoutId={`card-${offering.id}`}
-        whileHover={chatOpen ? undefined : { y: -4 }}
+        whileHover={chatOpen ? undefined : { scale: 1.01 }}
         transition={SPRING}
         style={{
           position: "relative",
+          transformOrigin: "center center",
           width: "100%",
           background: T.surface,
           border: `1px solid ${T.border}`,

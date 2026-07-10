@@ -4,17 +4,16 @@ import { motion, useDragControls, type PanInfo } from "motion/react";
 import { useState } from "react";
 import { X, Check, Star } from "lucide-react";
 import { type Offering } from "../lib/offerings";
-import { T, SPRING, SPRING_SOFT } from "../lib/theme";
+import { T, SPRING } from "../lib/theme";
 import { ImageCarousel } from "./image-carousel";
 import { CardChatDrawer } from "./card-chat-drawer";
 
+// Content is present immediately (no fade/stagger): during the shared-layout
+// morph, fading pieces in drew the eye to areas that made the grid transform
+// look less clean. Everything stays visible so the morph reads as one motion.
 const content = {
-  hidden: { opacity: 0, y: 14 },
-  show: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: { delay: 0.12 + i * 0.05, ...SPRING_SOFT },
-  }),
+  hidden: { opacity: 1, y: 0 },
+  show: () => ({ opacity: 1, y: 0 }),
 };
 
 export function OfferingSheet({
@@ -162,10 +161,7 @@ export function OfferingSheet({
 
   // Sticky action bar — Add to cart + Buy now + Ai, all in one row.
   const buyBar = (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.28, ...SPRING_SOFT }}
+    <div
       style={{
         flexShrink: 0,
         display: "flex",
@@ -242,14 +238,11 @@ export function OfferingSheet({
       >
         Ai
       </motion.button>
-    </motion.div>
+    </div>
   );
 
   const closeButton = (
     <motion.button
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: 0.15 }}
       onClick={onClose}
       aria-label="Close"
       whileTap={{ scale: 0.9 }}
