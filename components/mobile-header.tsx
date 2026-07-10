@@ -55,7 +55,7 @@ export function MobileHeader({
         alignItems: "center",
         justifyContent: "space-between",
         gap: 10,
-        padding: "20px 20px 0",
+        padding: "calc(20px + env(safe-area-inset-top)) 20px 0",
         background: "transparent",
         pointerEvents: "none",
         opacity: hidden ? 0 : 1,
