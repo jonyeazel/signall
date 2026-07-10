@@ -22,6 +22,7 @@ export function ImageCarousel({
   radius = 0,
   dots = true,
   dotBottom = 12,
+  dotTop,
   scrollable = true,
   tapToBrowse = false,
   imageFit = "cover",
@@ -35,6 +36,9 @@ export function ImageCarousel({
   radius?: number;
   dots?: boolean;
   dotBottom?: number;
+  /** When set, dots anchor to the top of the frame (story/reel style) instead
+   *  of the bottom — used by the immersive mobile card. */
+  dotTop?: number;
   scrollable?: boolean;
   tapToBrowse?: boolean;
   imageFit?: "cover" | "contain";
@@ -182,7 +186,7 @@ export function ImageCarousel({
         <div
           style={{
             position: "absolute",
-            bottom: dotBottom,
+            ...(dotTop != null ? { top: dotTop } : { bottom: dotBottom }),
             left: 0,
             right: 0,
             display: "flex",

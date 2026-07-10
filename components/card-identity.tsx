@@ -1,4 +1,3 @@
-import { Star } from "lucide-react";
 import { type Offering } from "../lib/offerings";
 import { T } from "../lib/theme";
 
@@ -51,17 +50,14 @@ export function CardIdentity({ offering }: { offering: Offering }) {
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 5,
-            fontSize: 12.5,
-            color: T.textSecondary,
+            fontSize: 13.5,
+            fontWeight: 600,
+            color: T.textPrimary,
             whiteSpace: "nowrap",
             textShadow: HALO,
           }}
         >
-          <span style={{ fontWeight: 600, color: T.textPrimary }}>{offering.price}</span>
-          <span style={{ opacity: 0.4 }}>·</span>
-          <Star size={11} strokeWidth={0} fill={T.ink} />
-          <span>{offering.rating.toFixed(1)}</span>
+          {offering.price}
         </div>
         <p
           style={{

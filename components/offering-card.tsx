@@ -66,7 +66,7 @@ export function OfferingCard({
               images={offering.images}
               alt={offering.title}
               radius={0}
-              dotBottom={160}
+              dotTop={16}
               scrollable
               style={{ height: "100%", width: "100%" }}
             />
@@ -93,9 +93,29 @@ export function OfferingCard({
             <CardIdentity offering={offering} />
 
             <div style={{ pointerEvents: "auto" }}>
-              <CardActionBar id={offering.id} title={offering.title} onBuy={onOpen} />
+              <CardActionBar
+                id={offering.id}
+                title={offering.title}
+                onBuy={onOpen}
+                onAsk={(q) => {
+                  setChatSeed(q);
+                  setChatOpen(true);
+                }}
+              />
             </div>
           </div>
+
+          {/* AI concierge — slides up over the card, clipped to its corners.
+              Same inline-composer → drawer flow as the desktop cards. */}
+          <CardChatDrawer
+            offering={offering}
+            open={chatOpen}
+            initialMessage={chatSeed}
+            onClose={() => {
+              setChatOpen(false);
+              setChatSeed(undefined);
+            }}
+          />
         </motion.div>
       </motion.div>
     );
