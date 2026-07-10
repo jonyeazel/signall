@@ -163,11 +163,11 @@ export function CardOverview({
                 onClick={() => onPick(i)}
                 style={{
                   width: "100%",
-                  height: "88%",
+                  height: "min(78%, 460px)",
                   padding: 12,
                   display: "flex",
                   flexDirection: "column",
-                  gap: 12,
+                  gap: 11,
                   background: T.surface,
                   border: `1px solid ${T.border}`,
                   borderRadius: 24,
