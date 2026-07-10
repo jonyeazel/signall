@@ -2,7 +2,7 @@
 
 import { motion, useDragControls, type PanInfo } from "motion/react";
 import { useState } from "react";
-import { X, Check, Star, Sparkles } from "lucide-react";
+import { X, Check, Star } from "lucide-react";
 import { type Offering } from "../lib/offerings";
 import { T, SPRING, SPRING_SOFT } from "../lib/theme";
 import { ImageCarousel } from "./image-carousel";
@@ -88,57 +88,45 @@ export function OfferingSheet({
   // PDP text content — shared between layouts.
   const body = (
     <div style={{ display: "flex", flexDirection: "column", gap: 18, padding: isMobile ? "18px 20px 24px" : "28px 30px 26px" }}>
-      {/* Title + price */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 14, paddingRight: isMobile ? 0 : 30 }}>
-          <motion.h2
-            variants={content}
-            initial="hidden"
-            animate="show"
-            custom={0}
-            style={{
-              margin: 0,
-              fontSize: 26,
-              fontWeight: 600,
-              letterSpacing: "-0.025em",
-              color: T.textPrimary,
-              lineHeight: 1.1,
-            }}
-          >
-            {offering.title}
-          </motion.h2>
-          <motion.span
-            variants={content}
-            initial="hidden"
-            animate="show"
-            custom={0}
-            style={{
-              fontSize: 20,
-              fontWeight: 600,
-              letterSpacing: "-0.02em",
-              color: T.textPrimary,
-              flexShrink: 0,
-            }}
-          >
-            {offering.price}
-          </motion.span>
-        </div>
+      {/* Title, price and rating — all left-aligned in one content column */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingRight: isMobile ? 0 : 30 }}>
+        <motion.h2
+          variants={content}
+          initial="hidden"
+          animate="show"
+          custom={0}
+          style={{
+            margin: 0,
+            fontSize: 26,
+            fontWeight: 600,
+            letterSpacing: "-0.025em",
+            color: T.textPrimary,
+            lineHeight: 1.1,
+          }}
+        >
+          {offering.title}
+        </motion.h2>
 
-        {/* Review stars */}
         <motion.div
           variants={content}
           initial="hidden"
           animate="show"
           custom={0}
-          style={{ display: "flex", alignItems: "center", gap: 8 }}
+          style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}
         >
-          <div style={{ display: "flex", gap: 1 }}>
-            {[0, 1, 2, 3, 4].map((i) => (
-              <Star key={i} size={14} strokeWidth={0} fill={i < Math.round(offering.rating) ? T.ink : T.borderActive} />
-            ))}
-          </div>
-          <span style={{ fontSize: 13, color: T.textSecondary }}>
-            {offering.rating.toFixed(1)} · {offering.reviews.toLocaleString()} reviews
+          <span style={{ fontSize: 20, fontWeight: 600, letterSpacing: "-0.02em", color: T.textPrimary }}>
+            {offering.price}
+          </span>
+          <span aria-hidden style={{ width: 1, height: 14, background: T.border }} />
+          <span style={{ display: "flex", alignItems: "center", gap: 7 }}>
+            <span style={{ display: "flex", gap: 1 }}>
+              {[0, 1, 2, 3, 4].map((i) => (
+                <Star key={i} size={14} strokeWidth={0} fill={i < Math.round(offering.rating) ? T.ink : T.borderActive} />
+              ))}
+            </span>
+            <span style={{ fontSize: 13, color: T.textSecondary }}>
+              {offering.rating.toFixed(1)} · {offering.reviews.toLocaleString()} reviews
+            </span>
           </span>
         </motion.div>
       </div>
@@ -246,10 +234,13 @@ export function OfferingSheet({
           background: T.surface,
           color: T.textPrimary,
           border: `1px solid ${T.borderActive}`,
+          fontSize: 15,
+          fontWeight: 600,
+          letterSpacing: "-0.01em",
           cursor: "pointer",
         }}
       >
-        <Sparkles size={19} strokeWidth={1.8} />
+        Ai
       </motion.button>
     </motion.div>
   );
@@ -306,9 +297,9 @@ export function OfferingSheet({
         style={{
           position: "absolute",
           inset: 0,
-          background: "rgba(20,20,20,0.28)",
-          backdropFilter: "blur(6px)",
-          WebkitBackdropFilter: "blur(6px)",
+          background: "rgba(20,20,20,0.14)",
+          backdropFilter: "blur(8px)",
+          WebkitBackdropFilter: "blur(8px)",
         }}
       />
 
@@ -371,7 +362,8 @@ export function OfferingSheet({
                 boxSizing: "border-box",
               }}
             >
-              <div style={{ position: "relative", height: "100%", width: "100%", borderRadius: 12, overflow: "hidden" }}>
+              {/* Inner radius = outer 28 − 12 padding, so the corners nest concentrically */}
+              <div style={{ position: "relative", height: "100%", width: "100%", borderRadius: 16, overflow: "hidden" }}>
                 {hero}
               </div>
             </div>

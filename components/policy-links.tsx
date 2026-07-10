@@ -19,48 +19,43 @@ export function PolicyLinks({ tone = "dock" }: { tone?: "dock" | "inline" }) {
   const year = new Date().getFullYear();
 
   return (
-    <div
+    <nav
       style={{
         width: "100%",
         display: "flex",
-        flexDirection: "column",
+        flexWrap: "wrap",
+        justifyContent: "center",
         alignItems: "center",
-        gap: isDock ? 10 : 8,
+        gap: "6px 0",
       }}
     >
-      <nav
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          justifyContent: "center",
-          alignItems: "center",
-          gap: isDock ? "6px 4px" : "4px 2px",
-        }}
-      >
-        {POLICIES.map((p, i) => (
-          <span key={p.slug} style={{ display: "inline-flex", alignItems: "center" }}>
-            {i > 0 && (
-              <span aria-hidden style={{ color: T.borderActive, fontSize: 12, padding: "0 8px" }}>
-                ·
-              </span>
-            )}
-            <Link
-              href={`/legal/${p.slug}`}
-              style={{
-                fontSize: isDock ? 13 : 12.5,
-                color: T.textSecondary,
-                textDecoration: "none",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {p.title}
-            </Link>
-          </span>
-        ))}
-      </nav>
-      <p style={{ margin: 0, fontSize: isDock ? 12 : 11.5, color: T.textTertiary, textAlign: "center" }}>
-        © {year} {STORE.name}. All rights reserved.
-      </p>
-    </div>
+      {POLICIES.map((p, i) => (
+        <span key={p.slug} style={{ display: "inline-flex", alignItems: "center" }}>
+          {i > 0 && (
+            <span aria-hidden style={{ color: T.borderActive, fontSize: 12, padding: "0 8px" }}>
+              ·
+            </span>
+          )}
+          <Link
+            href={`/legal/${p.slug}`}
+            style={{
+              fontSize: isDock ? 13 : 12.5,
+              color: T.textSecondary,
+              textDecoration: "none",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {p.title}
+          </Link>
+        </span>
+      ))}
+      {/* Copyright kept inline on the same row */}
+      <span aria-hidden style={{ color: T.borderActive, fontSize: 12, padding: "0 8px" }}>
+        ·
+      </span>
+      <span style={{ fontSize: isDock ? 12.5 : 11.5, color: T.textTertiary, whiteSpace: "nowrap" }}>
+        © {year} {STORE.name}
+      </span>
+    </nav>
   );
 }

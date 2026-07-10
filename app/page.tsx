@@ -170,10 +170,10 @@ export default function Home() {
     <div
       style={{
         position: "fixed",
-        inset: isMobile ? 0 : 12,
+        inset: 0,
         background: T.bg,
-        borderRadius: isMobile ? 0 : 24,
-        border: isMobile ? "none" : `1px solid ${T.border}`,
+        borderRadius: 0,
+        border: "none",
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
@@ -199,46 +199,35 @@ export default function Home() {
             alignItems: "center",
             justifyContent: "space-between",
             gap: 12,
-            padding: "16px 18px",
+            padding: "20px 28px",
             background: T.bg,
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
-            <div
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: "50%",
-                background: T.ink,
-                color: "#fff",
-                display: "grid",
-                placeItems: "center",
-                fontSize: 17,
-                fontWeight: 600,
-                letterSpacing: "-0.02em",
-                flexShrink: 0,
-              }}
-              aria-hidden
-            >
-              F
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+          {/* Light wordmark lockup — a small ink dot + name + tagline, all on
+              one baseline. Far airier than the old filled-black avatar. */}
+          <div style={{ display: "flex", alignItems: "baseline", gap: 12, minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+              <span
+                aria-hidden
+                style={{ width: 7, height: 7, borderRadius: "50%", background: T.ink, transform: "translateY(-1px)" }}
+              />
               <span
                 style={{
-                  fontSize: 17,
+                  fontSize: 19,
                   fontWeight: 600,
-                  letterSpacing: "-0.02em",
+                  letterSpacing: "-0.03em",
                   color: T.textPrimary,
-                  lineHeight: 1.15,
+                  lineHeight: 1,
                   whiteSpace: "nowrap",
                 }}
               >
                 Form
               </span>
-              <span style={{ fontSize: 13, color: T.textTertiary, lineHeight: 1.2, whiteSpace: "nowrap" }}>
-                Considered objects
-              </span>
             </div>
+            <span aria-hidden style={{ width: 1, height: 15, background: T.border, transform: "translateY(2px)" }} />
+            <span style={{ fontSize: 13.5, color: T.textTertiary, lineHeight: 1, whiteSpace: "nowrap" }}>
+              Considered objects
+            </span>
           </div>
           {cartButton}
         </div>
@@ -254,7 +243,7 @@ export default function Home() {
           overflowY: selected ? "hidden" : "auto",
           overflowX: "hidden",
           minHeight: 0,
-          padding: isMobile ? "0" : "0 32px",
+          padding: 0,
           display: isMobile ? undefined : "flex",
           flexDirection: isMobile ? undefined : "column",
           justifyContent: isMobile ? undefined : "center",
@@ -288,9 +277,7 @@ export default function Home() {
               ))}
             </div>
           ) : (
-            <div style={{ margin: "0 -32px" }}>
-              <DesktopCarousel offerings={OFFERINGS} rootRef={feedRef} onOpen={setSelectedId} />
-            </div>
+            <DesktopCarousel offerings={OFFERINGS} rootRef={feedRef} onOpen={setSelectedId} />
           )}
 
           {/* Expanded sheet */}

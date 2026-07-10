@@ -4,9 +4,12 @@ import { useState, useRef, useEffect, useCallback, useMemo, type KeyboardEvent }
 import { AnimatePresence, motion } from "motion/react";
 import { Sparkles, ArrowUp, X } from "lucide-react";
 import { type Offering } from "../lib/offerings";
-import { T, SPRING_SOFT } from "../lib/theme";
+import { T } from "../lib/theme";
 
 type Msg = { role: "user" | "assistant"; text: string };
+
+// A premium, overshoot-free slide for the drawer — glides up and settles.
+const DRAWER_SPRING = { type: "spring", stiffness: 320, damping: 36, mass: 0.85 } as const;
 
 /**
  * A beautiful AI chat that slides up *inside* a product card.
@@ -162,10 +165,10 @@ export function CardChatDrawer({
           {/* The drawer — slides up to ~82% of the card height */}
           <motion.div
             key="chat-panel"
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "100%" }}
-            transition={SPRING_SOFT}
+            initial={{ y: "101%", opacity: 0.85 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: "101%", opacity: 0.85 }}
+            transition={DRAWER_SPRING}
             style={{
               position: "absolute",
               left: 0,
@@ -175,44 +178,37 @@ export function CardChatDrawer({
               zIndex: 20,
               display: "flex",
               flexDirection: "column",
-              background: "rgba(255,255,255,0.95)",
-              backdropFilter: "blur(24px) saturate(1.5)",
-              WebkitBackdropFilter: "blur(24px) saturate(1.5)",
+              background: "rgba(255,255,255,0.985)",
+              backdropFilter: "blur(28px) saturate(1.6)",
+              WebkitBackdropFilter: "blur(28px) saturate(1.6)",
               borderTopLeftRadius: 20,
               borderTopRightRadius: 20,
               borderTop: `1px solid ${T.border}`,
               boxShadow: "0 -14px 40px -14px rgba(0,0,0,0.2)",
             }}
           >
-          {/* Header */}
+          {/* Minimal top — just a grabber + close. No branding: it's the chat. */}
           <div
             style={{
+              position: "relative",
               flexShrink: 0,
+              height: 42,
               display: "flex",
               alignItems: "center",
-              gap: 10,
-              padding: "12px 12px 10px",
-              borderBottom: `1px solid ${T.border}`,
+              justifyContent: "center",
             }}
           >
-            <img
-              src={offering.images[1] ?? offering.images[0] ?? "/placeholder.svg"}
-              alt=""
-              style={{ width: 34, height: 34, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
-            />
-            <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1 }}>
-              <span style={{ fontSize: 14, fontWeight: 600, letterSpacing: "-0.01em", color: T.textPrimary, lineHeight: 1.2 }}>
-                Ask about {offering.title}
-              </span>
-              <span style={{ fontSize: 11.5, color: T.textTertiary, lineHeight: 1.2 }}>AI concierge</span>
-            </div>
+            <span aria-hidden style={{ width: 38, height: 5, borderRadius: 999, background: T.borderActive }} />
             <button
               type="button"
               onClick={onClose}
               aria-label="Close chat"
               style={{
-                width: 34,
-                height: 34,
+                position: "absolute",
+                right: 10,
+                top: 7,
+                width: 30,
+                height: 30,
                 borderRadius: "50%",
                 background: T.bgSubtle,
                 border: `1px solid ${T.border}`,
@@ -220,11 +216,10 @@ export function CardChatDrawer({
                 display: "grid",
                 placeItems: "center",
                 cursor: "pointer",
-                flexShrink: 0,
                 WebkitTapHighlightColor: "transparent",
               }}
             >
-              <X size={17} strokeWidth={2} />
+              <X size={16} strokeWidth={2} />
             </button>
           </div>
 
