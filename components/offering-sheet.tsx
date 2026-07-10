@@ -5,6 +5,7 @@ import { X, Check, Star } from "lucide-react";
 import { type Offering } from "../lib/offerings";
 import { T, SPRING, SPRING_SOFT } from "../lib/theme";
 import { ImageCarousel } from "./image-carousel";
+import { PolicyLinks } from "./policy-links";
 
 const content = {
   hidden: { opacity: 0, y: 14 },
@@ -157,6 +158,11 @@ export function OfferingSheet({
           </div>
         ))}
       </motion.div>
+
+      {/* Policy links — keeps the storefront ad-platform compliant on every device */}
+      <div style={{ marginTop: 4, paddingTop: 18, borderTop: `1px solid ${T.border}` }}>
+        <PolicyLinks tone="inline" />
+      </div>
     </div>
   );
 

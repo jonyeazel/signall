@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import { ShoppingBag } from "lucide-react";
-import { ChatComposer } from "../components/chat-composer";
+import { PolicyLinks } from "../components/policy-links";
 import { OfferingCard } from "../components/offering-card";
 import { OfferingSheet } from "../components/offering-sheet";
 import { DesktopCarousel } from "../components/desktop-carousel";
@@ -338,19 +338,20 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      {/* Dock: desktop only — on mobile the composer lives inside each card */}
+      {/* Dock: desktop only. The per-card AI concierge replaces the global
+          composer, so this space carries the store's policy links — keeping
+          the storefront compliant with Meta and other ad-platform review. */}
       {!isMobile && (
         <div
           style={{
             flexShrink: 0,
-            borderTop: "none",
             background: "transparent",
-            padding: "12px 20px 18px",
+            padding: "14px 20px 18px",
             display: "flex",
             justifyContent: "center",
           }}
         >
-          <ChatComposer placeholder="Ask anything, or describe what to build…" />
+          <PolicyLinks tone="dock" />
         </div>
       )}
     </div>

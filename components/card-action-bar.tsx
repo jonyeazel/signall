@@ -20,11 +20,17 @@ export function CardActionBar({
   title,
   onBuy,
   onAsk,
+  onAi,
+  ctaLabel = "Learn more",
 }: {
   id: string;
   title: string;
   onBuy?: () => void;
   onAsk?: (value: string) => void;
+  /** When provided, the Ai button defers to this (e.g. open a chat drawer)
+   *  instead of morphing into the inline composer. */
+  onAi?: () => void;
+  ctaLabel?: string;
 }) {
   const surfaceId = `ai-surface-${id}`;
   const [aiOpen, setAiOpen] = useState(false);
@@ -97,7 +103,7 @@ export function CardActionBar({
               gap: 8,
             }}
           >
-            <span>Learn more</span>
+            <span>{ctaLabel}</span>
           </motion.button>
         )}
       </AnimatePresence>
@@ -107,8 +113,8 @@ export function CardActionBar({
         <motion.button
           key="ai-circle"
           type="button"
-          layoutId={surfaceId}
-          onClick={() => setAiOpen(true)}
+          layoutId={onAi ? undefined : surfaceId}
+          onClick={() => (onAi ? onAi() : setAiOpen(true))}
           transition={SPRING}
           whileTap={{ scale: 0.94 }}
           aria-label={`Ask AI about ${title}`}
@@ -183,7 +189,9 @@ export function CardActionBar({
               background: "transparent",
               color: T.textPrimary,
               fontFamily: "inherit",
-              fontSize: 14.5,
+              // 16px: iOS Safari zooms into any focused input below 16px,
+              // which would jarringly expand the fixed card layout.
+              fontSize: 16,
             }}
           />
           <motion.button

@@ -1,12 +1,13 @@
 "use client";
 
 import { motion } from "motion/react";
-import { type RefObject } from "react";
+import { useState, type RefObject } from "react";
 import { type Offering } from "../lib/offerings";
 import { T, SPRING } from "../lib/theme";
 import { ImageCarousel } from "./image-carousel";
 import { CardActionBar } from "./card-action-bar";
 import { CardIdentity } from "./card-identity";
+import { CardChatDrawer } from "./card-chat-drawer";
 
 export function OfferingCard({
   offering,
@@ -23,6 +24,9 @@ export function OfferingCard({
   withComposer?: boolean;
   imageScrollable?: boolean;
 }) {
+  // Desktop cards open the AI concierge as a drawer that slides up inside the card.
+  const [chatOpen, setChatOpen] = useState(false);
+
   // ---- Mobile: full-bleed immersive card ------------------------------------
   // The product image fills the entire card; a soft legibility veil at the
   // bottom carries the hook, rating and buy row. Feels like a premium reel.
@@ -105,18 +109,20 @@ export function OfferingCard({
     >
       <motion.div
         layoutId={`card-${offering.id}`}
-        whileHover={{ y: -4 }}
+        whileHover={chatOpen ? undefined : { y: -4 }}
         transition={SPRING}
         style={{
+          position: "relative",
           width: "100%",
           height: "100%",
           background: T.surface,
           border: `1px solid ${T.border}`,
-          borderRadius: 0,
+          borderRadius: 20,
           padding: 12,
           display: "flex",
           flexDirection: "column",
-          gap: 14,
+          gap: 12,
+          overflow: "hidden",
         }}
       >
         <div
@@ -127,7 +133,7 @@ export function OfferingCard({
             layoutId={`media-${offering.id}`}
             images={offering.images}
             alt={offering.title}
-            radius={0}
+            radius={12}
             scrollable={imageScrollable}
             style={{ height: "100%", width: "100%" }}
           />
@@ -139,10 +145,10 @@ export function OfferingCard({
             textAlign: "left",
             background: "transparent",
             border: "none",
-            padding: "2px 4px 4px",
+            padding: "0 4px",
             display: "flex",
             flexDirection: "column",
-            gap: 8,
+            gap: 6,
             cursor: "pointer",
             width: "100%",
             WebkitTapHighlightColor: "transparent",
@@ -186,9 +192,20 @@ export function OfferingCard({
               overflow: "hidden",
             }}
           >
-            {offering.tagline}
+            {offering.description}
           </p>
         </button>
+
+        {/* Action row — mirrors the mobile card. Ai opens the in-card drawer. */}
+        <CardActionBar
+          id={offering.id}
+          title={offering.title}
+          onBuy={onOpen}
+          onAi={() => setChatOpen(true)}
+        />
+
+        {/* AI concierge — slides up inside the card, clipped to its corners */}
+        <CardChatDrawer offering={offering} open={chatOpen} onClose={() => setChatOpen(false)} />
       </motion.div>
     </motion.div>
   );
