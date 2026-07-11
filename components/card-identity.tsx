@@ -55,16 +55,22 @@ export function CardIdentity({ offering }: { offering: Offering }) {
               flexShrink: 0,
               display: "inline-flex",
               alignItems: "center",
-              padding: "5px 11px",
+              // +4px taller than before (7px vs 5px vertical padding).
+              padding: "7px 12px",
               borderRadius: 999,
-              background: T.ink,
-              color: T.bg,
+              // Apple liquid glass — frosted translucent pane over the photo.
+              background: "rgba(255,255,255,0.55)",
+              backdropFilter: "blur(22px) saturate(180%)",
+              WebkitBackdropFilter: "blur(22px) saturate(180%)",
+              border: "1px solid rgba(255,255,255,0.6)",
+              color: T.textPrimary,
               fontSize: 12.5,
               fontWeight: 600,
               letterSpacing: "-0.01em",
               lineHeight: 1,
               whiteSpace: "nowrap",
-              boxShadow: "0 2px 10px rgba(0,0,0,0.14)",
+              textShadow: "0 1px 1px rgba(255,255,255,0.5)",
+              boxShadow: "0 8px 24px -8px rgba(0,0,0,0.30), inset 0 1px 0.5px rgba(255,255,255,0.85)",
             }}
           >
             Buy Now - {offering.price}

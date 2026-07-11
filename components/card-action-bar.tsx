@@ -22,7 +22,7 @@ export function CardActionBar({
   onAsk,
   onAi,
   ctaLabel = "Learn more",
-  height = 58,
+  height = 50,
 }: {
   id: string;
   title: string;
@@ -79,8 +79,8 @@ export function CardActionBar({
 
   // Apple "liquid glass": a frosted translucent pane that lets the product
   // photo bleed through, with a bright top highlight + soft drop for depth.
-  // Both the primary CTA and the Ai button share this exact material so they
-  // read as one matched pair.
+  // Used by the Ai button (and its morphed input/close) so it pairs with the
+  // liquid-glass "Buy Now" pill; the primary CTA stays solid black.
   const glass = {
     background: "rgba(255,255,255,0.55)",
     backdropFilter: "blur(22px) saturate(180%)",
@@ -108,11 +108,12 @@ export function CardActionBar({
               flex: 1,
               height: H,
               borderRadius: 999,
-              ...glass,
+              background: T.ink,
+              color: "#FFFFFF",
+              border: "none",
               fontSize: 15.5,
               fontWeight: 600,
               letterSpacing: "-0.01em",
-              textShadow: "0 1px 1px rgba(255,255,255,0.5)",
               cursor: "pointer",
               WebkitTapHighlightColor: "transparent",
               display: "flex",
