@@ -32,7 +32,9 @@ export function CardIdentity({ offering }: { offering: Offering }) {
             boxShadow: "0 2px 10px rgba(0,0,0,0.14)",
           }}
         />
-        <div style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
+        {/* Title + price share one row; the price rides in a dark "Buy Now"
+            pill next to the name. The title truncates so the pill never wraps. */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
           <span
             style={{
               fontSize: 16,
@@ -48,19 +50,31 @@ export function CardIdentity({ offering }: { offering: Offering }) {
           >
             {offering.title}
           </span>
-          <div
+          <span
             style={{
-              display: "flex",
+              flexShrink: 0,
+              display: "inline-flex",
               alignItems: "center",
-              fontSize: 13.5,
-              fontWeight: 600,
+              // +4px taller than before (7px vs 5px vertical padding).
+              padding: "7px 12px",
+              borderRadius: 999,
+              // Apple liquid glass — frosted translucent pane over the photo.
+              background: "rgba(255,255,255,0.55)",
+              backdropFilter: "blur(22px) saturate(180%)",
+              WebkitBackdropFilter: "blur(22px) saturate(180%)",
+              border: "1px solid rgba(255,255,255,0.6)",
               color: T.textPrimary,
+              fontSize: 12.5,
+              fontWeight: 600,
+              letterSpacing: "-0.01em",
+              lineHeight: 1,
               whiteSpace: "nowrap",
-              textShadow: HALO,
+              textShadow: "0 1px 1px rgba(255,255,255,0.5)",
+              boxShadow: "0 8px 24px -8px rgba(0,0,0,0.30), inset 0 1px 0.5px rgba(255,255,255,0.85)",
             }}
           >
-            {offering.price}
-          </div>
+            Buy Now - {offering.price}
+          </span>
         </div>
       </div>
 

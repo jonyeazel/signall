@@ -22,7 +22,7 @@ export function CardActionBar({
   onAsk,
   onAi,
   ctaLabel = "Learn more",
-  height = 54,
+  height = 50,
 }: {
   id: string;
   title: string;
@@ -77,6 +77,19 @@ export function CardActionBar({
   const hasText = value.trim().length > 0;
   const H = height;
 
+  // Apple "liquid glass": a frosted translucent pane that lets the product
+  // photo bleed through, with a bright top highlight + soft drop for depth.
+  // Used by the Ai button (and its morphed input/close) so it pairs with the
+  // liquid-glass "Buy Now" pill; the primary CTA stays solid black.
+  const glass = {
+    background: "rgba(255,255,255,0.55)",
+    backdropFilter: "blur(22px) saturate(180%)",
+    WebkitBackdropFilter: "blur(22px) saturate(180%)",
+    border: "1px solid rgba(255,255,255,0.6)",
+    boxShadow: "0 8px 24px -8px rgba(0,0,0,0.30), inset 0 1px 0.5px rgba(255,255,255,0.85)",
+    color: T.textPrimary,
+  } as const;
+
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, width: "100%" }}>
       <AnimatePresence initial={false} mode="popLayout">
@@ -128,9 +141,7 @@ export function CardActionBar({
             width: H,
             height: H,
             borderRadius: 999,
-            background: T.bgSubtle,
-            border: `1px solid ${T.borderActive}`,
-            color: T.textPrimary,
+            ...glass,
             display: "grid",
             placeItems: "center",
             flexShrink: 0,
@@ -145,6 +156,7 @@ export function CardActionBar({
               fontWeight: 600,
               letterSpacing: "-0.01em",
               color: T.textPrimary,
+              textShadow: "0 1px 1px rgba(255,255,255,0.5)",
             }}
           >
             Ai
@@ -159,8 +171,7 @@ export function CardActionBar({
             flex: 1,
             height: H,
             borderRadius: 999,
-            background: T.surface,
-            border: `1px solid ${T.borderActive}`,
+            ...glass,
             display: "flex",
             alignItems: "center",
             gap: 6,
@@ -245,8 +256,7 @@ export function CardActionBar({
               width: H,
               height: H,
               borderRadius: 999,
-              background: T.bgSubtle,
-              border: `1px solid ${T.border}`,
+              ...glass,
               color: T.textSecondary,
               display: "grid",
               placeItems: "center",
