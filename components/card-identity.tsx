@@ -32,7 +32,9 @@ export function CardIdentity({ offering }: { offering: Offering }) {
             boxShadow: "0 2px 10px rgba(0,0,0,0.14)",
           }}
         />
-        <div style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
+        {/* Title + price share one row; the price rides in a dark "Buy Now"
+            pill next to the name. The title truncates so the pill never wraps. */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
           <span
             style={{
               fontSize: 16,
@@ -48,19 +50,25 @@ export function CardIdentity({ offering }: { offering: Offering }) {
           >
             {offering.title}
           </span>
-          <div
+          <span
             style={{
-              display: "flex",
+              flexShrink: 0,
+              display: "inline-flex",
               alignItems: "center",
-              fontSize: 13.5,
+              padding: "5px 11px",
+              borderRadius: 999,
+              background: T.ink,
+              color: T.bg,
+              fontSize: 12.5,
               fontWeight: 600,
-              color: T.textPrimary,
+              letterSpacing: "-0.01em",
+              lineHeight: 1,
               whiteSpace: "nowrap",
-              textShadow: HALO,
+              boxShadow: "0 2px 10px rgba(0,0,0,0.14)",
             }}
           >
-            {offering.price}
-          </div>
+            Buy Now - {offering.price}
+          </span>
         </div>
       </div>
 
