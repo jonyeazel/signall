@@ -26,10 +26,8 @@ function DesktopBackdrop() {
         zIndex: 0,
         pointerEvents: "none",
         background: T.bg,
-        borderTop: `1px solid ${T.border}`,
       }}
     >
-      <div style={{ position: "absolute", left: 32, right: 32, top: 72, height: 1, background: T.border }} />
     </div>
   );
 }
@@ -229,7 +227,6 @@ export default function Home() {
             minHeight: 72,
             padding: "14px 32px",
             background: T.bg,
-            borderBottom: `1px solid ${T.border}`,
           }}
         >
           <Wordmark size={20} />
