@@ -5,12 +5,6 @@ import { X, Trash2, ShoppingBag } from "lucide-react";
 import { type Offering } from "../lib/offerings";
 import { T, SPRING } from "../lib/theme";
 
-const HATCH = {
-  background: T.skeleton,
-  backgroundImage:
-    "repeating-linear-gradient(-45deg, rgba(0,0,0,0.05) 0px, rgba(0,0,0,0.05) 1.5px, transparent 1.5px, transparent 8px)",
-};
-
 export type CartLine = { offering: Offering; qty: number };
 
 const priceOf = (p: string) => parseFloat(p.replace(/[^0-9.]/g, "")) || 0;
@@ -51,9 +45,7 @@ export function CartSheet({
         style={{
           position: "absolute",
           inset: 0,
-          background: "rgba(20,20,20,0.3)",
-          backdropFilter: "blur(6px)",
-          WebkitBackdropFilter: "blur(6px)",
+          background: "rgba(28,28,26,0.28)",
         }}
       />
 
@@ -68,8 +60,9 @@ export function CartSheet({
           maxWidth: isMobile ? "100%" : 440,
           maxHeight: isMobile ? "82dvh" : "80vh",
           background: T.surface,
-          border: `1px solid ${T.border}`,
-          borderRadius: isMobile ? "26px 26px 0 0" : 26,
+          border: `1px solid ${T.borderStrong}`,
+          borderRadius: isMobile ? "10px 10px 0 0" : 10,
+          boxShadow: "0 8px 28px rgba(28,28,26,0.16)",
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
@@ -142,7 +135,7 @@ export function CartSheet({
               style={{
                 height: 44,
                 padding: "0 22px",
-                borderRadius: 999,
+                borderRadius: 8,
                 background: T.ink,
                 color: "#fff",
                 border: "none",
@@ -167,9 +160,14 @@ export function CartSheet({
                   style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 8px" }}
                 >
                   <div
-                    style={{ width: 52, height: 52, borderRadius: 12, flexShrink: 0, border: `1px solid ${T.border}`, ...HATCH }}
-                    aria-hidden
-                  />
+                    style={{ width: 52, height: 52, borderRadius: 6, flexShrink: 0, border: `1px solid ${T.border}`, overflow: "hidden", background: T.ghost }}
+                  >
+                    <img
+                      src={offering.images[0] || "/placeholder.svg"}
+                      alt=""
+                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    />
+                  </div>
                   <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
                     <span
                       style={{
@@ -237,7 +235,7 @@ export function CartSheet({
                 style={{
                   flex: 1,
                   height: 52,
-                  borderRadius: 999,
+                  borderRadius: 8,
                   background: T.ink,
                   color: "#fff",
                   border: "none",

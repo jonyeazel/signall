@@ -3,7 +3,7 @@
 import { useRef, useEffect, useLayoutEffect, useState, useCallback } from "react";
 import { motion } from "motion/react";
 import { type Offering } from "../lib/offerings";
-import { T, WHISPER_PATTERN } from "../lib/theme";
+import { T } from "../lib/theme";
 
 type Dims = {
   photoW: number;
@@ -15,7 +15,7 @@ type Dims = {
 };
 
 // Corner radius on the miniature photo (this slideshow view only).
-const CARD_RADIUS = 26;
+const CARD_RADIUS = 8;
 // Vertical space reserved beneath each photo for the centered explainer text.
 const TEXT_H = 88;
 // Gap between the photo and the text block.
@@ -326,38 +326,12 @@ export function CardOverview({
         zIndex: 70,
         display: "flex",
         flexDirection: "column",
-        // The frosted panel stays TRANSPARENT until the ShrinkingCard clone is
-        // measured and ready to cover the screen (`shrinkRect`). Until then the
-        // real product card beneath us shows through — a seamless hand-off —
-        // instead of a bare gray panel flashing before the clone mounts. Once
-        // ready it's near-opaque (also stops the card's dark CTA ghosting
-        // through at the bottom, so the deck reads clean edge to edge).
-        background: shrinkRect ? "rgba(248,248,248,0.96)" : "transparent",
-        backdropFilter: shrinkRect ? "blur(28px) saturate(1.3)" : "none",
-        WebkitBackdropFilter: shrinkRect ? "blur(28px) saturate(1.3)" : "none",
-        transition: "background 0.2s ease",
+        // Stay transparent until the clone is measured, then become one honest
+        // opaque material. This preserves the flash-free handoff without blur.
+        background: shrinkRect ? T.bg : "transparent",
+        transition: "background 0.16s ease",
       }}
     >
-      {/* Whisper texture — the same barely-there contour lines as the AI drawer,
-          fading in from the top so the frosted backdrop has a hint of depth.
-          Only shown once the backdrop is opaque, so it never paints over the
-          live card during the first frame. */}
-      {shrinkRect && (
-        <div
-          aria-hidden
-          style={{
-            position: "absolute",
-            inset: 0,
-            pointerEvents: "none",
-            backgroundImage: WHISPER_PATTERN,
-            backgroundSize: "240px 180px",
-            backgroundRepeat: "repeat",
-            opacity: 0.7,
-            maskImage: "linear-gradient(to bottom, #000 0%, transparent 60%)",
-            WebkitMaskImage: "linear-gradient(to bottom, #000 0%, transparent 60%)",
-          }}
-        />
-      )}
 
       {/* Horizontal deck — shrinks in from the full feed. No header chrome:
           the photos + text own the whole height. Tapping the empty backdrop

@@ -140,19 +140,20 @@ export function OfferingCard({
     >
       <motion.div
         layoutId={`card-${offering.id}`}
-        whileHover={chatOpen ? undefined : { scale: 1.01 }}
+        whileHover={chatOpen ? undefined : { y: -2 }}
         transition={SPRING}
         style={{
           position: "relative",
           transformOrigin: "center center",
           width: "100%",
           background: T.surface,
-          border: `1px solid ${T.border}`,
-          borderRadius: 20,
-          padding: 12,
+          border: `1px solid ${T.borderStrong}`,
+          borderRadius: 10,
+          padding: 10,
           display: "flex",
           flexDirection: "column",
-          gap: 12,
+          gap: 10,
+          boxShadow: "0 2px 0 rgba(28,28,26,0.06)",
           overflow: "hidden",
         }}
       >
@@ -167,7 +168,7 @@ export function OfferingCard({
             layoutId={`media-${offering.id}`}
             images={offering.images}
             alt={offering.title}
-            radius={12}
+            radius={6}
             dots={false}
             scrollable={false}
             style={{ height: "100%", width: "100%" }}

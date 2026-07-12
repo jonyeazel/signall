@@ -81,18 +81,12 @@ export function CardActionBar({
   const hasText = value.trim().length > 0;
   const H = height;
 
-  // Apple "liquid glass": a frosted translucent pane that lets the product
-  // photo bleed through, with a bright top highlight + soft drop for depth.
-  // Used by the Ai button (and its morphed input/close) so it pairs with the
-  // liquid-glass "Buy Now" pill; the primary CTA stays solid black.
+  // One honest shell material for every secondary control. No blur, glow, or
+  // simulated glass: hierarchy comes from contrast, border, and position.
   const glass = {
-    background: "rgba(255,255,255,0.55)",
-    backdropFilter: "blur(22px) saturate(180%)",
-    WebkitBackdropFilter: "blur(22px) saturate(180%)",
-    border: borderedGlass ? `1px solid ${T.borderActive}` : "1px solid rgba(255,255,255,0.6)",
-    boxShadow: borderedGlass
-      ? "none"
-      : "0 8px 24px -8px rgba(0,0,0,0.30), inset 0 1px 0.5px rgba(255,255,255,0.85)",
+    background: T.surface,
+    border: `1px solid ${borderedGlass ? T.borderActive : T.borderStrong}`,
+    boxShadow: borderedGlass ? "none" : "0 2px 0 rgba(28,28,26,0.08)",
     color: T.textPrimary,
   } as const;
 
@@ -113,7 +107,7 @@ export function CardActionBar({
             style={{
               flex: 1,
               height: H,
-              borderRadius: 999,
+              borderRadius: 8,
               background: T.ink,
               color: "#FFFFFF",
               border: "none",
@@ -146,7 +140,7 @@ export function CardActionBar({
           style={{
             width: H,
             height: H,
-            borderRadius: 999,
+            borderRadius: 8,
             ...glass,
             display: "grid",
             placeItems: "center",
@@ -162,7 +156,6 @@ export function CardActionBar({
               fontWeight: 600,
               letterSpacing: "-0.01em",
               color: T.textPrimary,
-              textShadow: "0 1px 1px rgba(255,255,255,0.5)",
             }}
           >
             Ai
@@ -176,7 +169,7 @@ export function CardActionBar({
           style={{
             flex: 1,
             height: H,
-            borderRadius: 999,
+            borderRadius: 8,
             ...glass,
             display: "flex",
             alignItems: "center",
@@ -253,7 +246,7 @@ export function CardActionBar({
             style={{
               width: H,
               height: H,
-              borderRadius: 999,
+              borderRadius: 8,
               ...glass,
               color: T.textSecondary,
               display: "grid",

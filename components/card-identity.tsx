@@ -1,9 +1,6 @@
 import { type Offering } from "../lib/offerings";
 import { T } from "../lib/theme";
 
-/** White text-halo that keeps copy legible over any (light) product photo. */
-const HALO = "0 1px 12px rgba(251,251,251,0.92), 0 0 4px rgba(251,251,251,0.92)";
-
 /**
  * The classic "profile" block that sits just above a card's action row:
  * a round avatar + product name with a price·rating subtitle, followed by a
@@ -17,7 +14,17 @@ export function CardIdentity({ offering }: { offering: Offering }) {
     // A single left-aligned column: the avatar+name row sits on top, and the
     // description spans full width below it, so the avatar, name and
     // description all share one clean left edge (matching the action row).
-    <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "0 4px" }}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 8,
+        padding: "10px 12px",
+        borderRadius: 8,
+        background: "rgba(248,247,242,0.94)",
+        border: `1px solid ${T.border}`,
+      }}
+    >
       <div style={{ display: "flex", alignItems: "center", gap: 11, minWidth: 0 }}>
         {/* Avatar ring — identical to the header profile: a dark border with a
             thin 1.5px white gap around the product thumbnail. */}
@@ -25,13 +32,12 @@ export function CardIdentity({ offering }: { offering: Offering }) {
           style={{
             width: 40,
             height: 40,
-            borderRadius: "50%",
+            borderRadius: 5,
             flexShrink: 0,
-            padding: 1.5,
+            padding: 2,
             boxSizing: "border-box",
             background: T.surface,
-            border: `1.5px solid ${T.ink}`,
-            boxShadow: "0 2px 10px rgba(0,0,0,0.10)",
+            border: `1px solid ${T.borderStrong}`,
           }}
         >
           <img
@@ -40,7 +46,7 @@ export function CardIdentity({ offering }: { offering: Offering }) {
             style={{
               width: "100%",
               height: "100%",
-              borderRadius: "50%",
+              borderRadius: 3,
               objectFit: "cover",
               display: "block",
             }}
@@ -59,7 +65,6 @@ export function CardIdentity({ offering }: { offering: Offering }) {
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
-              textShadow: HALO,
             }}
           >
             {offering.title}
@@ -69,25 +74,19 @@ export function CardIdentity({ offering }: { offering: Offering }) {
               flexShrink: 0,
               display: "inline-flex",
               alignItems: "center",
-              // +4px taller than before (7px vs 5px vertical padding).
-              padding: "7px 12px",
-              borderRadius: 999,
-              // Apple liquid glass — frosted translucent pane over the photo.
-              background: "rgba(255,255,255,0.55)",
-              backdropFilter: "blur(22px) saturate(180%)",
-              WebkitBackdropFilter: "blur(22px) saturate(180%)",
-              border: "1px solid rgba(255,255,255,0.6)",
+              padding: "6px 9px",
+              borderRadius: 5,
+              background: T.bgSubtle,
+              border: `1px solid ${T.border}`,
               color: T.textPrimary,
               fontSize: 12.5,
               fontWeight: 600,
               letterSpacing: "-0.01em",
               lineHeight: 1,
               whiteSpace: "nowrap",
-              textShadow: "0 1px 1px rgba(255,255,255,0.5)",
-              boxShadow: "0 8px 24px -8px rgba(0,0,0,0.30), inset 0 1px 0.5px rgba(255,255,255,0.85)",
             }}
           >
-            Buy Now - {offering.price}
+            {offering.price}
           </span>
         </div>
       </div>

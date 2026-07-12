@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback, useMemo, type KeyboardEvent }
 import { AnimatePresence, motion, useDragControls } from "motion/react";
 import { ArrowUp, Check, ShoppingBag } from "lucide-react";
 import { type Offering } from "../lib/offerings";
-import { T, WHISPER_PATTERN } from "../lib/theme";
+import { T } from "../lib/theme";
 
 /** Functional assets the concierge can surface inline in the thread. */
 type Asset = "buy" | "specs";
@@ -403,38 +403,13 @@ export function CardChatDrawer({
               zIndex: 20,
               display: "flex",
               flexDirection: "column",
-              background: "rgba(255,255,255,0.985)",
-              backdropFilter: "blur(28px) saturate(1.6)",
-              WebkitBackdropFilter: "blur(28px) saturate(1.6)",
-              borderTopLeftRadius: flatTop ? 0 : 20,
-              borderTopRightRadius: flatTop ? 0 : 20,
-              borderTop: `1px solid ${T.border}`,
-              boxShadow: "0 -14px 40px -14px rgba(0,0,0,0.2)",
+              background: T.bg,
+              borderTopLeftRadius: flatTop ? 0 : 10,
+              borderTopRightRadius: flatTop ? 0 : 10,
+              borderTop: `1px solid ${T.borderStrong}`,
+              boxShadow: "0 -2px 0 rgba(28,28,26,0.06)",
             }}
           >
-            {/* Stripe-style decorative wash — barely-there flowing contour lines
-                over a soft top glow, masked to dissolve downward. Purely
-                aesthetic; sits behind the content and never intercepts taps. */}
-            <div
-              aria-hidden
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                height: 260,
-                zIndex: 0,
-                pointerEvents: "none",
-                borderTopLeftRadius: flatTop ? 0 : 20,
-                borderTopRightRadius: flatTop ? 0 : 20,
-                backgroundImage: `${WHISPER_PATTERN}, radial-gradient(95% 80% at 50% -20%, rgba(23,23,23,0.05), rgba(23,23,23,0) 70%)`,
-                backgroundSize: "240px 180px, 100% 100%",
-                backgroundRepeat: "repeat, no-repeat",
-                maskImage: "linear-gradient(to bottom, #000 0%, rgba(0,0,0,0.5) 55%, transparent 100%)",
-                WebkitMaskImage: "linear-gradient(to bottom, #000 0%, rgba(0,0,0,0.5) 55%, transparent 100%)",
-              }}
-            />
-
             {/* Minimal top — the grabber IS the control: drag it down to close. */}
             <div
               role="button"
@@ -454,7 +429,7 @@ export function CardChatDrawer({
                 WebkitTapHighlightColor: "transparent",
               }}
             >
-              <span aria-hidden style={{ width: 44, height: 5, borderRadius: 999, background: T.borderActive }} />
+              <span aria-hidden style={{ width: 44, height: 5, borderRadius: 8, background: T.borderActive }} />
             </div>
 
             {/* Messages */}
@@ -557,7 +532,7 @@ export function CardChatDrawer({
                   alignItems: "center",
                   gap: 6,
                   height: 48,
-                  borderRadius: 999,
+                  borderRadius: 8,
                   background: T.surface,
                   border: `1px solid ${T.borderActive}`,
                   paddingLeft: 18,
@@ -635,9 +610,9 @@ function Bubble({
         background: isUser ? T.ink : T.surface,
         color: isUser ? "#FFFFFF" : T.textPrimary,
         border: isUser ? "none" : `1px solid ${T.border}`,
-        borderRadius: 18,
-        borderBottomRightRadius: isUser ? 6 : 18,
-        borderBottomLeftRadius: isUser ? 18 : 6,
+        borderRadius: 8,
+        borderBottomRightRadius: isUser ? 2 : 8,
+        borderBottomLeftRadius: isUser ? 8 : 2,
         padding: "10px 13px",
         fontSize: 14,
         lineHeight: 1.45,
@@ -665,7 +640,7 @@ function Chip({ label, index, onClick }: { label: string; index: number; onClick
         color: T.textPrimary,
         background: T.surface,
         border: `1px solid ${T.border}`,
-        borderRadius: 999,
+        borderRadius: 8,
         padding: "7px 12px",
         cursor: "pointer",
         WebkitTapHighlightColor: "transparent",
@@ -749,7 +724,7 @@ function BuyCard({
           style={{
             flex: 1,
             height: 42,
-            borderRadius: 999,
+            borderRadius: 8,
             background: added ? T.ghost : T.ink,
             color: added ? T.textPrimary : "#FFFFFF",
             border: added ? `1px solid ${T.border}` : "none",
@@ -783,7 +758,7 @@ function BuyCard({
               flexShrink: 0,
               height: 42,
               padding: "0 16px",
-              borderRadius: 999,
+              borderRadius: 8,
               background: T.surface,
               color: T.textPrimary,
               border: `1px solid ${T.borderActive}`,

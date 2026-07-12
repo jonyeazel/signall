@@ -9,13 +9,10 @@ import { Wordmark } from "./wordmark";
 const roundBtn = {
   width: 44,
   height: 44,
-  borderRadius: "50%",
-  // Apple liquid glass — matches the card's Ai button + Buy Now pill.
-  background: "rgba(255,255,255,0.55)",
-  backdropFilter: "blur(22px) saturate(180%)",
-  WebkitBackdropFilter: "blur(22px) saturate(180%)",
-  border: "1px solid rgba(255,255,255,0.6)",
-  boxShadow: "0 8px 24px -8px rgba(0,0,0,0.30), inset 0 1px 0.5px rgba(255,255,255,0.85)",
+  borderRadius: 8,
+  background: T.surface,
+  border: `1px solid ${T.borderStrong}`,
+  boxShadow: "0 2px 0 rgba(28,28,26,0.08)",
   color: T.textPrimary,
   display: "grid",
   placeItems: "center",
@@ -76,13 +73,13 @@ export function MobileHeader({
           style={{
             width: 44,
             height: 44,
-            borderRadius: "50%",
+            borderRadius: 8,
             flexShrink: 0,
-            padding: 1.5,
+            padding: 3,
             boxSizing: "border-box",
             background: T.surface,
-            border: `1.5px solid ${T.ink}`,
-            boxShadow: "0 2px 10px rgba(0,0,0,0.10)",
+            border: `1px solid ${T.borderStrong}`,
+            boxShadow: "0 2px 0 rgba(28,28,26,0.08)",
           }}
           aria-hidden
         >
@@ -90,9 +87,9 @@ export function MobileHeader({
             style={{
               width: "100%",
               height: "100%",
-              borderRadius: "50%",
+              borderRadius: 5,
               background: T.ink,
-              color: "#fff",
+              color: T.surface,
               display: "grid",
               placeItems: "center",
               fontSize: 15,
@@ -104,14 +101,14 @@ export function MobileHeader({
           </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
-          <Wordmark size={17} glow />
+          <Wordmark size={17} />
           <span
             style={{
               fontSize: 12.5,
               color: T.textSecondary,
               lineHeight: 1.2,
               whiteSpace: "nowrap",
-              textShadow: "0 1px 12px rgba(251,251,251,0.92), 0 0 4px rgba(251,251,251,0.92)",
+              letterSpacing: "0.01em",
             }}
           >
             Shopify Theme
@@ -153,9 +150,9 @@ export function MobileHeader({
                   minWidth: 18,
                   height: 18,
                   padding: "0 5px",
-                  borderRadius: 999,
-                  background: T.ink,
-                  color: "#fff",
+                  borderRadius: 4,
+                  background: T.signal,
+                  color: T.surface,
                   fontSize: 11,
                   fontWeight: 700,
                   display: "grid",

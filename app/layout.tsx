@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 // app-frame clears the notch/home indicator; themeColor matches the backdrop
 // gutter so the browser chrome blends into the framed look.
 export const viewport: Viewport = {
-  themeColor: "#EAEAEA",
+  themeColor: "#F2F0E9",
   viewportFit: "cover",
   width: "device-width",
   initialScale: 1,
@@ -37,10 +37,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="bg-background">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        style={{ background: "#EAEAEA", color: "#171717" }}
+        style={{ background: "#F2F0E9", color: "#1C1C1A" }}
       >
         {children}
       </body>

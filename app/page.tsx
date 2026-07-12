@@ -13,32 +13,23 @@ import { CardOverview } from "../components/card-overview";
 import { CartSheet, type CartLine } from "../components/cart-sheet";
 import { OFFERINGS } from "../lib/offerings";
 import { useMediaQuery } from "../hooks/use-media-query";
-import { T, SPRING_SOFT, WHISPER_PATTERN } from "../lib/theme";
+import { T, SPRING_SOFT } from "../lib/theme";
 
-/**
- * The desktop canvas — a seamless photography "studio sweep": light at the top,
- * settling into a subtly deeper floor, with the faint whisper contour texture
- * rising from the bottom. Deliberately neutral *material*: the brand's signature
- * gesture is the red dot in the wordmark, not the background. Less, but better.
- */
+/** A quiet instrument bench: one material, one registration rule, no scenery. */
 function DesktopBackdrop() {
   return (
-    <div aria-hidden style={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none", overflow: "hidden" }}>
-      {/* Studio sweep */}
-      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, #FFFFFF 0%, #FBFBFB 54%, #EFEFEF 100%)" }} />
-      {/* Whisper contour texture, rising from the floor */}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          backgroundImage: WHISPER_PATTERN,
-          backgroundSize: "240px 180px",
-          backgroundRepeat: "repeat",
-          opacity: 0.5,
-          maskImage: "linear-gradient(180deg, transparent 28%, #000 100%)",
-          WebkitMaskImage: "linear-gradient(180deg, transparent 28%, #000 100%)",
-        }}
-      />
+    <div
+      aria-hidden
+      style={{
+        position: "absolute",
+        inset: 0,
+        zIndex: 0,
+        pointerEvents: "none",
+        background: T.bg,
+        borderTop: `1px solid ${T.border}`,
+      }}
+    >
+      <div style={{ position: "absolute", left: 32, right: 32, top: 72, height: 1, background: T.border }} />
     </div>
   );
 }
@@ -153,14 +144,14 @@ export default function Home() {
         flexShrink: 0,
         width: 44,
         height: 44,
-        borderRadius: "50%",
+        borderRadius: 8,
         background: T.surface,
-        border: `1px solid ${T.border}`,
+        border: `1px solid ${T.borderStrong}`,
         color: T.textPrimary,
         display: "grid",
         placeItems: "center",
         cursor: "pointer",
-        boxShadow: "0 8px 24px -10px rgba(0,0,0,0.28)",
+        boxShadow: "0 2px 0 rgba(28,28,26,0.08)",
       }}
     >
       <ShoppingBag size={20} strokeWidth={1.9} />
@@ -179,14 +170,14 @@ export default function Home() {
               minWidth: 19,
               height: 19,
               padding: "0 5px",
-              borderRadius: 999,
-              background: T.ink,
-              color: "#fff",
+              borderRadius: 4,
+              background: T.signal,
+              color: T.surface,
               fontSize: 11,
               fontWeight: 700,
               display: "grid",
               placeItems: "center",
-              border: "2px solid #FBFBFB",
+              border: `2px solid ${T.surface}`,
             }}
           >
             {cartCount}
@@ -235,13 +226,13 @@ export default function Home() {
             alignItems: "center",
             justifyContent: "center",
             gap: 12,
-            padding: "20px 28px",
-            // The header is now a pure, centered wordmark — the cart has moved
-            // to a floating control, so nothing pulls "Optimo" off-center.
-            background: "transparent",
+            minHeight: 72,
+            padding: "14px 32px",
+            background: T.bg,
+            borderBottom: `1px solid ${T.border}`,
           }}
         >
-          <Wordmark size={23} />
+          <Wordmark size={20} />
         </div>
       )}
 

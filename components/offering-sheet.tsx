@@ -75,7 +75,7 @@ export function OfferingSheet({
               marginTop: 10,
               width: 40,
               height: 5,
-              borderRadius: 999,
+              borderRadius: 8,
               background: "rgba(20,20,20,0.28)",
             }}
           />
@@ -168,10 +168,8 @@ export function OfferingSheet({
         alignItems: "center",
         gap: 10,
         padding: isMobile ? "12px 16px calc(14px + env(safe-area-inset-bottom))" : "14px 20px",
-        borderTop: `1px solid ${T.border}`,
-        background: "rgba(255,255,255,0.9)",
-        backdropFilter: "blur(10px)",
-        WebkitBackdropFilter: "blur(10px)",
+        borderTop: `1px solid ${T.borderStrong}`,
+        background: T.surface,
       }}
     >
       <motion.button
@@ -183,7 +181,7 @@ export function OfferingSheet({
           alignItems: "center",
           justifyContent: "center",
           height: 52,
-          borderRadius: 999,
+          borderRadius: 8,
           background: T.ghost,
           color: T.textPrimary,
           border: `1px solid ${T.border}`,
@@ -204,7 +202,7 @@ export function OfferingSheet({
           alignItems: "center",
           justifyContent: "center",
           height: 52,
-          borderRadius: 999,
+          borderRadius: 8,
           background: T.ink,
           color: "#fff",
           border: "none",
@@ -226,7 +224,7 @@ export function OfferingSheet({
           flexShrink: 0,
           display: "grid",
           placeItems: "center",
-          borderRadius: "50%",
+          borderRadius: 8,
           background: T.surface,
           color: T.textPrimary,
           border: `1px solid ${T.borderActive}`,
@@ -264,9 +262,7 @@ export function OfferingSheet({
         style={{
           position: "absolute",
           inset: 0,
-          background: "rgba(20,20,20,0.14)",
-          backdropFilter: "blur(8px)",
-          WebkitBackdropFilter: "blur(8px)",
+          background: "rgba(28,28,26,0.24)",
         }}
       />
 
@@ -290,8 +286,9 @@ export function OfferingSheet({
           height: isMobile ? undefined : "min(600px, 86vh)",
           maxHeight: isMobile ? `calc(100dvh - ${topInset + 16}px)` : "86vh",
           background: T.surface,
-          border: `1px solid ${T.border}`,
-          borderRadius: isMobile ? "22px 22px 0 0" : 28,
+          border: `1px solid ${T.borderStrong}`,
+          borderRadius: isMobile ? "10px 10px 0 0" : 10,
+          boxShadow: "0 8px 28px rgba(28,28,26,0.16)",
           display: "flex",
           flexDirection: isMobile ? "column" : "row",
           overflow: "hidden",
@@ -315,7 +312,7 @@ export function OfferingSheet({
                   slideshow card, so the product photo sits in a clean frame
                   rather than bleeding to the sheet's edges. */}
               <div style={{ padding: "12px 12px 0", flexShrink: 0 }}>
-                <div style={{ position: "relative", borderRadius: 14, overflow: "hidden" }}>
+                <div style={{ position: "relative", borderRadius: 6, overflow: "hidden" }}>
                   {hero}
                 </div>
               </div>
@@ -345,7 +342,7 @@ export function OfferingSheet({
               }}
             >
               {/* Inner radius = outer 28 − 12 padding, so the corners nest concentrically */}
-              <div style={{ position: "relative", height: "100%", width: "100%", borderRadius: 16, overflow: "hidden" }}>
+              <div style={{ position: "relative", height: "100%", width: "100%", borderRadius: 6, overflow: "hidden" }}>
                 {hero}
               </div>
             </div>
