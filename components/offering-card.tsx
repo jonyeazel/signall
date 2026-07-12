@@ -215,13 +215,9 @@ export function OfferingCard({
               fontSize: 14,
               lineHeight: 1.5,
               color: T.textSecondary,
-              display: "-webkit-box",
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: "vertical",
-              overflow: "hidden",
             }}
           >
-            {offering.description}
+            {offering.blurb}
           </p>
         </button>
 

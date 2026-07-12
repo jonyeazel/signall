@@ -99,13 +99,9 @@ export function CardIdentity({ offering }: { offering: Offering }) {
           lineHeight: 1.42,
           color: T.textSecondary,
           textShadow: HALO,
-          display: "-webkit-box",
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: "vertical",
-          overflow: "hidden",
         }}
       >
-        {offering.description}
+        {offering.blurb}
       </p>
     </div>
   );
