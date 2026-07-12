@@ -36,7 +36,7 @@ function Explainer({ offering, faded }: { offering: Offering; faded?: boolean })
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        gap: 4,
+        gap: 6,
         padding: "0 10px",
         textAlign: "center",
         opacity: faded ? 0 : 1,
@@ -44,11 +44,11 @@ function Explainer({ offering, faded }: { offering: Offering; faded?: boolean })
     >
       <span
         style={{
-          fontSize: 13,
+          fontSize: 19,
           fontWeight: 600,
-          letterSpacing: "-0.01em",
+          letterSpacing: "-0.02em",
           color: T.textPrimary,
-          lineHeight: 1.1,
+          lineHeight: 1.15,
         }}
       >
         {offering.title}
@@ -56,7 +56,7 @@ function Explainer({ offering, faded }: { offering: Offering; faded?: boolean })
       <p
         style={{
           margin: 0,
-          fontSize: 13,
+          fontSize: 13.5,
           lineHeight: 1.4,
           color: T.textSecondary,
           maxWidth: "32ch",

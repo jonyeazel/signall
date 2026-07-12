@@ -57,12 +57,18 @@ export function CardChatDrawer({
     [],
   );
 
-  // Focus the input when the drawer opens; reset the thread when it closes.
-  // preventScroll is essential: without it the browser scrolls the card into
-  // view to reveal the input, which shifts the shared-layout product image and
-  // makes the background "flip" as the drawer opens.
+  // Keyboard etiquette — the whole point of a great chat on iOS:
+  //  • Summon the keyboard ONLY when the shopper opened the chat to *type*
+  //    (tapped Ai with no seeded question). When it opens with a seeded
+  //    question they've already asked from the card's composer — so we keep the
+  //    keyboard away and let them READ the reply in full. It returns the instant
+  //    they tap the field for a follow-up.
+  //  • preventScroll is essential: without it the browser scrolls the card into
+  //    view to reveal the input, which shifts the shared-layout product image
+  //    and makes the background "flip" as the drawer opens.
   useEffect(() => {
     if (open) {
+      if (initialMessage) return;
       const raf = requestAnimationFrame(() => inputRef.current?.focus({ preventScroll: true }));
       return () => cancelAnimationFrame(raf);
     }
@@ -72,7 +78,7 @@ export function CardChatDrawer({
       setTyping(false);
     }, 260);
     return () => clearTimeout(t);
-  }, [open]);
+  }, [open, initialMessage]);
 
   useEffect(() => {
     return () => {
@@ -181,6 +187,13 @@ export function CardChatDrawer({
     [answer],
   );
 
+  // Close, but blur first so the keyboard begins sliding away in the same beat
+  // as the drawer — never a lingering keyboard over a dismissed sheet.
+  const dismiss = useCallback(() => {
+    inputRef.current?.blur();
+    onClose();
+  }, [onClose]);
+
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLInputElement>) => {
       if (e.nativeEvent.isComposing || e.keyCode === 229) return;
@@ -188,9 +201,9 @@ export function CardChatDrawer({
         e.preventDefault();
         send(value);
       }
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") dismiss();
     },
-    [send, value, onClose],
+    [send, value, dismiss],
   );
 
   const hasText = value.trim().length > 0;
@@ -206,7 +219,7 @@ export function CardChatDrawer({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.24 }}
-            onClick={onClose}
+            onClick={dismiss}
             style={{
               position: "absolute",
               inset: 0,
@@ -234,7 +247,9 @@ export function CardChatDrawer({
               right: 0,
               bottom: kb,
               height: kb > 0 ? `calc(100% - ${kb}px - 44px)` : heightPct,
-              transition: "bottom 0.24s cubic-bezier(0.22,1,0.36,1), height 0.24s cubic-bezier(0.22,1,0.36,1)",
+              // Track the keyboard with iOS's own easing so the sheet feels
+              // physically attached to it as it rises and falls.
+              transition: "bottom 0.28s cubic-bezier(0.32,0.72,0,1), height 0.28s cubic-bezier(0.32,0.72,0,1)",
               zIndex: 20,
               display: "flex",
               flexDirection: "column",
@@ -283,9 +298,10 @@ export function CardChatDrawer({
             }}
           >
             <span aria-hidden style={{ width: 38, height: 5, borderRadius: 999, background: T.borderActive }} />
-            <button
+            <motion.button
               type="button"
-              onClick={onClose}
+              onClick={dismiss}
+              whileTap={{ scale: 0.9 }}
               aria-label="Close chat"
               style={{
                 position: "absolute",
@@ -304,12 +320,20 @@ export function CardChatDrawer({
               }}
             >
               <X size={16} strokeWidth={2} />
-            </button>
+            </motion.button>
           </div>
 
           {/* Messages */}
           <div
             ref={scrollRef}
+            onTouchMove={() => {
+              // iMessage-style: the moment you drag the transcript, the
+              // keyboard bows out — the conversation is yours to read. It only
+              // ever returns when you deliberately tap the field again.
+              if (typeof document !== "undefined" && document.activeElement === inputRef.current) {
+                inputRef.current?.blur();
+              }
+            }}
             style={{
               position: "relative",
               zIndex: 1,
@@ -336,11 +360,15 @@ export function CardChatDrawer({
 
             {messages.length === 0 && (
               <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginTop: 2 }}>
-                {suggestions.map((s) => (
-                  <button
+                {suggestions.map((s, i) => (
+                  <motion.button
                     key={s}
                     type="button"
                     onClick={() => send(s)}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.24, delay: 0.06 + i * 0.05, ease: [0.22, 1, 0.36, 1] }}
+                    whileTap={{ scale: 0.96 }}
                     style={{
                       fontSize: 13,
                       color: T.textPrimary,
@@ -353,7 +381,7 @@ export function CardChatDrawer({
                     }}
                   >
                     {s}
-                  </button>
+                  </motion.button>
                 ))}
               </div>
             )}
@@ -417,11 +445,12 @@ export function CardChatDrawer({
                   fontSize: 16,
                 }}
               />
-              <button
+              <motion.button
                 type="button"
                 aria-label="Send"
                 onClick={() => send(value)}
                 disabled={!hasText}
+                whileTap={{ scale: hasText ? 0.88 : 1 }}
                 style={{
                   width: 38,
                   height: 38,
@@ -437,7 +466,7 @@ export function CardChatDrawer({
                 }}
               >
                 <ArrowUp size={17} strokeWidth={2} />
-              </button>
+              </motion.button>
             </div>
           </div>
           </motion.div>
