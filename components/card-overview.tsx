@@ -21,11 +21,31 @@ const TEXT_H = 88;
 // Gap between the photo and the text block.
 const TEXT_GAP = 16;
 
-// The zoom-open photo uses a fixed-duration tween (not a spring) so the
-// handoff to the immersive card fires exactly when the photo *visually* fills
-// the screen — a spring's long settle tail is what made the "text on top"
-// arrive a beat late.
-const PHOTO_MORPH = { type: "tween" as const, duration: 0.44, ease: [0.32, 0.72, 0, 1] as const };
+// Spring physics shared by both the shrink-into-deck (open) and expand-to-full
+// (close) photo morphs. High stiffness for a confident, fast initial movement;
+// moderate damping for a natural settle — just enough residual spring to read
+// as physical rather than mechanical, but not so much that it overshoots into
+// the card chrome. The expand uses a tighter rest threshold so onAnimationComplete
+// fires promptly and the card handoff never feels late.
+const PHOTO_SPRING = {
+  type: "spring" as const,
+  stiffness: 520,
+  damping: 52,
+  mass: 0.9,
+  restDelta: 0.5,
+  restSpeed: 1.5,
+} as const;
+
+// Slightly heavier for the shrink-open so the card "lands" with a hint of
+// weight — a lighter touch into the deck than the crisp snap back to full-bleed.
+const SHRINK_SPRING = {
+  type: "spring" as const,
+  stiffness: 440,
+  damping: 50,
+  mass: 1.05,
+  restDelta: 0.5,
+  restSpeed: 1.2,
+} as const;
 
 /** The centered explainer block: a small quiet name + the two-line blurb.
  *  Rendered on the frosted overview backdrop (never on a white panel). */
@@ -93,8 +113,8 @@ function ExpandingCard({
       {/* Explainer text sitting just under the photo — fades + lifts away */}
       <motion.div
         initial={{ top: photo.bottom + TEXT_GAP, opacity: 1 }}
-        animate={{ top: photo.bottom + TEXT_GAP - 24, opacity: 0 }}
-        transition={{ duration: 0.16, ease: "easeIn" }}
+        animate={{ top: photo.bottom + TEXT_GAP - 18, opacity: 0 }}
+        transition={{ type: "spring", stiffness: 380, damping: 36, mass: 0.7 }}
         style={{ position: "absolute", left: 0, right: 0, display: "flex", justifyContent: "center" }}
       >
         <Explainer offering={offering} />
@@ -104,7 +124,7 @@ function ExpandingCard({
       <motion.div
         initial={{ top: photo.top, left: photo.left, width: photo.width, height: photo.height, borderRadius: CARD_RADIUS }}
         animate={{ top: 0, left: 0, width: vw, height: vh, borderRadius: 0 }}
-        transition={PHOTO_MORPH}
+        transition={PHOTO_SPRING}
         onAnimationComplete={onDone}
         style={{ position: "absolute", overflow: "hidden", background: T.surface }}
       >
@@ -149,7 +169,7 @@ function ShrinkingCard({
             ? { top: target.top, left: target.left, width: target.width, height: target.height, borderRadius: CARD_RADIUS }
             : full
         }
-        transition={PHOTO_MORPH}
+        transition={SHRINK_SPRING}
         onAnimationComplete={() => {
           if (target) onDone();
         }}
@@ -171,9 +191,9 @@ function ShrinkingCard({
       {/* Explainer settles in beneath the shrunken photo */}
       {target && (
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.26, delay: 0.18, ease: "easeOut" }}
+          transition={{ type: "spring", stiffness: 340, damping: 38, mass: 0.8, delay: 0.12 }}
           style={{ position: "absolute", top: target.bottom + TEXT_GAP, left: 0, right: 0, display: "flex", justifyContent: "center" }}
         >
           <Explainer offering={offering} />
@@ -338,7 +358,7 @@ export function CardOverview({
           closes; taps on a card are stopped from bubbling. */}
       <motion.div
         animate={{ opacity: phase === "live" ? 1 : 0 }}
-        transition={{ duration: 0.2, ease: "easeOut" }}
+        transition={{ type: "spring", stiffness: 300, damping: 38, mass: 0.7 }}
         style={{
           flex: 1,
           minHeight: 0,
