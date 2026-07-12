@@ -43,7 +43,7 @@ export function OfferingSheet({
   // the slideshow card; dots + horizontal scroll are enabled here for browsing.
   const hero = (
     <ImageCarousel
-      layoutId={`media-${offering.id}`}
+      layoutId={isMobile ? undefined : `media-${offering.id}`}
       images={offering.images}
       alt={offering.title}
       radius={0}
@@ -296,9 +296,12 @@ export function OfferingSheet({
         }}
       />
 
-      {/* Panel — morphs from the card via shared layoutId */}
+      {/* Panel — on mobile it simply slides up from the bottom (a proper bottom
+          sheet); on desktop it morphs from the card via the shared layoutId. */}
       <motion.div
-        layoutId={`card-${offering.id}`}
+        {...(isMobile
+          ? { initial: { y: "100%" }, animate: { y: 0 }, exit: { y: "100%" } }
+          : { layoutId: `card-${offering.id}` })}
         drag={isMobile ? "y" : false}
         dragListener={false}
         dragControls={dragControls}
@@ -348,7 +351,7 @@ export function OfferingSheet({
             </div>
             {buyBar}
             {/* AI concierge — covers the full card on mobile */}
-            <CardChatDrawer offering={offering} open={chatOpen} flatTop onClose={() => setChatOpen(false)} />
+            <CardChatDrawer offering={offering} open={chatOpen} onClose={() => setChatOpen(false)} />
           </>
         ) : (
           <>

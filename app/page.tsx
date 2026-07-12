@@ -209,15 +209,14 @@ export default function Home() {
             transition: "background 200ms ease",
           }}
         >
-          {/* Centered wordmark — the "Optimo" name alone, set in a timeless
-              high-contrast serif. Cart floats to the right so it doesn't
-              pull the wordmark off-center. */}
+          {/* Centered wordmark — the "Optimo" name alone, set in Geist. Cart
+              floats to the right so it doesn't pull the wordmark off-center. */}
           <span
             style={{
-              fontFamily: "var(--font-playfair), Georgia, serif",
-              fontSize: 25,
+              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+              fontSize: 23,
               fontWeight: 600,
-              letterSpacing: "0.01em",
+              letterSpacing: "-0.02em",
               color: T.textPrimary,
               lineHeight: 1,
               whiteSpace: "nowrap",

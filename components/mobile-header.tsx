@@ -68,18 +68,19 @@ export function MobileHeader({
       {/* Consistent brand identity — the storefront's logo + name, unchanging
           as you scroll (product identity now lives on each card itself). */}
       <div style={{ display: "flex", alignItems: "center", gap: 11, flex: 1, minWidth: 0 }}>
-        {/* Avatar ring: a bordered outer circle with a small gap (padding)
-            around the inner avatar, so the mark reads as a framed profile. */}
+        {/* Avatar ring: a dark border (matching the avatar photo) with a thin
+            1.5px white gap around the inner avatar, so it reads as a framed
+            profile without a wide halo. */}
         <div
           style={{
             width: 40,
             height: 40,
             borderRadius: "50%",
             flexShrink: 0,
-            padding: 3,
+            padding: 1.5,
             boxSizing: "border-box",
             background: T.surface,
-            border: `1px solid ${T.border}`,
+            border: `1.5px solid ${T.ink}`,
             boxShadow: "0 2px 10px rgba(0,0,0,0.10)",
           }}
           aria-hidden
@@ -104,10 +105,10 @@ export function MobileHeader({
         <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
           <span
             style={{
-              fontFamily: "var(--font-playfair), Georgia, serif",
-              fontSize: 18,
+              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+              fontSize: 17,
               fontWeight: 600,
-              letterSpacing: "0.01em",
+              letterSpacing: "-0.02em",
               color: T.textPrimary,
               lineHeight: 1.15,
               whiteSpace: "nowrap",
@@ -125,7 +126,7 @@ export function MobileHeader({
               textShadow: "0 1px 12px rgba(251,251,251,0.92), 0 0 4px rgba(251,251,251,0.92)",
             }}
           >
-            Considered objects
+            Shopify Theme
           </span>
         </div>
       </div>
