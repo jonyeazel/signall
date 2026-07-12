@@ -2,7 +2,7 @@
 
 import { motion, useDragControls, type PanInfo } from "motion/react";
 import { useState } from "react";
-import { X, Check, Star } from "lucide-react";
+import { Check, Star } from "lucide-react";
 import { type Offering } from "../lib/offerings";
 import { T, SPRING } from "../lib/theme";
 import { ImageCarousel } from "./image-carousel";
@@ -241,32 +241,6 @@ export function OfferingSheet({
     </div>
   );
 
-  const closeButton = (
-    <motion.button
-      onClick={onClose}
-      aria-label="Close"
-      whileTap={{ scale: 0.9 }}
-      style={{
-        position: "absolute",
-        top: 12,
-        right: 13,
-        zIndex: 5,
-        width: 34,
-        height: 34,
-        borderRadius: "50%",
-        background: "rgba(255,255,255,0.9)",
-        backdropFilter: "blur(4px)",
-        WebkitBackdropFilter: "blur(4px)",
-        border: `1px solid ${T.border}`,
-        color: T.textSecondary,
-        display: "grid",
-        placeItems: "center",
-      }}
-    >
-      <X size={17} strokeWidth={1.9} />
-    </motion.button>
-  );
-
   return (
     <div
       style={{
@@ -323,8 +297,6 @@ export function OfferingSheet({
           overflow: "hidden",
         }}
       >
-        {closeButton}
-
         {isMobile ? (
           <>
             {/* Stacked: hero scrolls with content, buy bar pinned */}
