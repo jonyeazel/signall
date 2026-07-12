@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Playfair_Display } from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -12,9 +12,16 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// A timeless, high-contrast serif reserved for the "Optimo" wordmark.
+const playfair = Playfair_Display({
+  variable: "--font-playfair",
+  subsets: ["latin"],
+  weight: ["500", "600"],
+});
+
 export const metadata: Metadata = {
-  title: "Template",
-  description: "A clean, AI-ready starting point.",
+  title: "Optimo",
+  description: "Considered objects.",
 };
 
 // viewport-fit=cover makes env(safe-area-inset-*) meaningful so the mobile
@@ -39,7 +46,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} antialiased`}
         style={{ background: "#EAEAEA", color: "#171717" }}
       >
         {children}

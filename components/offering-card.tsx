@@ -231,6 +231,7 @@ export function OfferingCard({
           id={offering.id}
           title={offering.title}
           height={44}
+          borderedGlass
           onBuy={onOpen}
           onAsk={(q) => {
             setChatSeed(q);

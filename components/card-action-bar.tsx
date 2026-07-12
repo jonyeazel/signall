@@ -23,6 +23,7 @@ export function CardActionBar({
   onAi,
   ctaLabel = "Learn more",
   height = 50,
+  borderedGlass = false,
 }: {
   id: string;
   title: string;
@@ -34,6 +35,9 @@ export function CardActionBar({
   ctaLabel?: string;
   /** Row height. Desktop cards use a lighter 44 so the buttons don't dominate. */
   height?: number;
+  /** Desktop variant: a visible solid border and no drop shadow (the glass
+   *  material sits on a white card, where the frosted glow reads as clutter). */
+  borderedGlass?: boolean;
 }) {
   const surfaceId = `ai-surface-${id}`;
   const [aiOpen, setAiOpen] = useState(false);
@@ -85,8 +89,10 @@ export function CardActionBar({
     background: "rgba(255,255,255,0.55)",
     backdropFilter: "blur(22px) saturate(180%)",
     WebkitBackdropFilter: "blur(22px) saturate(180%)",
-    border: "1px solid rgba(255,255,255,0.6)",
-    boxShadow: "0 8px 24px -8px rgba(0,0,0,0.30), inset 0 1px 0.5px rgba(255,255,255,0.85)",
+    border: borderedGlass ? `1px solid ${T.borderActive}` : "1px solid rgba(255,255,255,0.6)",
+    boxShadow: borderedGlass
+      ? "none"
+      : "0 8px 24px -8px rgba(0,0,0,0.30), inset 0 1px 0.5px rgba(255,255,255,0.85)",
     color: T.textPrimary,
   } as const;
 

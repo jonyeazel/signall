@@ -314,7 +314,7 @@ export function OfferingSheet({
           maxHeight: isMobile ? `calc(100dvh - ${topInset + 16}px)` : "86vh",
           background: T.surface,
           border: `1px solid ${T.border}`,
-          borderRadius: isMobile ? 0 : 28,
+          borderRadius: isMobile ? "22px 22px 0 0" : 28,
           display: "flex",
           flexDirection: isMobile ? "column" : "row",
           overflow: "hidden",
@@ -336,7 +336,14 @@ export function OfferingSheet({
                 flexDirection: "column",
               }}
             >
-              {hero}
+              {/* Framed hero — a 12px inset + rounded inner image mirrors the
+                  slideshow card, so the product photo sits in a clean frame
+                  rather than bleeding to the sheet's edges. */}
+              <div style={{ padding: "12px 12px 0", flexShrink: 0 }}>
+                <div style={{ position: "relative", borderRadius: 14, overflow: "hidden" }}>
+                  {hero}
+                </div>
+              </div>
               {body}
             </div>
             {buyBar}
