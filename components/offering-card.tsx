@@ -157,20 +157,31 @@ export function OfferingCard({
           overflow: "hidden",
         }}
       >
+        {/* 1:1 image well with inset padding — the product sits inside white
+            space rather than bleeding to every edge. The inner wrapper clips
+            to the same small radius so the image corners stay clean. */}
         <div
           onClick={onOpen}
-          style={{ width: "100%", aspectRatio: "1 / 1", flexShrink: 0, cursor: "pointer" }}
+          style={{
+            width: "100%",
+            aspectRatio: "1 / 1",
+            flexShrink: 0,
+            cursor: "pointer",
+            background: T.bgSubtle,
+            borderRadius: 6,
+            padding: "8%",
+            boxSizing: "border-box",
+            overflow: "hidden",
+          }}
         >
-          {/* Slideshow view: a single 1:1 hero, no dots and not scrollable —
-              browsing images belongs to the expanded card, so this never
-              hijacks the horizontal slide between products. */}
           <ImageCarousel
             layoutId={`media-${offering.id}`}
             images={offering.images}
             alt={offering.title}
-            radius={6}
+            radius={4}
             dots={false}
             scrollable={false}
+            imageFit="contain"
             style={{ height: "100%", width: "100%" }}
           />
         </div>
