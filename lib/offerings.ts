@@ -28,6 +28,10 @@ export type Offering = {
   features: string[];
   stats: { label: string; value: string }[];
   cta: string;
+  /** Product-specific opener questions shown as tappable chips when the
+   *  concierge chat is empty. Written in the shopper's voice to spark the
+   *  exact conversation that sells THIS piece. Falls back to a generic set. */
+  chatSeeds?: string[];
 };
 
 /**
@@ -62,6 +66,7 @@ export const OFFERINGS: Offering[] = [
       { label: "Charge", value: "USB-C" },
     ],
     cta: "Add Lumen",
+    chatSeeds: ["Will it light a bedside table?", "How warm is the glow?", "Is 40 hours realistic?"],
   },
   {
     id: "strata",
@@ -89,6 +94,7 @@ export const OFFERINGS: Offering[] = [
       { label: "Safe", value: "Dishwasher" },
     ],
     cta: "Add Strata",
+    chatSeeds: ["What sizes are the three bowls?", "Is each one really unique?", "Oven-safe how hot?"],
   },
   {
     id: "orbit",
@@ -116,6 +122,7 @@ export const OFFERINGS: Offering[] = [
       { label: "Battery", value: "1 yr" },
     ],
     cta: "Add Orbit",
+    chatSeeds: ["Is it truly silent at night?", "How big is the face?", "Will it suit a bedroom?"],
   },
   {
     id: "compass",
@@ -143,6 +150,7 @@ export const OFFERINGS: Offering[] = [
       { label: "Hinge", value: "5-barrel" },
     ],
     cta: "Add Compass",
+    chatSeeds: ["Will these suit my face shape?", "How good is the polarization?", "Are the hinges sturdy?"],
   },
   {
     id: "boxes",
@@ -170,6 +178,7 @@ export const OFFERINGS: Offering[] = [
       { label: "Finish", value: "Oiled" },
     ],
     cta: "Add Modules",
+    chatSeeds: ["How big is one box?", "Can I add more later?", "Will they scratch my shelf?"],
   },
   {
     id: "waves",
@@ -197,6 +206,7 @@ export const OFFERINGS: Offering[] = [
       { label: "Sealed", value: "Yes" },
     ],
     cta: "Add Waves",
+    chatSeeds: ["Can it hold real flowers?", "How tall is it?", "Is each one different?"],
   },
   {
     id: "aperture",
@@ -224,5 +234,6 @@ export const OFFERINGS: Offering[] = [
       { label: "Aperture", value: "f/1.2" },
     ],
     cta: "Add Aperture",
+    chatSeeds: ["Is it good for street photos?", "Does it really fit a pocket?", "Why a fixed 35mm?"],
   },
 ];
