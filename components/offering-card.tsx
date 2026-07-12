@@ -14,6 +14,7 @@ export function OfferingCard({
   index,
   rootRef,
   onOpen,
+  onAddToCart,
   withComposer = false,
   imageScrollable = true,
 }: {
@@ -21,6 +22,8 @@ export function OfferingCard({
   index: number;
   rootRef: RefObject<HTMLElement | null>;
   onOpen: () => void;
+  /** Add this product to the cart — wires the in-chat buy card to the store. */
+  onAddToCart?: () => void;
   withComposer?: boolean;
   imageScrollable?: boolean;
 }) {
@@ -114,6 +117,8 @@ export function OfferingCard({
             offering={offering}
             open={chatOpen}
             initialMessage={chatSeed}
+            onAddToCart={onAddToCart}
+            onViewProduct={onOpen}
             onClose={() => {
               setChatOpen(false);
               setChatSeed(undefined);
@@ -242,6 +247,8 @@ export function OfferingCard({
           offering={offering}
           open={chatOpen}
           initialMessage={chatSeed}
+          onAddToCart={onAddToCart}
+          onViewProduct={onOpen}
           onClose={() => {
             setChatOpen(false);
             setChatSeed(undefined);

@@ -323,7 +323,12 @@ export function OfferingSheet({
             </div>
             {buyBar}
             {/* AI concierge — covers the full card on mobile */}
-            <CardChatDrawer offering={offering} open={chatOpen} onClose={() => setChatOpen(false)} />
+            <CardChatDrawer
+              offering={offering}
+              open={chatOpen}
+              onAddToCart={onAddToCart}
+              onClose={() => setChatOpen(false)}
+            />
           </>
         ) : (
           <>
@@ -376,6 +381,7 @@ export function OfferingSheet({
                 offering={offering}
                 open={chatOpen}
                 heightPct="92%"
+                onAddToCart={onAddToCart}
                 onClose={() => setChatOpen(false)}
               />
             </div>
