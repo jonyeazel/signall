@@ -114,10 +114,7 @@ export function ImageCarousel({
               height: "100%",
               scrollSnapAlign: "start",
               position: "relative",
-              background: T.skeleton,
-              backgroundImage: images
-                ? undefined
-                : "repeating-linear-gradient(-45deg, rgba(0,0,0,0.05) 0px, rgba(0,0,0,0.05) 1.5px, transparent 1.5px, transparent 11px)",
+              background: images ? T.skeleton : T.ghost,
             }}
           >
             {images && (

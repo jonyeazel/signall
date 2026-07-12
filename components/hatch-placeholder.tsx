@@ -24,9 +24,7 @@ export function HatchPlaceholder({
       layoutId={layoutId}
       style={{
         position: "relative",
-        background: T.skeleton,
-        backgroundImage:
-          "repeating-linear-gradient(-45deg, rgba(0,0,0,0.05) 0px, rgba(0,0,0,0.05) 1.5px, transparent 1.5px, transparent 11px)",
+        background: T.ghost,
         borderRadius: radius,
         overflow: "hidden",
         ...style,

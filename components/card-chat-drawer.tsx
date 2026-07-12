@@ -369,9 +369,7 @@ export function CardChatDrawer({
               position: "absolute",
               inset: 0,
               zIndex: 19,
-              background: "rgba(255,255,255,0.5)",
-              backdropFilter: "blur(3px)",
-              WebkitBackdropFilter: "blur(3px)",
+              background: "rgba(28,28,26,0.22)",
             }}
           />
           {/* The drawer slides up to ~82% of the card at rest. When the
@@ -454,8 +452,6 @@ export function CardChatDrawer({
                 display: "flex",
                 flexDirection: "column",
                 gap: 10,
-                maskImage: "linear-gradient(to bottom, #000 calc(100% - 30px), transparent 100%)",
-                WebkitMaskImage: "linear-gradient(to bottom, #000 calc(100% - 30px), transparent 100%)",
               }}
             >
               {/* Assistant welcome */}

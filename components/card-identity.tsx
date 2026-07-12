@@ -97,7 +97,6 @@ export function CardIdentity({ offering }: { offering: Offering }) {
           fontSize: 14,
           lineHeight: 1.42,
           color: T.textSecondary,
-          textShadow: HALO,
         }}
       >
         {offering.blurb}
