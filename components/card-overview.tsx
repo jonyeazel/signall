@@ -305,7 +305,12 @@ export function CardOverview({
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
+      // Start fully present, NOT faded-in: the ShrinkingCard clone renders
+      // solid and full-bleed on frame one, perfectly covering the card you
+      // were viewing, then shrinks to reveal the frosted deck behind it. A
+      // fade-in here would cross-dissolve the clone + backdrop over the still-
+      // sharp card underneath — the "flash". We only fade on exit.
+      initial={{ opacity: 1 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.22 }}

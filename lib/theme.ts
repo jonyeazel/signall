@@ -17,6 +17,10 @@ export const T = {
   textTertiary: "#9A9A9A",
   skeleton: "#EFEFEF",
   ghost: "#F5F5F5",
+  // "Optimo red" — the signature accent used sparingly as the desktop
+  // canvas's "red bottom": a single crisp hairline that anchors the studio
+  // sweep. The one deliberate splash of color in an otherwise timeless palette.
+  signature: "#E23A2C",
 } as const;
 
 // Spring feel used across the app for the "fluid, future UI" motion signature.

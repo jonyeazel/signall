@@ -98,6 +98,7 @@ export function OfferingCard({
               <CardActionBar
                 id={offering.id}
                 title={offering.title}
+                height={58}
                 onBuy={onOpen}
                 onAsk={(q) => {
                   setChatSeed(q);

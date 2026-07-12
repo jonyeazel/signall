@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, type KeyboardEvent } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Sparkles, ArrowUp, X } from "lucide-react";
+import { ArrowUp, X } from "lucide-react";
 import { T, SPRING } from "../lib/theme";
 
 /**
@@ -186,14 +186,6 @@ export function CardActionBar({
             overflow: "hidden",
           }}
         >
-          <motion.span
-            initial={{ opacity: 0, scale: 0.6 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.08 }}
-            style={{ display: "grid", placeItems: "center", color: T.textTertiary, flexShrink: 0 }}
-          >
-            <Sparkles size={16} strokeWidth={1.75} />
-          </motion.span>
           <motion.input
             ref={inputRef}
             value={value}

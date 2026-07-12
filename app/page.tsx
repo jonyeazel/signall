@@ -12,7 +12,49 @@ import { CardOverview } from "../components/card-overview";
 import { CartSheet, type CartLine } from "../components/cart-sheet";
 import { OFFERINGS } from "../lib/offerings";
 import { useMediaQuery } from "../hooks/use-media-query";
-import { T, SPRING_SOFT } from "../lib/theme";
+import { T, SPRING_SOFT, WHISPER_PATTERN } from "../lib/theme";
+
+/**
+ * Optimo's signature desktop canvas — a seamless photography "studio sweep":
+ * light at the top, settling into a deeper floor, with the faint whisper
+ * contour texture rising from the bottom. It's anchored by the brand's one
+ * deliberate flourish: a crisp "Optimo red" hairline pinned to the very bottom
+ * edge — our "red bottom." Minimal, ownable, unmistakable.
+ */
+function DesktopBackdrop() {
+  return (
+    <div aria-hidden style={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none", overflow: "hidden" }}>
+      {/* Studio sweep */}
+      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, #FFFFFF 0%, #FBFBFB 54%, #EFEFEF 100%)" }} />
+      {/* Whisper contour texture, rising from the floor */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          backgroundImage: WHISPER_PATTERN,
+          backgroundSize: "240px 180px",
+          backgroundRepeat: "repeat",
+          opacity: 0.5,
+          maskImage: "linear-gradient(180deg, transparent 28%, #000 100%)",
+          WebkitMaskImage: "linear-gradient(180deg, transparent 28%, #000 100%)",
+        }}
+      />
+      {/* Signature "red bottom": a soft glow bleeding up… */}
+      <div
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: 128,
+          background: "linear-gradient(180deg, rgba(226,58,44,0) 0%, rgba(226,58,44,0.055) 100%)",
+        }}
+      />
+      {/* …anchored by a single crisp hairline — the Optimo sole. */}
+      <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 3, background: T.signature }} />
+    </div>
+  );
+}
 
 export default function Home() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -131,6 +173,7 @@ export default function Home() {
         display: "grid",
         placeItems: "center",
         cursor: "pointer",
+        boxShadow: "0 8px 24px -10px rgba(0,0,0,0.28)",
       }}
     >
       <ShoppingBag size={20} strokeWidth={1.9} />
@@ -182,6 +225,9 @@ export default function Home() {
         flexDirection: "column",
       }}
     >
+      {/* Optimo's signature desktop canvas (studio sweep + red bottom) */}
+      {!isMobile && <DesktopBackdrop />}
+
       {/* Header: floating & product-aware on mobile, identity bar on desktop */}
       {isMobile ? (
         <MobileHeader
@@ -203,14 +249,11 @@ export default function Home() {
             justifyContent: "center",
             gap: 12,
             padding: "20px 28px",
-            // When a card is expanded the header background drops away so its
-            // content floats over the scrim and the card centers cleanly.
-            background: selected ? "transparent" : T.bg,
-            transition: "background 200ms ease",
+            // The header is now a pure, centered wordmark — the cart has moved
+            // to a floating control, so nothing pulls "Optimo" off-center.
+            background: "transparent",
           }}
         >
-          {/* Centered wordmark — the "Optimo" name alone, set in Geist. Cart
-              floats to the right so it doesn't pull the wordmark off-center. */}
           <span
             style={{
               fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
@@ -224,9 +267,6 @@ export default function Home() {
           >
             Optimo
           </span>
-          <div style={{ position: "absolute", right: 28, top: "50%", transform: "translateY(-50%)" }}>
-            {cartButton}
-          </div>
         </div>
       )}
 
@@ -236,6 +276,8 @@ export default function Home() {
         onScroll={isMobile ? onFeedScroll : undefined}
         className={isMobile ? "carousel-x" : "feed-scroll"}
         style={{
+          position: "relative",
+          zIndex: 1,
           flex: 1,
           overflowY: selected ? "hidden" : "auto",
           overflowX: "hidden",
@@ -329,6 +371,8 @@ export default function Home() {
       {!isMobile && (
         <div
           style={{
+            position: "relative",
+            zIndex: 1,
             flexShrink: 0,
             background: "transparent",
             padding: "14px 20px 18px",
@@ -338,6 +382,12 @@ export default function Home() {
         >
           <PolicyLinks tone="dock" />
         </div>
+      )}
+
+      {/* Cart — freed from the header into a floating glass control that stays
+          within thumb's reach in the lower-right while you browse the deck. */}
+      {!isMobile && (
+        <div style={{ position: "fixed", right: 24, bottom: 24, zIndex: 60 }}>{cartButton}</div>
       )}
     </div>
   );

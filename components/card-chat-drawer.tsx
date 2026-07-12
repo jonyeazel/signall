@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo, type KeyboardEvent } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Sparkles, ArrowUp, X } from "lucide-react";
+import { ArrowUp, X } from "lucide-react";
 import { type Offering } from "../lib/offerings";
 import { T, WHISPER_PATTERN } from "../lib/theme";
 
@@ -421,11 +421,10 @@ export function CardChatDrawer({
                 borderRadius: 999,
                 background: T.surface,
                 border: `1px solid ${T.borderActive}`,
-                paddingLeft: 16,
+                paddingLeft: 18,
                 paddingRight: 6,
               }}
             >
-              <Sparkles size={16} strokeWidth={1.75} color={T.textTertiary} style={{ flexShrink: 0 }} />
               <input
                 ref={inputRef}
                 value={value}
