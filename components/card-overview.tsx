@@ -21,8 +21,6 @@ const TEXT_H = 88;
 // Gap between the photo and the text block.
 const TEXT_GAP = 16;
 
-// A calm, controlled morph — enough spring to feel alive, no wobble.
-const MORPH = { type: "spring" as const, stiffness: 300, damping: 34 };
 // The zoom-open photo uses a fixed-duration tween (not a spring) so the
 // handoff to the immersive card fires exactly when the photo *visually* fills
 // the screen — a spring's long settle tail is what made the "text on top"
@@ -121,6 +119,71 @@ function ExpandingCard({
 }
 
 /**
+ * The zoom-to-CLOSE morph (opening the overview). The inverse of ExpandingCard:
+ * the full-bleed card you were viewing shrinks down into its miniature photo
+ * frame in the deck, while the centered explainer text settles in beneath it.
+ * On completion the real deck is revealed. This makes entering the slideshow
+ * feel physically connected to the card you left, not a generic fade.
+ */
+function ShrinkingCard({
+  offering,
+  target,
+  vw,
+  vh,
+  onDone,
+}: {
+  offering: Offering;
+  target: DOMRect | null;
+  vw: number;
+  vh: number;
+  onDone: () => void;
+}) {
+  const full = { top: 0, left: 0, width: vw, height: vh, borderRadius: 0 } as const;
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 80, pointerEvents: "none" }}>
+      {/* Photo: from full-bleed down to the miniature's frame */}
+      <motion.div
+        initial={full}
+        animate={
+          target
+            ? { top: target.top, left: target.left, width: target.width, height: target.height, borderRadius: CARD_RADIUS }
+            : full
+        }
+        transition={PHOTO_MORPH}
+        onAnimationComplete={() => {
+          if (target) onDone();
+        }}
+        style={{
+          position: "absolute",
+          overflow: "hidden",
+          background: T.surface,
+          border: `1px solid ${T.border}`,
+          boxShadow: "0 24px 60px -24px rgba(0,0,0,0.28)",
+        }}
+      >
+        <img
+          src={offering.images[0] || "/placeholder.svg"}
+          alt=""
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+        />
+      </motion.div>
+
+      {/* Explainer settles in beneath the shrunken photo */}
+      {target && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.26, delay: 0.18, ease: "easeOut" }}
+          style={{ position: "absolute", top: target.bottom + TEXT_GAP, left: 0, right: 0, display: "flex", justifyContent: "center" }}
+        >
+          <Explainer offering={offering} />
+        </motion.div>
+      )}
+    </div>
+  );
+}
+
+/**
  * iOS app-switcher style overview.
  *
  * The vertical feed shrinks into a horizontal deck of product cards — each a
@@ -146,6 +209,10 @@ export function CardOverview({
   const [picked, setPicked] = useState<{ i: number; rect: DOMRect } | null>(null);
   const [current, setCurrent] = useState(activeIndex);
   const pickedRef = useRef(false);
+  // Opening transition: the fullscreen card shrinks into its miniature before
+  // the real deck is revealed.
+  const [phase, setPhase] = useState<"enter" | "live">("enter");
+  const [shrinkRect, setShrinkRect] = useState<DOMRect | null>(null);
 
   // Size the photo to the live card's aspect ratio (vw : vh), filling most of
   // the deck height minus the reserved text space beneath it.
@@ -217,6 +284,9 @@ export function CardOverview({
     const el = cardRefs.current[activeIndex];
     if (sc && el) sc.scrollLeft = el.offsetLeft - (sc.clientWidth - el.offsetWidth) / 2;
     applyTransforms();
+    // Measure where the active card's photo now sits — the shrink target.
+    const photoEl = el?.querySelector<HTMLElement>("[data-photo]");
+    if (photoEl) setShrinkRect(photoEl.getBoundingClientRect());
     return () => {
       if (raf.current) cancelAnimationFrame(raf.current);
     };
@@ -239,7 +309,9 @@ export function CardOverview({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.22 }}
-      onClick={onClose}
+      onClick={() => {
+        if (phase === "live") onClose();
+      }}
       style={{
         position: "absolute",
         inset: 0,
@@ -272,15 +344,15 @@ export function CardOverview({
           the photos + text own the whole height. Tapping the empty backdrop
           closes; taps on a card are stopped from bubbling. */}
       <motion.div
-        initial={{ scale: 0.92, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.92, opacity: 0 }}
-        transition={MORPH}
+        animate={{ opacity: phase === "live" ? 1 : 0 }}
+        transition={{ duration: 0.2, ease: "easeOut" }}
         style={{
           flex: 1,
           minHeight: 0,
           display: "flex",
           paddingTop: "env(safe-area-inset-top)",
+          // Don't let the invisible deck swallow taps during the entrance.
+          pointerEvents: phase === "live" ? "auto" : "none",
         }}
       >
         <div
@@ -376,7 +448,7 @@ export function CardOverview({
           justifyContent: "center",
           gap: 6,
           padding: "2px 0 calc(20px + env(safe-area-inset-bottom))",
-          opacity: picked ? 0 : 1,
+          opacity: picked || phase !== "live" ? 0 : 1,
           transition: "opacity 0.2s ease",
         }}
       >
@@ -393,6 +465,17 @@ export function CardOverview({
           />
         ))}
       </div>
+
+      {/* Zoom-to-close morph — the fullscreen card shrinking into its deck slot */}
+      {phase === "enter" && dims && (
+        <ShrinkingCard
+          offering={offerings[activeIndex]}
+          target={shrinkRect}
+          vw={dims.vw}
+          vh={dims.vh}
+          onDone={() => setPhase("live")}
+        />
+      )}
 
       {/* Zoom-to-open morph */}
       {picked && dims && (
