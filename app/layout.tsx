@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Template",
-  description: "A clean, AI-ready starting point.",
+  title: "Optimo",
+  description: "A considered Shopify theme.",
 };
 
 // viewport-fit=cover makes env(safe-area-inset-*) meaningful so the mobile

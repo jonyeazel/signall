@@ -19,19 +19,33 @@ export function CardIdentity({ offering }: { offering: Offering }) {
     // description all share one clean left edge (matching the action row).
     <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "0 4px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 11, minWidth: 0 }}>
-        <img
-          src={offering.images[1] ?? offering.images[0] ?? "/placeholder.svg"}
-          alt=""
+        {/* Avatar ring — identical to the header profile: a dark border with a
+            thin 1.5px white gap around the product thumbnail. */}
+        <div
           style={{
             width: 40,
             height: 40,
             borderRadius: "50%",
             flexShrink: 0,
-            objectFit: "cover",
-            border: "1px solid rgba(255,255,255,0.7)",
-            boxShadow: "0 2px 10px rgba(0,0,0,0.14)",
+            padding: 1.5,
+            boxSizing: "border-box",
+            background: T.surface,
+            border: `1.5px solid ${T.ink}`,
+            boxShadow: "0 2px 10px rgba(0,0,0,0.10)",
           }}
-        />
+        >
+          <img
+            src={offering.images[1] ?? offering.images[0] ?? "/placeholder.svg"}
+            alt=""
+            style={{
+              width: "100%",
+              height: "100%",
+              borderRadius: "50%",
+              objectFit: "cover",
+              display: "block",
+            }}
+          />
+        </div>
         {/* Title + price share one row; the price rides in a dark "Buy Now"
             pill next to the name. The title truncates so the pill never wraps. */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
@@ -85,13 +99,9 @@ export function CardIdentity({ offering }: { offering: Offering }) {
           lineHeight: 1.42,
           color: T.textSecondary,
           textShadow: HALO,
-          display: "-webkit-box",
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: "vertical",
-          overflow: "hidden",
         }}
       >
-        {offering.description}
+        {offering.blurb}
       </p>
     </div>
   );

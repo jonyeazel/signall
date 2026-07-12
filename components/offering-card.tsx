@@ -51,12 +51,14 @@ export function OfferingCard({
             height: "100%",
             background: T.surface,
             overflow: "hidden",
+            // Pin to 0 so Motion's shared-layout projection can't leave a
+            // residual percentage radius on the full-bleed immersive card.
+            borderRadius: 0,
           }}
         >
-          {/* Full-bleed gallery — native horizontal scroll-snap.
-              touch-action: pan-x on the track + pan-y on the feed lets the
-              browser axis-lock: swipe sideways browses images, swipe up/down
-              pages products. A tap (no scroll) opens the PDP. */}
+          {/* Full-bleed hero — a single product image (no horizontal browsing;
+              that lives in the PDP). Vertical swipes page between products. A
+              tap opens the PDP. */}
           <div
             onClick={onOpen}
             style={{ position: "absolute", inset: 0, cursor: "pointer" }}
@@ -66,8 +68,8 @@ export function OfferingCard({
               images={offering.images}
               alt={offering.title}
               radius={0}
-              dotTop={16}
-              scrollable
+              dots={false}
+              scrollable={false}
               style={{ height: "100%", width: "100%" }}
             />
           </div>
@@ -111,7 +113,6 @@ export function OfferingCard({
             offering={offering}
             open={chatOpen}
             initialMessage={chatSeed}
-            flatTop
             onClose={() => {
               setChatOpen(false);
               setChatSeed(undefined);
@@ -214,13 +215,9 @@ export function OfferingCard({
               fontSize: 14,
               lineHeight: 1.5,
               color: T.textSecondary,
-              display: "-webkit-box",
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: "vertical",
-              overflow: "hidden",
             }}
           >
-            {offering.description}
+            {offering.blurb}
           </p>
         </button>
 
@@ -231,6 +228,7 @@ export function OfferingCard({
           id={offering.id}
           title={offering.title}
           height={44}
+          borderedGlass
           onBuy={onOpen}
           onAsk={(q) => {
             setChatSeed(q);

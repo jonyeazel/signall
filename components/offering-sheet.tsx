@@ -43,7 +43,7 @@ export function OfferingSheet({
   // the slideshow card; dots + horizontal scroll are enabled here for browsing.
   const hero = (
     <ImageCarousel
-      layoutId={`media-${offering.id}`}
+      layoutId={isMobile ? undefined : `media-${offering.id}`}
       images={offering.images}
       alt={offering.title}
       radius={0}
@@ -296,9 +296,12 @@ export function OfferingSheet({
         }}
       />
 
-      {/* Panel — morphs from the card via shared layoutId */}
+      {/* Panel — on mobile it simply slides up from the bottom (a proper bottom
+          sheet); on desktop it morphs from the card via the shared layoutId. */}
       <motion.div
-        layoutId={`card-${offering.id}`}
+        {...(isMobile
+          ? { initial: { y: "100%" }, animate: { y: 0 }, exit: { y: "100%" } }
+          : { layoutId: `card-${offering.id}` })}
         drag={isMobile ? "y" : false}
         dragListener={false}
         dragControls={dragControls}
@@ -314,7 +317,7 @@ export function OfferingSheet({
           maxHeight: isMobile ? `calc(100dvh - ${topInset + 16}px)` : "86vh",
           background: T.surface,
           border: `1px solid ${T.border}`,
-          borderRadius: isMobile ? 0 : 28,
+          borderRadius: isMobile ? "22px 22px 0 0" : 28,
           display: "flex",
           flexDirection: isMobile ? "column" : "row",
           overflow: "hidden",
@@ -336,12 +339,19 @@ export function OfferingSheet({
                 flexDirection: "column",
               }}
             >
-              {hero}
+              {/* Framed hero — a 12px inset + rounded inner image mirrors the
+                  slideshow card, so the product photo sits in a clean frame
+                  rather than bleeding to the sheet's edges. */}
+              <div style={{ padding: "12px 12px 0", flexShrink: 0 }}>
+                <div style={{ position: "relative", borderRadius: 14, overflow: "hidden" }}>
+                  {hero}
+                </div>
+              </div>
               {body}
             </div>
             {buyBar}
             {/* AI concierge — covers the full card on mobile */}
-            <CardChatDrawer offering={offering} open={chatOpen} flatTop onClose={() => setChatOpen(false)} />
+            <CardChatDrawer offering={offering} open={chatOpen} onClose={() => setChatOpen(false)} />
           </>
         ) : (
           <>

@@ -14,7 +14,7 @@
  */
 
 export const STORE = {
-  name: "Form",
+  name: "Optimo",
   legalName: "[Your Legal Company Name]",
   email: "support@example.com",
   address: "[Street Address, City, State/Region, Postal Code, Country]",

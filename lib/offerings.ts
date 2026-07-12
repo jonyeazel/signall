@@ -16,6 +16,9 @@ export type Offering = {
   title: string;
   /** Short punchy hook shown on the card — the "why buy" in one line. */
   tagline: string;
+  /** A complete two-line thought (~12–15 words) shown beneath the product on
+   *  the card and overview. Written to fit two lines with no truncation. */
+  blurb: string;
   price: string;
   description: string;
   images: string[];
@@ -39,6 +42,7 @@ export const OFFERINGS: Offering[] = [
     icon: Sparkles,
     title: "Lumen",
     tagline: "Warm, dimmable glow — cordless anywhere.",
+    blurb: "A cordless plaster lamp with three warm settings and forty hours of glow per charge.",
     price: "$149",
     description:
       "A rechargeable table lamp cast in matte plaster. Three warm brightness levels, up to 40 hours per charge, and no cord to hide — carry it from the desk to the dinner table.",
@@ -65,6 +69,7 @@ export const OFFERINGS: Offering[] = [
     icon: Layers,
     title: "Strata",
     tagline: "Hand-thrown stoneware that nests.",
+    blurb: "Three hand-thrown stoneware bowls that nest neatly and move from oven to dishwasher safely.",
     price: "$120",
     description:
       "A set of three nesting bowls, each hand-thrown from speckled stoneware and glazed in tonal neutrals. Oven, microwave, and dishwasher safe.",
@@ -91,6 +96,7 @@ export const OFFERINGS: Offering[] = [
     icon: Orbit,
     title: "Orbit",
     tagline: "Silent sweep. Aircraft-grade aluminum.",
+    blurb: "A silent-sweep wall clock milled from solid aluminum that runs a full year per cell.",
     price: "$189",
     description:
       "A wall clock milled from a single piece of aircraft-grade aluminum, with a true silent sweep movement and hands balanced to the millimeter.",
@@ -117,6 +123,7 @@ export const OFFERINGS: Offering[] = [
     icon: Compass,
     title: "Compass",
     tagline: "Hand-polished acetate. Polarized.",
+    blurb: "Hand-polished acetate frames with polarized, scratch-resistant lenses and a hinge built to outlast trends.",
     price: "$240",
     description:
       "Hand-polished tortoise-shell acetate with polarized, scratch-resistant lenses and a five-barrel hinge built to outlast trends.",
@@ -143,6 +150,7 @@ export const OFFERINGS: Offering[] = [
     icon: Boxes,
     title: "Modules",
     tagline: "Solid oak. Stack it your way.",
+    blurb: "Solid oak storage boxes you stack, nest, and reconfigure endlessly as your space changes.",
     price: "$95",
     description:
       "Modular storage boxes in solid white oak, finished with a food-safe oil. Stack, nest, and reconfigure them endlessly as your space changes.",
@@ -169,6 +177,7 @@ export const OFFERINGS: Offering[] = [
     icon: Waves,
     title: "Waves",
     tagline: "Sculptural stoneware, thrown by hand.",
+    blurb: "A hand-thrown bone-white vase whose undulating profile catches the light from every angle.",
     price: "$135",
     description:
       "A sculptural vase thrown by hand in bone-white stoneware, its undulating profile catching light differently from every angle.",
@@ -195,6 +204,7 @@ export const OFFERINGS: Offering[] = [
     icon: Aperture,
     title: "Aperture",
     tagline: "Full-frame that lives in your pocket.",
+    blurb: "A pocketable full-frame camera with a fixed 35mm lens and tactile dials for everyday carry.",
     price: "$1,290",
     description:
       "A compact full-frame camera with a fixed 35mm lens, tactile dials, and a leather grip — engineered to disappear into everyday carry.",

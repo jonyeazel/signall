@@ -200,7 +200,7 @@ export default function Home() {
             flexShrink: 0,
             display: "flex",
             alignItems: "center",
-            justifyContent: "space-between",
+            justifyContent: "center",
             gap: 12,
             padding: "20px 28px",
             // When a card is expanded the header background drops away so its
@@ -209,31 +209,24 @@ export default function Home() {
             transition: "background 200ms ease",
           }}
         >
-          {/* Light wordmark lockup — a small ink dot + name + tagline, all
-              vertically centered on one axis. Far airier than the old avatar. */}
-          <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
-            <span
-              aria-hidden
-              style={{ width: 7, height: 7, borderRadius: "50%", background: T.ink, flexShrink: 0, marginRight: -3 }}
-            />
-            <span
-              style={{
-                fontSize: 19,
-                fontWeight: 600,
-                letterSpacing: "-0.03em",
-                color: T.textPrimary,
-                lineHeight: 1,
-                whiteSpace: "nowrap",
-              }}
-            >
-              Form
-            </span>
-            <span aria-hidden style={{ width: 1, height: 14, background: T.border, flexShrink: 0 }} />
-            <span style={{ fontSize: 13.5, color: T.textTertiary, lineHeight: 1, whiteSpace: "nowrap" }}>
-              Considered objects
-            </span>
+          {/* Centered wordmark — the "Optimo" name alone, set in Geist. Cart
+              floats to the right so it doesn't pull the wordmark off-center. */}
+          <span
+            style={{
+              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+              fontSize: 23,
+              fontWeight: 600,
+              letterSpacing: "-0.02em",
+              color: T.textPrimary,
+              lineHeight: 1,
+              whiteSpace: "nowrap",
+            }}
+          >
+            Optimo
+          </span>
+          <div style={{ position: "absolute", right: 28, top: "50%", transform: "translateY(-50%)" }}>
+            {cartButton}
           </div>
-          {cartButton}
         </div>
       )}
 
