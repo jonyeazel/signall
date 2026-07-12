@@ -323,9 +323,12 @@ export function CardOverview({
         zIndex: 70,
         display: "flex",
         flexDirection: "column",
-        background: "rgba(248,248,248,0.72)",
-        backdropFilter: "blur(22px) saturate(1.3)",
-        WebkitBackdropFilter: "blur(22px) saturate(1.3)",
+        // Nearly opaque frosted panel — keeps the soft glass character but
+        // stops the immersive card's dark CTA behind it from ghosting through
+        // at the bottom, so the deck reads clean and consistent edge to edge.
+        background: "rgba(248,248,248,0.96)",
+        backdropFilter: "blur(28px) saturate(1.3)",
+        WebkitBackdropFilter: "blur(28px) saturate(1.3)",
       }}
     >
       {/* Whisper texture — the same barely-there contour lines as the AI drawer,

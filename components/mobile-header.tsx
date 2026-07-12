@@ -7,8 +7,8 @@ import { T, SPRING_SOFT } from "../lib/theme";
 import { Wordmark } from "./wordmark";
 
 const roundBtn = {
-  width: 40,
-  height: 40,
+  width: 44,
+  height: 44,
   borderRadius: "50%",
   // Apple liquid glass — matches the card's Ai button + Buy Now pill.
   background: "rgba(255,255,255,0.55)",
@@ -74,8 +74,8 @@ export function MobileHeader({
             profile without a wide halo. */}
         <div
           style={{
-            width: 40,
-            height: 40,
+            width: 44,
+            height: 44,
             borderRadius: "50%",
             flexShrink: 0,
             padding: 1.5,
@@ -95,7 +95,7 @@ export function MobileHeader({
               color: "#fff",
               display: "grid",
               placeItems: "center",
-              fontSize: 14,
+              fontSize: 15,
               fontWeight: 600,
               letterSpacing: "-0.02em",
             }}
@@ -128,7 +128,7 @@ export function MobileHeader({
           aria-label="Browse all products"
           style={roundBtn}
         >
-          <LayoutGrid size={18} strokeWidth={1.9} />
+          <LayoutGrid size={20} strokeWidth={1.9} />
         </motion.button>
         <motion.button
           type="button"
@@ -137,7 +137,7 @@ export function MobileHeader({
           aria-label={`Cart, ${cartCount} item${cartCount === 1 ? "" : "s"}`}
           style={{ ...roundBtn, position: "relative" }}
         >
-          <ShoppingBag size={18} strokeWidth={1.9} />
+          <ShoppingBag size={20} strokeWidth={1.9} />
           <AnimatePresence>
             {cartCount > 0 && (
               <motion.span

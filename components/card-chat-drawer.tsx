@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback, useMemo, type KeyboardEvent } from "react";
-import { AnimatePresence, motion } from "motion/react";
-import { ArrowUp, X } from "lucide-react";
+import { AnimatePresence, motion, useDragControls } from "motion/react";
+import { ArrowUp } from "lucide-react";
 import { type Offering } from "../lib/offerings";
 import { T, WHISPER_PATTERN } from "../lib/theme";
 
@@ -51,6 +51,7 @@ export function CardChatDrawer({
   const scrollRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const replyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dragControls = useDragControls();
 
   const suggestions = useMemo(
     () => ["What's it made of?", "Shipping & returns", "Is it right for me?"],
@@ -241,6 +242,18 @@ export function CardChatDrawer({
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: "101%", opacity: 0.85 }}
             transition={DRAWER_SPRING}
+            // Drag-to-close: only the grabber handle starts a drag
+            // (dragListener=false), so the message list still scrolls freely.
+            // Pulling the sheet down past a short threshold — or flicking it —
+            // dismisses; anything less springs cleanly back to rest.
+            drag="y"
+            dragListener={false}
+            dragControls={dragControls}
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={{ top: 0, bottom: 0.55 }}
+            onDragEnd={(_, info) => {
+              if (info.offset.y > 110 || info.velocity.y > 520) dismiss();
+            }}
             style={{
               position: "absolute",
               left: 0,
@@ -285,42 +298,32 @@ export function CardChatDrawer({
             }}
           />
 
-          {/* Minimal top — just a grabber + close. No branding: it's the chat. */}
+          {/* Minimal top — the grabber IS the control: drag it down to close.
+              No branding, no button: it's the chat. A generous 44px-tall zone
+              makes the handle an easy, obvious target. */}
           <div
+            role="button"
+            aria-label="Drag down to close chat"
+            onPointerDown={(e) => dragControls.start(e)}
+            onClick={(e) => {
+              // A deliberate tap on the handle also closes — but never let a
+              // stray tap here fall through to the card behind.
+              e.stopPropagation();
+            }}
             style={{
               position: "relative",
               zIndex: 1,
               flexShrink: 0,
-              height: 42,
+              height: 44,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              cursor: "grab",
+              touchAction: "none",
+              WebkitTapHighlightColor: "transparent",
             }}
           >
-            <span aria-hidden style={{ width: 38, height: 5, borderRadius: 999, background: T.borderActive }} />
-            <motion.button
-              type="button"
-              onClick={dismiss}
-              whileTap={{ scale: 0.9 }}
-              aria-label="Close chat"
-              style={{
-                position: "absolute",
-                right: 10,
-                top: 7,
-                width: 30,
-                height: 30,
-                borderRadius: "50%",
-                background: T.bgSubtle,
-                border: `1px solid ${T.border}`,
-                color: T.textSecondary,
-                display: "grid",
-                placeItems: "center",
-                cursor: "pointer",
-                WebkitTapHighlightColor: "transparent",
-              }}
-            >
-              <X size={16} strokeWidth={2} />
-            </motion.button>
+            <span aria-hidden style={{ width: 44, height: 5, borderRadius: 999, background: T.borderActive }} />
           </div>
 
           {/* Messages */}
