@@ -247,10 +247,34 @@ export function CardChatDrawer({
               boxShadow: "0 -14px 40px -14px rgba(0,0,0,0.2)",
             }}
           >
+          {/* Stripe-style decorative wash — a soft top glow over a faint dot
+              grid, masked to fade out downward. Purely aesthetic; sits behind
+              the content and never intercepts taps. */}
+          <div
+            aria-hidden
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              height: 200,
+              zIndex: 0,
+              pointerEvents: "none",
+              borderTopLeftRadius: flatTop ? 0 : 20,
+              borderTopRightRadius: flatTop ? 0 : 20,
+              backgroundImage:
+                "radial-gradient(90% 70% at 50% -10%, rgba(23,23,23,0.06), rgba(23,23,23,0) 70%), radial-gradient(circle at 1px 1px, rgba(23,23,23,0.055) 1px, transparent 1.6px)",
+              backgroundSize: "100% 100%, 15px 15px",
+              maskImage: "linear-gradient(to bottom, #000 0%, rgba(0,0,0,0.55) 45%, transparent 100%)",
+              WebkitMaskImage: "linear-gradient(to bottom, #000 0%, rgba(0,0,0,0.55) 45%, transparent 100%)",
+            }}
+          />
+
           {/* Minimal top — just a grabber + close. No branding: it's the chat. */}
           <div
             style={{
               position: "relative",
+              zIndex: 1,
               flexShrink: 0,
               height: 42,
               display: "flex",
@@ -287,6 +311,8 @@ export function CardChatDrawer({
           <div
             ref={scrollRef}
             style={{
+              position: "relative",
+              zIndex: 1,
               flex: 1,
               minHeight: 0,
               overflowY: "auto",
@@ -345,6 +371,8 @@ export function CardChatDrawer({
           {/* Composer */}
           <div
             style={{
+              position: "relative",
+              zIndex: 1,
               flexShrink: 0,
               // When lifted above the keyboard the home-indicator inset no
               // longer applies, so drop it to keep the composer snug.

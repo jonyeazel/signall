@@ -13,7 +13,7 @@ export const T = {
   ink: "#141414",
   inkSoft: "#3A3A3A",
   textPrimary: "#171717",
-  textSecondary: "#6B6B6B",
+  textSecondary: "#565656",
   textTertiary: "#9A9A9A",
   skeleton: "#EFEFEF",
   ghost: "#F5F5F5",
