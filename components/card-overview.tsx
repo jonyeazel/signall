@@ -3,7 +3,7 @@
 import { useRef, useEffect, useLayoutEffect, useState, useCallback } from "react";
 import { motion } from "motion/react";
 import { type Offering } from "../lib/offerings";
-import { T } from "../lib/theme";
+import { T, WHISPER_PATTERN } from "../lib/theme";
 
 type Dims = {
   photoW: number;
@@ -23,6 +23,11 @@ const TEXT_GAP = 16;
 
 // A calm, controlled morph — enough spring to feel alive, no wobble.
 const MORPH = { type: "spring" as const, stiffness: 300, damping: 34 };
+// The zoom-open photo uses a fixed-duration tween (not a spring) so the
+// handoff to the immersive card fires exactly when the photo *visually* fills
+// the screen — a spring's long settle tail is what made the "text on top"
+// arrive a beat late.
+const PHOTO_MORPH = { type: "tween" as const, duration: 0.44, ease: [0.32, 0.72, 0, 1] as const };
 
 /** The centered explainer block: a small quiet name + the two-line blurb.
  *  Rendered on the frosted overview backdrop (never on a white panel). */
@@ -90,8 +95,8 @@ function ExpandingCard({
       {/* Explainer text sitting just under the photo — fades + lifts away */}
       <motion.div
         initial={{ top: photo.bottom + TEXT_GAP, opacity: 1 }}
-        animate={{ top: photo.bottom + TEXT_GAP - 20, opacity: 0 }}
-        transition={{ duration: 0.22, ease: "easeIn" }}
+        animate={{ top: photo.bottom + TEXT_GAP - 24, opacity: 0 }}
+        transition={{ duration: 0.16, ease: "easeIn" }}
         style={{ position: "absolute", left: 0, right: 0, display: "flex", justifyContent: "center" }}
       >
         <Explainer offering={offering} />
@@ -101,7 +106,7 @@ function ExpandingCard({
       <motion.div
         initial={{ top: photo.top, left: photo.left, width: photo.width, height: photo.height, borderRadius: CARD_RADIUS }}
         animate={{ top: 0, left: 0, width: vw, height: vh, borderRadius: 0 }}
-        transition={MORPH}
+        transition={PHOTO_MORPH}
         onAnimationComplete={onDone}
         style={{ position: "absolute", overflow: "hidden", background: T.surface }}
       >
@@ -246,6 +251,23 @@ export function CardOverview({
         WebkitBackdropFilter: "blur(22px) saturate(1.3)",
       }}
     >
+      {/* Whisper texture — the same barely-there contour lines as the AI drawer,
+          fading in from the top so the frosted backdrop has a hint of depth. */}
+      <div
+        aria-hidden
+        style={{
+          position: "absolute",
+          inset: 0,
+          pointerEvents: "none",
+          backgroundImage: WHISPER_PATTERN,
+          backgroundSize: "240px 180px",
+          backgroundRepeat: "repeat",
+          opacity: 0.7,
+          maskImage: "linear-gradient(to bottom, #000 0%, transparent 60%)",
+          WebkitMaskImage: "linear-gradient(to bottom, #000 0%, transparent 60%)",
+        }}
+      />
+
       {/* Horizontal deck — shrinks in from the full feed. No header chrome:
           the photos + text own the whole height. Tapping the empty backdrop
           closes; taps on a card are stopped from bubbling. */}

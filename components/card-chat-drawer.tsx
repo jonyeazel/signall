@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback, useMemo, type KeyboardEvent }
 import { AnimatePresence, motion } from "motion/react";
 import { Sparkles, ArrowUp, X } from "lucide-react";
 import { type Offering } from "../lib/offerings";
-import { T } from "../lib/theme";
+import { T, WHISPER_PATTERN } from "../lib/theme";
 
 type Msg = { role: "user" | "assistant"; text: string };
 
@@ -247,9 +247,9 @@ export function CardChatDrawer({
               boxShadow: "0 -14px 40px -14px rgba(0,0,0,0.2)",
             }}
           >
-          {/* Stripe-style decorative wash — a soft top glow over a faint dot
-              grid, masked to fade out downward. Purely aesthetic; sits behind
-              the content and never intercepts taps. */}
+          {/* Stripe-style decorative wash — barely-there flowing contour lines
+              over a soft top glow, masked to dissolve downward. Purely
+              aesthetic; sits behind the content and never intercepts taps. */}
           <div
             aria-hidden
             style={{
@@ -257,16 +257,16 @@ export function CardChatDrawer({
               top: 0,
               left: 0,
               right: 0,
-              height: 200,
+              height: 260,
               zIndex: 0,
               pointerEvents: "none",
               borderTopLeftRadius: flatTop ? 0 : 20,
               borderTopRightRadius: flatTop ? 0 : 20,
-              backgroundImage:
-                "radial-gradient(90% 70% at 50% -10%, rgba(23,23,23,0.06), rgba(23,23,23,0) 70%), radial-gradient(circle at 1px 1px, rgba(23,23,23,0.055) 1px, transparent 1.6px)",
-              backgroundSize: "100% 100%, 15px 15px",
-              maskImage: "linear-gradient(to bottom, #000 0%, rgba(0,0,0,0.55) 45%, transparent 100%)",
-              WebkitMaskImage: "linear-gradient(to bottom, #000 0%, rgba(0,0,0,0.55) 45%, transparent 100%)",
+              backgroundImage: `${WHISPER_PATTERN}, radial-gradient(95% 80% at 50% -20%, rgba(23,23,23,0.05), rgba(23,23,23,0) 70%)`,
+              backgroundSize: "240px 180px, 100% 100%",
+              backgroundRepeat: "repeat, no-repeat",
+              maskImage: "linear-gradient(to bottom, #000 0%, rgba(0,0,0,0.5) 55%, transparent 100%)",
+              WebkitMaskImage: "linear-gradient(to bottom, #000 0%, rgba(0,0,0,0.5) 55%, transparent 100%)",
             }}
           />
 
@@ -318,10 +318,15 @@ export function CardChatDrawer({
               overflowY: "auto",
               overscrollBehavior: "contain",
               WebkitOverflowScrolling: "touch",
-              padding: "14px 12px",
+              padding: "14px 12px 26px",
               display: "flex",
               flexDirection: "column",
               gap: 10,
+              // Elegantly dissolve the conversation as it nears the composer —
+              // no hard divider line, just a soft fade (extra bottom padding
+              // keeps the newest message clear of the fade zone).
+              maskImage: "linear-gradient(to bottom, #000 calc(100% - 30px), transparent 100%)",
+              WebkitMaskImage: "linear-gradient(to bottom, #000 calc(100% - 30px), transparent 100%)",
             }}
           >
             {/* Assistant welcome */}
@@ -376,8 +381,7 @@ export function CardChatDrawer({
               flexShrink: 0,
               // When lifted above the keyboard the home-indicator inset no
               // longer applies, so drop it to keep the composer snug.
-              padding: kb > 0 ? "10px 10px" : "10px 10px calc(10px + env(safe-area-inset-bottom))",
-              borderTop: `1px solid ${T.border}`,
+              padding: kb > 0 ? "6px 10px 10px" : "6px 10px calc(10px + env(safe-area-inset-bottom))",
             }}
           >
             <div
