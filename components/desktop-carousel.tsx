@@ -19,10 +19,13 @@ export function DesktopCarousel({
   offerings,
   rootRef,
   onOpen,
+  onAddToCart,
 }: {
   offerings: Offering[];
   rootRef: RefObject<HTMLElement | null>;
   onOpen: (id: string) => void;
+  /** Add a product to the cart by id — powers the in-chat buy card. */
+  onAddToCart?: (id: string) => void;
 }) {
   const trackRef = useRef<HTMLDivElement>(null);
   const cellRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -112,6 +115,7 @@ export function DesktopCarousel({
               index={i}
               rootRef={rootRef}
               onOpen={() => onOpen(offering.id)}
+              onAddToCart={onAddToCart ? () => onAddToCart(offering.id) : undefined}
               imageScrollable={false}
             />
           </div>

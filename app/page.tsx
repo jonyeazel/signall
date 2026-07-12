@@ -285,13 +285,14 @@ export default function Home() {
                     index={i}
                     rootRef={feedRef}
                     onOpen={() => setSelectedId(offering.id)}
+                    onAddToCart={() => addToCart(offering.id)}
                     withComposer
                   />
                 </div>
               ))}
             </div>
           ) : (
-            <DesktopCarousel offerings={OFFERINGS} rootRef={feedRef} onOpen={setSelectedId} />
+            <DesktopCarousel offerings={OFFERINGS} rootRef={feedRef} onOpen={setSelectedId} onAddToCart={addToCart} />
           )}
 
           {/* Expanded sheet */}
