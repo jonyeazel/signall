@@ -169,8 +169,6 @@ export function OfferingCard({
             cursor: "pointer",
             background: T.bgSubtle,
             borderRadius: 6,
-            padding: "8%",
-            boxSizing: "border-box",
             overflow: "hidden",
           }}
         >
@@ -181,7 +179,7 @@ export function OfferingCard({
             radius={4}
             dots={false}
             scrollable={false}
-            imageFit="contain"
+            imageFit="cover"
             style={{ height: "100%", width: "100%" }}
           />
         </div>
