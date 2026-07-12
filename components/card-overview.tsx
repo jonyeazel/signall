@@ -4,7 +4,6 @@ import { useRef, useEffect, useLayoutEffect, useState, useCallback } from "react
 import { motion } from "motion/react";
 import { type Offering } from "../lib/offerings";
 import { T, SPRING } from "../lib/theme";
-import { CardIdentity } from "./card-identity";
 
 type Dims = { w: number; h: number; pad: number; vw: number; vh: number; f: number };
 
@@ -12,80 +11,149 @@ type Dims = { w: number; h: number; pad: number; vw: number; vh: number; f: numb
 // The live full-bleed cards stay square.
 const CARD_RADIUS = 28;
 
+// Height reserved beneath the photo for the centered explainer text.
+const TEXT_H = 104;
+
 /**
- * A pixel-perfect miniature of the full-bleed product card. It is rendered at
- * the real viewport size (vw × vh) and uniformly scaled down, so proportions
- * are identical to the live card — just smaller.
+ * The shrunken slideshow card: a clean, chrome-free product photo up top with
+ * the two explainer lines centered beneath it. No name overlay, no buttons —
+ * the image says what it is, the two lines say what it does. (The name is kept,
+ * small and quiet, to ground the card.)
  */
-function CardFace({ offering, vw, vh, f }: { offering: Offering; vw: number; vh: number; f: number }) {
+function MiniCard({ offering }: { offering: Offering }) {
   return (
     <div
       style={{
         position: "absolute",
-        top: 0,
-        left: 0,
-        width: vw,
-        height: vh,
-        transform: `scale(${f})`,
-        transformOrigin: "top left",
+        inset: 0,
+        display: "flex",
+        flexDirection: "column",
+        background: T.surface,
       }}
     >
-      <div style={{ position: "relative", width: "100%", height: "100%", background: T.surface, overflow: "hidden" }}>
+      <div style={{ position: "relative", flex: `0 0 calc(100% - ${TEXT_H}px)`, overflow: "hidden" }}>
         <img
           src={offering.images[0] || "/placeholder.svg"}
           alt={offering.title}
           style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
         />
-        <div
+      </div>
+      <div
+        style={{
+          flex: 1,
+          minHeight: 0,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 5,
+          padding: "0 18px",
+          textAlign: "center",
+        }}
+      >
+        <span
           style={{
-            position: "absolute",
-            left: 0,
-            right: 0,
-            bottom: 0,
-            padding: "12px 12px 14px",
-            display: "flex",
-            flexDirection: "column",
-            gap: 12,
+            fontSize: 14.5,
+            fontWeight: 600,
+            letterSpacing: "-0.01em",
+            color: T.textPrimary,
+            lineHeight: 1.1,
           }}
         >
-          <CardIdentity offering={offering} />
-
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <div
-              style={{
-                flex: 1,
-                height: 46,
-                borderRadius: 999,
-                background: T.ink,
-                color: "#fff",
-                display: "grid",
-                placeItems: "center",
-                fontSize: 15.5,
-                fontWeight: 600,
-              }}
-            >
-              Learn more
-            </div>
-            <div
-              style={{
-                width: 46,
-                height: 46,
-                borderRadius: 999,
-                background: T.bgSubtle,
-                border: `1px solid ${T.borderActive}`,
-                display: "grid",
-                placeItems: "center",
-                fontSize: 15,
-                fontWeight: 600,
-                color: T.textPrimary,
-                flexShrink: 0,
-              }}
-            >
-              Ai
-            </div>
-          </div>
-        </div>
+          {offering.title}
+        </span>
+        <p
+          style={{
+            margin: 0,
+            fontSize: 13.5,
+            lineHeight: 1.45,
+            color: T.textSecondary,
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+            maxWidth: "34ch",
+          }}
+        >
+          {offering.description}
+        </p>
       </div>
+    </div>
+  );
+}
+
+/**
+ * The zoom-to-open morph. The photo grows uniformly from the miniature's image
+ * area up to full-bleed while the centered explainer text lifts a touch and
+ * fades — as if the words are absorbed into the image. On completion it hands
+ * off to the immersive card, whose own overlay text fades in on top. This is
+ * the "text below → text on top" transition, kept graceful and robust.
+ */
+function ExpandingCard({
+  offering,
+  card,
+  vw,
+  vh,
+  onDone,
+}: {
+  offering: Offering;
+  card: DOMRect;
+  vw: number;
+  vh: number;
+  onDone: () => void;
+}) {
+  const imageH = card.height - TEXT_H;
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 90, pointerEvents: "none" }}>
+      {/* Photo: from the mini's image box to full-bleed */}
+      <motion.div
+        initial={{ top: card.top, left: card.left, width: card.width, height: imageH, borderRadius: CARD_RADIUS }}
+        animate={{ top: 0, left: 0, width: vw, height: vh, borderRadius: 0 }}
+        transition={SPRING}
+        onAnimationComplete={onDone}
+        style={{ position: "absolute", overflow: "hidden", background: T.surface }}
+      >
+        <img
+          src={offering.images[0] || "/placeholder.svg"}
+          alt=""
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+        />
+      </motion.div>
+
+      {/* Explainer text: lifts slightly and fades as the photo takes over */}
+      <motion.div
+        initial={{ top: card.top + imageH, left: card.left, width: card.width, opacity: 1 }}
+        animate={{ top: card.top + imageH - 28, opacity: 0 }}
+        transition={{ ...SPRING, opacity: { duration: 0.28, ease: "easeIn" } }}
+        style={{
+          position: "absolute",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 5,
+          padding: "10px 18px 0",
+          textAlign: "center",
+        }}
+      >
+        <span style={{ fontSize: 14.5, fontWeight: 600, letterSpacing: "-0.01em", color: T.textPrimary }}>
+          {offering.title}
+        </span>
+        <p
+          style={{
+            margin: 0,
+            fontSize: 13.5,
+            lineHeight: 1.45,
+            color: T.textSecondary,
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+            maxWidth: "34ch",
+          }}
+        >
+          {offering.description}
+        </p>
+      </motion.div>
     </div>
   );
 }
@@ -93,11 +161,11 @@ function CardFace({ offering, vw, vh, f }: { offering: Offering; vw: number; vh:
 /**
  * iOS app-switcher style overview.
  *
- * The vertical feed shrinks into a horizontal deck of miniature product cards
- * (exact proportions of the live card). The centered card is largest; neighbors
- * shrink + dim (coverflow), computed per-frame from scroll position. Tapping a
- * card uniformly zooms it from its spot up to full-bleed, then opens it — so the
- * expand reads as one continuous, intuitive motion.
+ * The vertical feed shrinks into a horizontal deck of miniature product cards.
+ * The centered card is largest; neighbors shrink + dim (coverflow), computed
+ * per-frame from scroll position. Tapping a card zooms its photo from its spot
+ * up to full-bleed, then opens it — so the expand reads as one continuous,
+ * intuitive motion.
  */
 export function CardOverview({
   offerings,
@@ -217,7 +285,7 @@ export function CardOverview({
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "16px 18px 4px",
+          padding: "calc(16px + env(safe-area-inset-top)) 18px 4px",
           flexShrink: 0,
           opacity: picked ? 0 : 1,
           transition: "opacity 0.25s ease",
@@ -305,7 +373,7 @@ export function CardOverview({
                     WebkitTapHighlightColor: "transparent",
                   }}
                 >
-                  <CardFace offering={o} vw={dims.vw} vh={dims.vh} f={dims.f} />
+                  <MiniCard offering={o} />
                 </button>
               </div>
             ))}
@@ -339,28 +407,15 @@ export function CardOverview({
         ))}
       </div>
 
-      {/* Zoom-to-open: the tapped miniature grows uniformly from its spot to
-          full-bleed, then hands off to the feed already positioned on it. */}
+      {/* Zoom-to-open morph */}
       {picked && dims && (
-        <motion.div
-          initial={{ x: picked.rect.left, y: picked.rect.top, scale: picked.rect.width / dims.vw, borderRadius: CARD_RADIUS }}
-          animate={{ x: 0, y: 0, scale: 1, borderRadius: 0 }}
-          transition={SPRING}
-          onAnimationComplete={() => onPick(picked.i)}
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: dims.vw,
-            height: dims.vh,
-            transformOrigin: "top left",
-            zIndex: 90,
-            overflow: "hidden",
-            background: T.surface,
-          }}
-        >
-          <CardFace offering={offerings[picked.i]} vw={dims.vw} vh={dims.vh} f={1} />
-        </motion.div>
+        <ExpandingCard
+          offering={offerings[picked.i]}
+          card={picked.rect}
+          vw={dims.vw}
+          vh={dims.vh}
+          onDone={() => onPick(picked.i)}
+        />
       )}
     </motion.div>
   );
