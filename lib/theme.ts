@@ -17,9 +17,10 @@ export const T = {
   textTertiary: "#9A9A9A",
   skeleton: "#EFEFEF",
   ghost: "#F5F5F5",
-  // "Optimo red" — the signature accent used sparingly as the desktop
-  // canvas's "red bottom": a single crisp hairline that anchors the studio
-  // sweep. The one deliberate splash of color in an otherwise timeless palette.
+  // "Optimo red" — the brand's signature accent. It appears in exactly one
+  // place: the dot set as a period at the end of the wordmark ("Optimo●").
+  // One unexpected pop of saturated color in an otherwise timeless monochrome
+  // palette — Optimo's Louboutin sole. Never used for anything else.
   signature: "#E23A2C",
 } as const;
 

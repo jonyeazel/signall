@@ -8,6 +8,7 @@ import { OfferingCard } from "../components/offering-card";
 import { OfferingSheet } from "../components/offering-sheet";
 import { DesktopCarousel } from "../components/desktop-carousel";
 import { MobileHeader } from "../components/mobile-header";
+import { Wordmark } from "../components/wordmark";
 import { CardOverview } from "../components/card-overview";
 import { CartSheet, type CartLine } from "../components/cart-sheet";
 import { OFFERINGS } from "../lib/offerings";
@@ -15,11 +16,10 @@ import { useMediaQuery } from "../hooks/use-media-query";
 import { T, SPRING_SOFT, WHISPER_PATTERN } from "../lib/theme";
 
 /**
- * Optimo's signature desktop canvas — a seamless photography "studio sweep":
- * light at the top, settling into a deeper floor, with the faint whisper
- * contour texture rising from the bottom. It's anchored by the brand's one
- * deliberate flourish: a crisp "Optimo red" hairline pinned to the very bottom
- * edge — our "red bottom." Minimal, ownable, unmistakable.
+ * The desktop canvas — a seamless photography "studio sweep": light at the top,
+ * settling into a subtly deeper floor, with the faint whisper contour texture
+ * rising from the bottom. Deliberately neutral *material*: the brand's signature
+ * gesture is the red dot in the wordmark, not the background. Less, but better.
  */
 function DesktopBackdrop() {
   return (
@@ -39,19 +39,6 @@ function DesktopBackdrop() {
           WebkitMaskImage: "linear-gradient(180deg, transparent 28%, #000 100%)",
         }}
       />
-      {/* Signature "red bottom": a soft glow bleeding up… */}
-      <div
-        style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          bottom: 0,
-          height: 128,
-          background: "linear-gradient(180deg, rgba(226,58,44,0) 0%, rgba(226,58,44,0.055) 100%)",
-        }}
-      />
-      {/* …anchored by a single crisp hairline — the Optimo sole. */}
-      <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 3, background: T.signature }} />
     </div>
   );
 }
@@ -254,19 +241,7 @@ export default function Home() {
             background: "transparent",
           }}
         >
-          <span
-            style={{
-              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-              fontSize: 23,
-              fontWeight: 600,
-              letterSpacing: "-0.02em",
-              color: T.textPrimary,
-              lineHeight: 1,
-              whiteSpace: "nowrap",
-            }}
-          >
-            Optimo
-          </span>
+          <Wordmark size={23} />
         </div>
       )}
 

@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { LayoutGrid, ShoppingBag } from "lucide-react";
 import { type RefObject } from "react";
 import { T, SPRING_SOFT } from "../lib/theme";
+import { Wordmark } from "./wordmark";
 
 const roundBtn = {
   width: 40,
@@ -103,20 +104,7 @@ export function MobileHeader({
           </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
-          <span
-            style={{
-              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-              fontSize: 17,
-              fontWeight: 600,
-              letterSpacing: "-0.02em",
-              color: T.textPrimary,
-              lineHeight: 1.15,
-              whiteSpace: "nowrap",
-              textShadow: "0 1px 12px rgba(251,251,251,0.92), 0 0 4px rgba(251,251,251,0.92)",
-            }}
-          >
-            Optimo
-          </span>
+          <Wordmark size={17} glow />
           <span
             style={{
               fontSize: 12.5,
