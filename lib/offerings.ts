@@ -50,7 +50,7 @@ export const OFFERINGS: Offering[] = [
     price: "$149",
     description:
       "A rechargeable table lamp cast in matte plaster. Three warm brightness levels, up to 40 hours per charge, and no cord to hide — carry it from the desk to the dinner table.",
-    images: ["/catalog/lumen-1.png", "/catalog/lumen-2.png"],
+    images: ["/catalog/lumen-1.webp", "/catalog/lumen-2.webp"],
     rating: 4.9,
     reviews: 2431,
     tags: ["Lighting", "Cordless", "Dimmable"],
@@ -78,7 +78,7 @@ export const OFFERINGS: Offering[] = [
     price: "$120",
     description:
       "A set of three nesting bowls, each hand-thrown from speckled stoneware and glazed in tonal neutrals. Oven, microwave, and dishwasher safe.",
-    images: ["/catalog/strata-1.png", "/catalog/strata-2.png"],
+    images: ["/catalog/strata-1.webp", "/catalog/strata-2.webp"],
     rating: 4.8,
     reviews: 1187,
     tags: ["Ceramics", "Set of 3", "Handmade"],
@@ -106,7 +106,7 @@ export const OFFERINGS: Offering[] = [
     price: "$189",
     description:
       "A wall clock milled from a single piece of aircraft-grade aluminum, with a true silent sweep movement and hands balanced to the millimeter.",
-    images: ["/catalog/orbit-1.png", "/catalog/orbit-2.png"],
+    images: ["/catalog/orbit-1.webp", "/catalog/orbit-2.webp"],
     rating: 4.9,
     reviews: 864,
     tags: ["Clock", "Aluminum", "Silent"],
@@ -134,7 +134,7 @@ export const OFFERINGS: Offering[] = [
     price: "$240",
     description:
       "Hand-polished tortoise-shell acetate with polarized, scratch-resistant lenses and a five-barrel hinge built to outlast trends.",
-    images: ["/catalog/compass-1.png", "/catalog/compass-2.png"],
+    images: ["/catalog/compass-1.webp", "/catalog/compass-2.webp"],
     rating: 4.7,
     reviews: 1592,
     tags: ["Eyewear", "Polarized", "Acetate"],
@@ -162,7 +162,7 @@ export const OFFERINGS: Offering[] = [
     price: "$95",
     description:
       "Modular storage boxes in solid white oak, finished with a food-safe oil. Stack, nest, and reconfigure them endlessly as your space changes.",
-    images: ["/catalog/boxes-1.png", "/catalog/boxes-2.png"],
+    images: ["/catalog/boxes-1.webp", "/catalog/boxes-2.webp"],
     rating: 4.8,
     reviews: 733,
     tags: ["Storage", "Solid Oak", "Modular"],
@@ -190,7 +190,7 @@ export const OFFERINGS: Offering[] = [
     price: "$135",
     description:
       "A sculptural vase thrown by hand in bone-white stoneware, its undulating profile catching light differently from every angle.",
-    images: ["/catalog/waves-1.png", "/catalog/waves-2.png"],
+    images: ["/catalog/waves-1.webp", "/catalog/waves-2.webp"],
     rating: 4.8,
     reviews: 528,
     tags: ["Vase", "Stoneware", "Sculptural"],
@@ -218,7 +218,7 @@ export const OFFERINGS: Offering[] = [
     price: "$1,290",
     description:
       "A compact full-frame camera with a fixed 35mm lens, tactile dials, and a leather grip — engineered to disappear into everyday carry.",
-    images: ["/catalog/aperture-1.png", "/catalog/aperture-2.png"],
+    images: ["/catalog/aperture-1.webp", "/catalog/aperture-2.webp"],
     rating: 4.9,
     reviews: 946,
     tags: ["Camera", "Full-frame", "35mm"],
