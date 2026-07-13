@@ -69,6 +69,8 @@ export function OfferingCard({
             <ImageCarousel
               layoutId={`media-${offering.id}`}
               images={offering.images}
+              offering={offering}
+              coverVariant="backdrop"
               alt={offering.title}
               radius={0}
               dots={false}
@@ -175,6 +177,8 @@ export function OfferingCard({
           <ImageCarousel
             layoutId={`media-${offering.id}`}
             images={offering.images}
+            offering={offering}
+            coverVariant="backdrop"
             alt={offering.title}
             radius={4}
             dots={false}

@@ -1,5 +1,5 @@
 import { type Offering } from "../lib/offerings";
-import { T } from "../lib/theme";
+import { T, COVERS } from "../lib/theme";
 
 /**
  * The classic "profile" block that sits just above a card's action row:
@@ -40,17 +40,20 @@ export function CardIdentity({ offering }: { offering: Offering }) {
             border: `1px solid ${T.borderStrong}`,
           }}
         >
-          <img
-            src={offering.images[1] ?? offering.images[0] ?? "/placeholder.svg"}
-            alt=""
+          <div
             style={{
               width: "100%",
               height: "100%",
               borderRadius: 3,
-              objectFit: "cover",
-              display: "block",
+              background: COVERS[offering.cover].bg,
+              color: COVERS[offering.cover].accent,
+              display: "grid",
+              placeItems: "center",
             }}
-          />
+            aria-hidden
+          >
+            <offering.icon size={19} strokeWidth={1.9} />
+          </div>
         </div>
         {/* Title + price share one row; the price rides in a dark "Buy Now"
             pill next to the name. The title truncates so the pill never wraps. */}

@@ -53,8 +53,6 @@ export function ImageCarousel({
   scrollable?: boolean;
   tapToBrowse?: boolean;
   imageFit?: "cover" | "contain";
-  offering?: Offering;
-  coverScale?: number;
   coverVariant?: "backdrop" | "full";
   style?: CSSProperties;
   children?: ReactNode;
@@ -159,6 +157,7 @@ export function ImageCarousel({
                 duration={offering.duration}
                 Icon={offering.icon}
                 scale={coverScale}
+                variant={coverVariant}
               />
             )}
           </div>

@@ -7,6 +7,7 @@ import { type Offering } from "../lib/offerings";
 import { T, SPRING } from "../lib/theme";
 import { ImageCarousel } from "./image-carousel";
 import { CardChatDrawer } from "./card-chat-drawer";
+import { CourseVideo } from "./course-video";
 
 // Content is present immediately (no fade/stagger): during the shared-layout
 // morph, fading pieces in drew the eye to areas that made the grid transform
@@ -45,6 +46,8 @@ export function OfferingSheet({
     <ImageCarousel
       layoutId={isMobile ? undefined : `media-${offering.id}`}
       images={offering.images}
+      offering={offering}
+      coverVariant="backdrop"
       alt={offering.title}
       radius={0}
       dotBottom={16}
@@ -130,6 +133,13 @@ export function OfferingSheet({
         </motion.div>
       </div>
 
+      {/* Course video + curriculum — only for taught offers */}
+      {(offering.kind === "course" || offering.kind === "digital") && (offering.lessons?.length || offering.duration) && (
+        <motion.div variants={content} initial="hidden" animate="show" custom={1}>
+          <CourseVideo offering={offering} />
+        </motion.div>
+      )}
+
       {/* Description */}
       <motion.p
         variants={content}
@@ -159,7 +169,14 @@ export function OfferingSheet({
     </div>
   );
 
-  // Sticky action bar — Add to cart + Buy now + Ai, all in one row.
+  // Sticky action bar — adapts to how the offer transacts.
+  //  · book  → high-ticket services/engagements: one "Book a call" primary.
+  //  · subscribe → the Pass: one "Get the Pass" primary.
+  //  · buy → courses/digital: "Add to cart" + the offer's own CTA primary.
+  const isBook = offering.action === "book";
+  const isSubscribe = offering.action === "subscribe";
+  const showCart = offering.action === "buy";
+  const primaryLabel = offering.cta || (isBook ? "Book a call" : isSubscribe ? "Get the Pass" : "Buy now");
   const buyBar = (
     <div
       style={{
@@ -172,39 +189,41 @@ export function OfferingSheet({
         background: T.surface,
       }}
     >
-      <motion.button
-        whileTap={{ scale: 0.98 }}
-        onClick={onAddToCart}
-        style={{
-          flex: 1,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          height: 52,
-          borderRadius: 8,
-          background: T.ghost,
-          color: T.textPrimary,
-          border: `1px solid ${T.border}`,
-          fontSize: 15.5,
-          fontWeight: 600,
-          letterSpacing: "-0.01em",
-          cursor: "pointer",
-        }}
-      >
-        Add to cart
-      </motion.button>
+      {showCart && (
+        <motion.button
+          whileTap={{ scale: 0.98 }}
+          onClick={onAddToCart}
+          style={{
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            height: 52,
+            borderRadius: 8,
+            background: T.ghost,
+            color: T.textPrimary,
+            border: `1px solid ${T.border}`,
+            fontSize: 15.5,
+            fontWeight: 600,
+            letterSpacing: "-0.01em",
+            cursor: "pointer",
+          }}
+        >
+          Add to cart
+        </motion.button>
+      )}
       <motion.button
         whileTap={{ scale: 0.98 }}
         onClick={onBuy}
         style={{
-          flex: 1,
+          flex: showCart ? 1 : 3,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           height: 52,
           borderRadius: 8,
-          background: T.ink,
-          color: "#fff",
+          background: isBook || isSubscribe ? T.signal : T.ink,
+          color: isBook || isSubscribe ? T.onSignal : "#fff",
           border: "none",
           fontSize: 15.5,
           fontWeight: 600,
@@ -212,7 +231,7 @@ export function OfferingSheet({
           cursor: "pointer",
         }}
       >
-        Buy now
+        {primaryLabel}
       </motion.button>
       <motion.button
         whileTap={{ scale: 0.94 }}

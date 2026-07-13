@@ -18,6 +18,43 @@ import type { LucideIcon } from "lucide-react";
  * variant "full" — for contexts with no chrome (the overview minis). Adds the
  *   title + tagline block.
  */
+/** Convenience wrapper: renders an offer's cover to fill an absolute-positioned
+ *  parent frame (used by the overview morph + grid minis, which previously held
+ *  an <img>). Pulls all fields straight off the offering. */
+export function CoverFill({
+  offering,
+  scale = 1,
+  variant = "backdrop",
+}: {
+  offering: {
+    cover: CoverKey;
+    index: string;
+    category: string;
+    title: string;
+    tagline?: string;
+    price?: string;
+    duration?: string;
+    icon?: LucideIcon;
+  };
+  scale?: number;
+  variant?: "backdrop" | "full";
+}) {
+  return (
+    <OfferCover
+      cover={offering.cover}
+      index={offering.index}
+      category={offering.category}
+      title={offering.title}
+      tagline={offering.tagline}
+      price={offering.price}
+      duration={offering.duration}
+      Icon={offering.icon}
+      scale={scale}
+      variant={variant}
+    />
+  );
+}
+
 export function OfferCover({
   cover,
   index,

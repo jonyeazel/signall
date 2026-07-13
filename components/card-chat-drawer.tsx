@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback, useMemo, type KeyboardEvent }
 import { AnimatePresence, motion, useDragControls } from "motion/react";
 import { ArrowUp, Check, ShoppingBag } from "lucide-react";
 import { type Offering } from "../lib/offerings";
-import { T } from "../lib/theme";
+import { T, COVERS } from "../lib/theme";
 
 /** Functional assets the concierge can surface inline in the thread. */
 type Asset = "buy" | "specs";
@@ -204,38 +204,40 @@ export function CardChatDrawer({
   const localReply = useCallback(
     (q: string): { text: string; assets?: Asset[]; asks?: string[] } => {
       const s = q.toLowerCase();
-      if (/(material|made|build|fabric|construct|finish|quality)/.test(s)) {
-        const detail = offering.features[1]?.toLowerCase() ?? offering.description.toLowerCase();
-        const extra = offering.features[2] ? `, ${offering.features[2].toLowerCase()}` : "";
+      if (/(what.*(learn|inside|included|cover|get)|structure|lesson|chapter|module|how long|length)/.test(s)) {
+        const detail = offering.features[0]?.toLowerCase() ?? offering.description.toLowerCase();
+        const extra = offering.features[1] ? `, plus ${offering.features[1].toLowerCase()}` : "";
+        const dur = offering.duration ? ` It's taught in a single video, ${offering.duration}.` : "";
         return {
-          text: `${offering.title} is ${detail}${extra}. It's built to sit in your space for years, not seasons.`,
+          text: `You'll walk away with ${detail}${extra}.${dur}`,
           assets: ["specs"],
-          asks: ["Is it right for me?", "How soon does it ship?"],
+          asks: ["Is this right for me?", "Should I just get the Pass?"],
         };
       }
-      if (/(ship|deliver|return|refund|exchange|warranty|track|arrive)/.test(s)) {
+      if (/(beginner|new|start|code|experience|hard|difficult|level)/.test(s)) {
         return {
-          text: "It ships within two business days with tracking, and there's a free 30-day return window — so you can live with it before you fully decide.",
-          asks: ["Is it right for me?", `Why ${offering.price}?`],
+          text: `No coding required — this is about the rhythm, not the syntax. If you can describe what you want, you can follow along and ship it.`,
+          assets: ["buy"],
+          asks: ["What will I build?", `Why ${offering.price}?`],
         };
       }
       if (/(right for me|should i|fit|suit|good for|worth|help|recommend|me)/.test(s)) {
         return {
-          text: `If you value ${offering.tags.slice(0, 2).join(" and ").toLowerCase()}, ${offering.title} earns its spot — ${offering.tagline.toLowerCase()} Picture where you'd set it down first.`,
+          text: `If you want ${offering.tags.slice(0, 2).join(" and ").toLowerCase()}, this is a direct hit — ${offering.tagline.toLowerCase()} It pays for itself the first time you use it.`,
           assets: ["buy"],
-          asks: ["What's it made of?", "How soon does it ship?"],
+          asks: ["What will I learn?", "Should I just get the Pass?"],
         };
       }
-      if (/(price|cost|how much|expensive|why|value)/.test(s)) {
+      if (/(price|cost|how much|expensive|why|value|pass|subscribe|bundle)/.test(s)) {
         return {
-          text: `${offering.title} is ${offering.price}. You're paying for ${offering.features[0]?.toLowerCase() ?? "the details that last"} — the kind of piece you keep and stop thinking about.`,
+          text: `${offering.title} is ${offering.price}. If you're eyeing more than a couple of courses, the Pass at $39/mo unlocks all eight plus everything I release next — cancel anytime.`,
           assets: ["buy"],
-          asks: ["Is it right for me?", "What's included?"],
+          asks: ["What's included?", "Is this right for me?"],
         };
       }
       return {
-        text: `${offering.description} What would you like to picture first?`,
-        asks: ["Is it right for me?", "What's it made of?"],
+        text: `${offering.description} What would you like to know?`,
+        asks: ["Is this right for me?", "What will I learn?"],
       };
     },
     [offering],
@@ -456,8 +458,8 @@ export function CardChatDrawer({
             >
               {/* Assistant welcome */}
               <Bubble role="assistant">
-                Hi — I&apos;m your guide to {offering.title}. Ask me anything, or tell me what you&apos;re looking
-                for and I&apos;ll tell you honestly if it fits.
+                Hey — I&apos;m Ada. Ask me anything about {offering.title}, or tell me what you&apos;re trying to
+                build and I&apos;ll tell you honestly if it&apos;s the right move.
               </Bubble>
 
               {messages.length === 0 && (
@@ -688,23 +690,22 @@ function BuyCard({
             borderRadius: 12,
             overflow: "hidden",
             flexShrink: 0,
-            background: T.ghost,
+            display: "grid",
+            placeItems: "center",
+            background: COVERS[offering.cover].bg,
+            color: COVERS[offering.cover].accent,
             border: `1px solid ${T.border}`,
           }}
+          aria-hidden
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={offering.images[0] || "/placeholder.svg"}
-            alt={offering.title}
-            style={{ width: "100%", height: "100%", objectFit: "cover" }}
-          />
+          <offering.icon size={24} strokeWidth={1.8} />
         </div>
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ fontSize: 14.5, fontWeight: 600, letterSpacing: "-0.01em", color: T.textPrimary }}>
             {offering.title}
           </div>
           <div style={{ fontSize: 13, color: T.textSecondary, marginTop: 1 }}>
-            {offering.price} · free 30-day returns
+            {offering.price} · {offering.action === "subscribe" ? "cancel anytime" : "lifetime access"}
           </div>
         </div>
       </div>

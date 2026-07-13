@@ -63,57 +63,22 @@ export function MobileHeader({
         transition: "opacity 220ms ease, transform 220ms ease",
       }}
     >
-      {/* Consistent brand identity — the storefront's logo + name, unchanging
-          as you scroll (product identity now lives on each card itself). */}
-      <div style={{ display: "flex", alignItems: "center", gap: 11, flex: 1, minWidth: 0 }}>
-        {/* Avatar ring: a dark border (matching the avatar photo) with a thin
-            1.5px white gap around the inner avatar, so it reads as a framed
-            profile without a wide halo. */}
-        <div
-          style={{
-            width: 44,
-            height: 44,
-            borderRadius: 8,
-            flexShrink: 0,
-            padding: 3,
-            boxSizing: "border-box",
-            background: T.surface,
-            border: `1px solid ${T.borderStrong}`,
-            boxShadow: "0 2px 0 rgba(28,28,26,0.08)",
-          }}
-          aria-hidden
-        >
-          <div
-            style={{
-              width: "100%",
-              height: "100%",
-              borderRadius: 5,
-              background: T.ink,
-              color: T.surface,
-              display: "grid",
-              placeItems: "center",
-              fontSize: 15,
-              fontWeight: 600,
-              letterSpacing: "-0.02em",
-            }}
-          >
-            O
-          </div>
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
-          <Wordmark size={17} />
-          <span
-            style={{
-              fontSize: 12.5,
-              color: T.textSecondary,
-              lineHeight: 1.2,
-              whiteSpace: "nowrap",
-              letterSpacing: "0.01em",
-            }}
-          >
-            Shopify Theme
-          </span>
-        </div>
+      {/* Brand identity — the wordmark alone, unchanging as you scroll. Sits in
+          a soft glass chip so it stays legible over any cover behind it. */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          flexShrink: 0,
+          height: 44,
+          padding: "0 16px",
+          borderRadius: 8,
+          background: "rgba(251,250,245,0.86)",
+          border: `1px solid ${T.borderStrong}`,
+          boxShadow: "0 2px 0 rgba(28,28,26,0.08)",
+        }}
+      >
+        <Wordmark size={17} />
       </div>
 
       {/* Functional affordances */}
