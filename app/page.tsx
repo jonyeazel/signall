@@ -15,7 +15,7 @@ import { OFFERINGS } from "../lib/offerings";
 import { useMediaQuery } from "../hooks/use-media-query";
 import { T, SPRING_SOFT } from "../lib/theme";
 
-/** A quiet instrument bench: one material, one registration rule, no scenery. */
+/** A calm paper canvas — no scenery, so the covers and type carry the page. */
 function DesktopBackdrop() {
   return (
     <div
@@ -201,7 +201,7 @@ export default function Home() {
         flexDirection: "column",
       }}
     >
-      {/* Optimo's signature desktop canvas (studio sweep + red bottom) */}
+      {/* v0University's calm paper canvas */}
       {!isMobile && <DesktopBackdrop />}
 
       {/* Header: floating & product-aware on mobile, identity bar on desktop */}
@@ -222,14 +222,55 @@ export default function Home() {
             flexShrink: 0,
             display: "flex",
             alignItems: "center",
-            justifyContent: "center",
+            justifyContent: "space-between",
             gap: 12,
             minHeight: 72,
             padding: "14px 32px",
             background: T.bg,
           }}
         >
+          <div style={{ width: 240 }} aria-hidden />
           <Wordmark size={20} />
+          {/* Persistent authority — the credential that anchors the whole
+              platform, present on every screen without ever getting in the way. */}
+          <div
+            style={{
+              width: 240,
+              display: "flex",
+              justifyContent: "flex-end",
+            }}
+          >
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                height: 30,
+                padding: "0 12px",
+                borderRadius: 6,
+                background: T.surface,
+                border: `1px solid ${T.borderStrong}`,
+                fontSize: 12,
+                letterSpacing: "-0.01em",
+                color: T.textSecondary,
+                whiteSpace: "nowrap",
+              }}
+            >
+              <span
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: "50%",
+                  background: T.signal,
+                  flexShrink: 0,
+                }}
+              />
+              <span>
+                <strong style={{ color: T.textPrimary, fontWeight: 600 }}>#1 on Earth</strong>
+                {" · 30,000 generations"}
+              </span>
+            </div>
+          </div>
         </div>
       )}
 

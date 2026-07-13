@@ -22,12 +22,11 @@ const roundBtn = {
 } as const;
 
 /**
- * Floating, product-aware header for mobile.
+ * Floating brand header for mobile.
  *
- * Stationary on the z-axis (glass, sits above the scrolling feed) but adopts
- * the *active* card's thumbnail + name/price as cards snap into view — so it
- * reads as an extension of whatever card you're looking at. Right side carries
- * the two functional affordances: browse-all (overview) and cart.
+ * A glass chip that sits above the scrolling feed with the wordmark on the left
+ * and the two functional affordances on the right: browse the full catalog
+ * (overview deck) and cart.
  */
 export function MobileHeader({
   cartCount,
@@ -87,7 +86,7 @@ export function MobileHeader({
           type="button"
           onClick={onOpenOverview}
           whileTap={{ scale: 0.92 }}
-          aria-label="Browse all products"
+          aria-label="Browse the full catalog"
           style={roundBtn}
         >
           <LayoutGrid size={20} strokeWidth={1.9} />
