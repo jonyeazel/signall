@@ -3,6 +3,8 @@
 import { motion } from "motion/react";
 import { useRef, useState, useCallback, type CSSProperties, type ReactNode } from "react";
 import { T, SPRING } from "../lib/theme";
+import { OfferCover } from "./offer-cover";
+import type { Offering } from "../lib/offerings";
 
 /**
  * Full-width, horizontally-paged image carousel with pagination dots.
@@ -26,6 +28,9 @@ export function ImageCarousel({
   scrollable = true,
   tapToBrowse = false,
   imageFit = "cover",
+  offering,
+  coverScale = 1,
+  coverVariant = "backdrop",
   style,
   children,
 }: {
@@ -36,16 +41,28 @@ export function ImageCarousel({
   radius?: number;
   dots?: boolean;
   dotBottom?: number;
+  /** When provided and there are no images, render the offer's typographic
+   *  cover instead of empty placeholder slides. This is how the entire
+   *  v0University catalog gets its visual identity. */
+  offering?: Offering;
+  /** Tune cover type for small contexts (overview mini ≈ 0.5). */
+  coverScale?: number;
   /** When set, dots anchor to the top of the frame (story/reel style) instead
    *  of the bottom — used by the immersive mobile card. */
   dotTop?: number;
   scrollable?: boolean;
   tapToBrowse?: boolean;
   imageFit?: "cover" | "contain";
+  offering?: Offering;
+  coverScale?: number;
+  coverVariant?: "backdrop" | "full";
   style?: CSSProperties;
   children?: ReactNode;
 }) {
-  const slides = images && images.length > 0 ? images.length : count;
+  const hasImages = !!(images && images.length > 0);
+  // No photos + a cover offer → render one typographic cover slide.
+  const showCover = !hasImages && !!offering;
+  const slides = hasImages ? images!.length : showCover ? 1 : count;
   const trackRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
   const raf = useRef(0);
@@ -114,12 +131,12 @@ export function ImageCarousel({
               height: "100%",
               scrollSnapAlign: "start",
               position: "relative",
-              background: images ? T.skeleton : T.ghost,
+              background: hasImages ? T.skeleton : T.ghost,
             }}
           >
-            {images && (
+            {hasImages && (
               <img
-                src={images[i] || "/placeholder.svg"}
+                src={images![i] || "/placeholder.svg"}
                 alt={alt}
                 draggable={false}
                 style={{
@@ -129,6 +146,19 @@ export function ImageCarousel({
                   display: "block",
                   userSelect: "none",
                 }}
+              />
+            )}
+            {showCover && offering && (
+              <OfferCover
+                cover={offering.cover}
+                index={offering.index}
+                category={offering.category}
+                title={offering.title}
+                tagline={offering.tagline}
+                price={offering.price}
+                duration={offering.duration}
+                Icon={offering.icon}
+                scale={coverScale}
               />
             )}
           </div>
