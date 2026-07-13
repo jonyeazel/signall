@@ -1,33 +1,63 @@
 /**
- * Greyscale design tokens — the "v0 native" palette.
- * Kept as plain values so both inline styles and motion components can use them.
+ * v0University design system — codename "Marlow".
+ *
+ * A light, editorial authority language: warm paper canvas, warm near-black
+ * ink, and a single electric vermilion signal. Type is the hero (Fraunces
+ * display serif + Geist sans + Geist Mono technical labels); the signal is
+ * spent only on the moments that convert. No dark mode, no ornament — the
+ * confidence comes from space, scale, and precision.
+ *
+ * Values are kept as plain constants so motion components and inline styles
+ * share one system. Existing token NAMES are preserved so every surface
+ * re-skins from this one file.
  */
 export const T = {
-  gutter: "#E7E7E7",
-  bg: "#FBFBFB",
-  bgSubtle: "#F4F4F4",
-  surface: "#FFFFFF",
-  border: "#DBDBDB",
-  borderStrong: "#CFCFCF",
-  borderActive: "#BFBFBF",
-  ink: "#141414",
-  inkSoft: "#3A3A3A",
-  textPrimary: "#171717",
-  textSecondary: "#565656",
-  textTertiary: "#9A9A9A",
-  skeleton: "#EFEFEF",
-  ghost: "#F5F5F5",
+  gutter: "#E6E3DA",
+  /** Paper — the canvas. Warm, flattering, unmistakably not-white. */
+  bg: "#F1EFE8",
+  bgSubtle: "#E8E5DC",
+  /** Raised surface — cards, sheets, controls. */
+  surface: "#FBFAF5",
+  border: "#D6D2C8",
+  borderStrong: "#BEB9AD",
+  borderActive: "#8F8A7E",
+  /** Warm near-black ink. */
+  ink: "#16150F",
+  inkSoft: "#33322A",
+  textPrimary: "#16150F",
+  textSecondary: "#615D51",
+  textTertiary: "#8F8A7E",
+  skeleton: "#E3DFD5",
+  ghost: "#ECE9E0",
+  /** The one signal — electric vermilion. Authority, energy, conviction. */
+  signal: "#E23A1E",
+  signalHover: "#C7301680",
+  /** Legible foreground on a signal-filled surface. */
+  onSignal: "#FBFAF5",
+  /** Soft signal wash for active chips / focus fields. */
+  signalSoft: "rgba(226, 58, 30, 0.10)",
 } as const;
 
-// Spring feel used across the app for the "fluid, future UI" motion signature.
-export const SPRING = { type: "spring", stiffness: 420, damping: 38, mass: 0.9 } as const;
-export const SPRING_SOFT = { type: "spring", stiffness: 260, damping: 30 } as const;
-
 /**
- * "Whisper" pattern — a set of gently flowing, parallel topographic contour
- * lines (the barely-there texture Stripe uses in its assistant panel). Kept
- * extremely faint so it reads as a premium hint of depth, never decoration.
- * Seamlessly tileable: each wave is one full period over the 240px tile width.
+ * Course-cover art direction. Each offer gets a tonal field + ink pairing so
+ * the catalog reads like a premium design annual — typographic, cohesive, and
+ * scalable to hundreds of courses with zero image generation.
  */
-const WHISPER_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='240' height='180'><g fill='none' stroke='#1e2436' stroke-opacity='0.05' stroke-width='1'><path d='M0 30 Q60 14 120 30 T240 30'/><path d='M0 54 Q60 38 120 54 T240 54'/><path d='M0 78 Q60 62 120 78 T240 78'/><path d='M0 102 Q60 86 120 102 T240 102'/><path d='M0 126 Q60 110 120 126 T240 126'/><path d='M0 150 Q60 134 120 150 T240 150'/></g></svg>`;
-export const WHISPER_PATTERN = `url("data:image/svg+xml,${encodeURIComponent(WHISPER_SVG)}")`;
+export type CoverTone = { bg: string; ink: string; accent: string; sub: string };
+export const COVERS = {
+  paper: { bg: "#E7E3D8", ink: "#16150F", accent: "#E23A1E", sub: "#615D51" },
+  sage: { bg: "#DFE4DD", ink: "#16150F", accent: "#E23A1E", sub: "#5C6156" },
+  sand: { bg: "#EAE1D1", ink: "#16150F", accent: "#E23A1E", sub: "#6B6250" },
+  slate: { bg: "#DDE2E7", ink: "#16150F", accent: "#E23A1E", sub: "#586069" },
+  clay: { bg: "#E9DDD8", ink: "#16150F", accent: "#E23A1E", sub: "#6E5E56" },
+  /** The bold one — reserved for the flagship / all-access pass. Not dark: a
+   *  saturated signal field with paper type. */
+  signal: { bg: "#E23A1E", ink: "#FDF7F1", accent: "#16150F", sub: "#FBE3DC" },
+  /** Ink cover for the highest-ticket "license the platform" tier. */
+  ink: { bg: "#16150F", ink: "#F3F0E8", accent: "#E8846F", sub: "#B4AEA0" },
+} as const;
+export type CoverKey = keyof typeof COVERS;
+
+/** Critically damped motion: immediate, but weighted enough to explain space. */
+export const SPRING = { type: "spring", stiffness: 480, damping: 48, mass: 0.85 } as const;
+export const SPRING_SOFT = { type: "spring", stiffness: 360, damping: 42, mass: 0.9 } as const;

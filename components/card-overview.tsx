@@ -3,7 +3,8 @@
 import { useRef, useEffect, useLayoutEffect, useState, useCallback } from "react";
 import { motion } from "motion/react";
 import { type Offering } from "../lib/offerings";
-import { T, WHISPER_PATTERN } from "../lib/theme";
+import { T } from "../lib/theme";
+import { CoverFill } from "./offer-cover";
 
 type Dims = {
   photoW: number;
@@ -15,17 +16,37 @@ type Dims = {
 };
 
 // Corner radius on the miniature photo (this slideshow view only).
-const CARD_RADIUS = 26;
+const CARD_RADIUS = 8;
 // Vertical space reserved beneath each photo for the centered explainer text.
 const TEXT_H = 88;
 // Gap between the photo and the text block.
 const TEXT_GAP = 16;
 
-// The zoom-open photo uses a fixed-duration tween (not a spring) so the
-// handoff to the immersive card fires exactly when the photo *visually* fills
-// the screen — a spring's long settle tail is what made the "text on top"
-// arrive a beat late.
-const PHOTO_MORPH = { type: "tween" as const, duration: 0.44, ease: [0.32, 0.72, 0, 1] as const };
+// Spring physics shared by both the shrink-into-deck (open) and expand-to-full
+// (close) photo morphs. High stiffness for a confident, fast initial movement;
+// moderate damping for a natural settle — just enough residual spring to read
+// as physical rather than mechanical, but not so much that it overshoots into
+// the card chrome. The expand uses a tighter rest threshold so onAnimationComplete
+// fires promptly and the card handoff never feels late.
+const PHOTO_SPRING = {
+  type: "spring" as const,
+  stiffness: 520,
+  damping: 52,
+  mass: 0.9,
+  restDelta: 0.5,
+  restSpeed: 1.5,
+} as const;
+
+// Slightly heavier for the shrink-open so the card "lands" with a hint of
+// weight — a lighter touch into the deck than the crisp snap back to full-bleed.
+const SHRINK_SPRING = {
+  type: "spring" as const,
+  stiffness: 440,
+  damping: 50,
+  mass: 1.05,
+  restDelta: 0.5,
+  restSpeed: 1.2,
+} as const;
 
 /** The centered explainer block: a small quiet name + the two-line blurb.
  *  Rendered on the frosted overview backdrop (never on a white panel). */
@@ -93,8 +114,8 @@ function ExpandingCard({
       {/* Explainer text sitting just under the photo — fades + lifts away */}
       <motion.div
         initial={{ top: photo.bottom + TEXT_GAP, opacity: 1 }}
-        animate={{ top: photo.bottom + TEXT_GAP - 24, opacity: 0 }}
-        transition={{ duration: 0.16, ease: "easeIn" }}
+        animate={{ top: photo.bottom + TEXT_GAP - 18, opacity: 0 }}
+        transition={{ type: "spring", stiffness: 380, damping: 36, mass: 0.7 }}
         style={{ position: "absolute", left: 0, right: 0, display: "flex", justifyContent: "center" }}
       >
         <Explainer offering={offering} />
@@ -104,15 +125,11 @@ function ExpandingCard({
       <motion.div
         initial={{ top: photo.top, left: photo.left, width: photo.width, height: photo.height, borderRadius: CARD_RADIUS }}
         animate={{ top: 0, left: 0, width: vw, height: vh, borderRadius: 0 }}
-        transition={PHOTO_MORPH}
+        transition={PHOTO_SPRING}
         onAnimationComplete={onDone}
         style={{ position: "absolute", overflow: "hidden", background: T.surface }}
       >
-        <img
-          src={offering.images[0] || "/placeholder.svg"}
-          alt=""
-          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
-        />
+        <CoverFill offering={offering} />
       </motion.div>
     </div>
   );
@@ -149,7 +166,7 @@ function ShrinkingCard({
             ? { top: target.top, left: target.left, width: target.width, height: target.height, borderRadius: CARD_RADIUS }
             : full
         }
-        transition={PHOTO_MORPH}
+        transition={SHRINK_SPRING}
         onAnimationComplete={() => {
           if (target) onDone();
         }}
@@ -161,19 +178,15 @@ function ShrinkingCard({
           boxShadow: "0 24px 60px -24px rgba(0,0,0,0.28)",
         }}
       >
-        <img
-          src={offering.images[0] || "/placeholder.svg"}
-          alt=""
-          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
-        />
+        <CoverFill offering={offering} />
       </motion.div>
 
       {/* Explainer settles in beneath the shrunken photo */}
       {target && (
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.26, delay: 0.18, ease: "easeOut" }}
+          transition={{ type: "spring", stiffness: 340, damping: 38, mass: 0.8, delay: 0.12 }}
           style={{ position: "absolute", top: target.bottom + TEXT_GAP, left: 0, right: 0, display: "flex", justifyContent: "center" }}
         >
           <Explainer offering={offering} />
@@ -326,45 +339,19 @@ export function CardOverview({
         zIndex: 70,
         display: "flex",
         flexDirection: "column",
-        // The frosted panel stays TRANSPARENT until the ShrinkingCard clone is
-        // measured and ready to cover the screen (`shrinkRect`). Until then the
-        // real product card beneath us shows through — a seamless hand-off —
-        // instead of a bare gray panel flashing before the clone mounts. Once
-        // ready it's near-opaque (also stops the card's dark CTA ghosting
-        // through at the bottom, so the deck reads clean edge to edge).
-        background: shrinkRect ? "rgba(248,248,248,0.96)" : "transparent",
-        backdropFilter: shrinkRect ? "blur(28px) saturate(1.3)" : "none",
-        WebkitBackdropFilter: shrinkRect ? "blur(28px) saturate(1.3)" : "none",
-        transition: "background 0.2s ease",
+        // Stay transparent until the clone is measured, then become one honest
+        // opaque material. This preserves the flash-free handoff without blur.
+        background: shrinkRect ? T.bg : "transparent",
+        transition: "background 0.16s ease",
       }}
     >
-      {/* Whisper texture — the same barely-there contour lines as the AI drawer,
-          fading in from the top so the frosted backdrop has a hint of depth.
-          Only shown once the backdrop is opaque, so it never paints over the
-          live card during the first frame. */}
-      {shrinkRect && (
-        <div
-          aria-hidden
-          style={{
-            position: "absolute",
-            inset: 0,
-            pointerEvents: "none",
-            backgroundImage: WHISPER_PATTERN,
-            backgroundSize: "240px 180px",
-            backgroundRepeat: "repeat",
-            opacity: 0.7,
-            maskImage: "linear-gradient(to bottom, #000 0%, transparent 60%)",
-            WebkitMaskImage: "linear-gradient(to bottom, #000 0%, transparent 60%)",
-          }}
-        />
-      )}
 
       {/* Horizontal deck — shrinks in from the full feed. No header chrome:
           the photos + text own the whole height. Tapping the empty backdrop
           closes; taps on a card are stopped from bubbling. */}
       <motion.div
         animate={{ opacity: phase === "live" ? 1 : 0 }}
-        transition={{ duration: 0.2, ease: "easeOut" }}
+        transition={{ type: "spring", stiffness: 300, damping: 38, mass: 0.7 }}
         style={{
           flex: 1,
           minHeight: 0,
@@ -442,11 +429,7 @@ export function CardOverview({
                       border: `1px solid ${T.border}`,
                     }}
                   >
-                    <img
-                      src={o.images[0] || "/placeholder.svg"}
-                      alt={o.title}
-                      style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
-                    />
+                    <CoverFill offering={o} />
                   </div>
                   {/* Explainer beneath, on the frosted backdrop */}
                   <div style={{ height: TEXT_H, display: "flex", alignItems: "flex-start" }}>

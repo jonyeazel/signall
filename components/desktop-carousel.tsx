@@ -42,9 +42,9 @@ export function DesktopCarousel({
       if (!cell) return;
       const cellCenter = cell.offsetLeft + cell.offsetWidth / 2;
       const dist = Math.abs(center - cellCenter);
-      const norm = Math.min(dist / (CARD_W * 1.15), 1); // 0 at center → 1 far away
-      const scale = 1.05 - norm * 0.2; // 1.05 centered → 0.85 edges
-      const opacity = 1 - norm * 0.42; // 1 centered → ~0.58 edges
+      const norm = Math.min(dist / (CARD_W * 1.3), 1);
+      const scale = 1.015 - norm * 0.075;
+      const opacity = 1 - norm * 0.18;
       cell.style.transform = `scale(${scale.toFixed(4)})`;
       cell.style.opacity = opacity.toFixed(3);
       cell.style.zIndex = String(Math.round((1 - norm) * 10));
@@ -148,11 +148,11 @@ function NavArrow({
         top: "50%",
         [side]: 24,
         transform: "translateY(-50%)",
-        width: 48,
-        height: 48,
-        borderRadius: "50%",
+        width: 44,
+        height: 44,
+        borderRadius: 8,
         background: T.surface,
-        border: `1px solid ${T.border}`,
+        border: `1px solid ${T.borderStrong}`,
         color: T.textPrimary,
         display: "grid",
         placeItems: "center",

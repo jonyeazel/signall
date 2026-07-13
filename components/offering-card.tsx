@@ -69,6 +69,8 @@ export function OfferingCard({
             <ImageCarousel
               layoutId={`media-${offering.id}`}
               images={offering.images}
+              offering={offering}
+              coverVariant="backdrop"
               alt={offering.title}
               radius={0}
               dots={false}
@@ -140,36 +142,48 @@ export function OfferingCard({
     >
       <motion.div
         layoutId={`card-${offering.id}`}
-        whileHover={chatOpen ? undefined : { scale: 1.01 }}
+        whileHover={chatOpen ? undefined : { y: -2 }}
         transition={SPRING}
         style={{
           position: "relative",
           transformOrigin: "center center",
           width: "100%",
           background: T.surface,
-          border: `1px solid ${T.border}`,
-          borderRadius: 20,
-          padding: 12,
+          border: `1px solid ${T.borderStrong}`,
+          borderRadius: 10,
+          padding: 10,
           display: "flex",
           flexDirection: "column",
-          gap: 12,
+          gap: 10,
+          boxShadow: "0 2px 0 rgba(28,28,26,0.06)",
           overflow: "hidden",
         }}
       >
+        {/* 1:1 image well with inset padding — the product sits inside white
+            space rather than bleeding to every edge. The inner wrapper clips
+            to the same small radius so the image corners stay clean. */}
         <div
           onClick={onOpen}
-          style={{ width: "100%", aspectRatio: "1 / 1", flexShrink: 0, cursor: "pointer" }}
+          style={{
+            width: "100%",
+            aspectRatio: "1 / 1",
+            flexShrink: 0,
+            cursor: "pointer",
+            background: T.bgSubtle,
+            borderRadius: 6,
+            overflow: "hidden",
+          }}
         >
-          {/* Slideshow view: a single 1:1 hero, no dots and not scrollable —
-              browsing images belongs to the expanded card, so this never
-              hijacks the horizontal slide between products. */}
           <ImageCarousel
             layoutId={`media-${offering.id}`}
             images={offering.images}
+            offering={offering}
+            coverVariant="backdrop"
             alt={offering.title}
-            radius={12}
+            radius={4}
             dots={false}
             scrollable={false}
+            imageFit="cover"
             style={{ height: "100%", width: "100%" }}
           />
         </div>

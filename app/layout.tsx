@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Fraunces } from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -12,16 +12,26 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// The authority voice — a high-contrast optical serif used only for display
+// headlines and course titles. Opsz + weight range give editorial control.
+const fraunces = Fraunces({
+  variable: "--font-display",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  style: ["normal", "italic"],
+});
+
 export const metadata: Metadata = {
-  title: "Optimo",
-  description: "A considered Shopify theme.",
+  title: "v0University — Master v0 with the #1 builder on Earth",
+  description:
+    "30,000 generations. #1 on the planet. Micro-courses, prompt libraries, and 1-on-1 access to the alpha v0 user — plus an AI that teaches and answers around the clock.",
 };
 
 // viewport-fit=cover makes env(safe-area-inset-*) meaningful so the mobile
 // app-frame clears the notch/home indicator; themeColor matches the backdrop
 // gutter so the browser chrome blends into the framed look.
 export const viewport: Viewport = {
-  themeColor: "#EAEAEA",
+  themeColor: "#F1EFE8",
   viewportFit: "cover",
   width: "device-width",
   initialScale: 1,
@@ -37,10 +47,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="bg-background">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        style={{ background: "#EAEAEA", color: "#171717" }}
+        className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} antialiased`}
+        style={{ background: "#F1EFE8", color: "#16150F" }}
       >
         {children}
       </body>

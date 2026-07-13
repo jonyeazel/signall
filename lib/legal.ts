@@ -14,11 +14,11 @@
  */
 
 export const STORE = {
-  name: "Optimo",
+  name: "v0University",
   legalName: "[Your Legal Company Name]",
-  email: "support@example.com",
+  email: "hello@v0university.com",
   address: "[Street Address, City, State/Region, Postal Code, Country]",
-  returnWindowDays: 30,
+  returnWindowDays: 14,
   shipWithinDays: 2,
 };
 
@@ -43,20 +43,20 @@ export const POLICIES: Policy[] = [
       {
         heading: "Overview",
         body: [
-          `This Privacy Policy explains how ${STORE.name} ("we", "us") collects, uses, and protects your information when you visit our store or make a purchase. We only collect what we need to run the store, fulfil orders, and improve your experience.`,
+          `This Privacy Policy explains how ${STORE.name} ("we", "us") collects, uses, and protects your information when you visit the platform, enrol in a course, or book a session. We only collect what we need to give you access, provide support, and improve the experience.`,
         ],
       },
       {
         heading: "Information we collect",
         body: [
-          "Order information: your name, shipping and billing address, email address, phone number, and payment confirmation (we never store full card numbers — payments are handled by our PCI-compliant payment processor).",
-          "Usage information: pages viewed, products browsed, and general device/browser data collected through cookies and similar technologies to keep the site working and to measure performance.",
+          "Account & purchase information: your name, email address, and payment confirmation (we never store full card numbers — payments are handled by our PCI-compliant payment processor).",
+          "Usage information: lessons viewed, progress, questions asked to the AI guide, and general device/browser data collected through cookies and similar technologies to keep the platform working and to measure performance.",
         ],
       },
       {
         heading: "How we use your information",
         body: [
-          "To process and deliver your orders, provide customer support, send order and shipping updates, prevent fraud, and — only where you have opted in — send occasional marketing you can unsubscribe from at any time.",
+          "To give you access to the courses and materials you purchase, provide customer support, answer your questions, prevent fraud, and — only where you have opted in — send occasional updates you can unsubscribe from at any time.",
         ],
       },
       {
@@ -68,7 +68,7 @@ export const POLICIES: Policy[] = [
       {
         heading: "Sharing",
         body: [
-          "We share information only with service providers who help us operate — payment processors, shipping carriers, and analytics/advertising partners — and only as needed to perform their service. We do not sell your personal information.",
+          "We share information only with service providers who help us operate — payment processors, video hosting, and analytics/advertising partners — and only as needed to perform their service. We do not sell your personal information.",
         ],
       },
       {
@@ -98,27 +98,28 @@ export const POLICIES: Policy[] = [
         ],
       },
       {
-        heading: "Products & pricing",
+        heading: "Courses & pricing",
         body: [
-          "We work to describe and price every product accurately. Colours and finishes may vary slightly due to screen settings and the handmade nature of some items. If a product is listed with an incorrect price or description, we reserve the right to cancel the order and refund you in full.",
+          "We work to describe and price every course, subscription, and service accurately. If something is listed with an incorrect price or description, we reserve the right to cancel the order and refund you in full.",
         ],
       },
       {
-        heading: "Orders",
+        heading: "Access & subscriptions",
         body: [
-          "Your order is an offer to buy. We may accept or decline it, and we may limit or cancel quantities purchased per person or per order. A contract is formed only when we confirm shipment.",
+          "One-time purchases grant you lifetime personal access to that course or resource. The Pass is a recurring subscription that unlocks the full library while active; you can cancel anytime and keep access until the end of the current billing period. Bookings for coaching, custom work, and licensing are confirmed by email.",
         ],
       },
       {
-        heading: "Intellectual property",
+        heading: "Intellectual property & personal use",
         body: [
-          "All content on this store — images, text, and design — is owned by us or our licensors and may not be reused without permission.",
+          "All content — videos, prompts, text, and design — is owned by us or our licensors and is licensed to you for your own personal use. You may not share, resell, redistribute, or republish it without written permission.",
         ],
       },
       {
-        heading: "Limitation of liability",
+        heading: "Educational purpose & no guarantees",
         body: [
-          "To the fullest extent permitted by law, our liability arising from your use of the store or any product is limited to the amount you paid for the relevant order. Nothing in these Terms limits rights you have that cannot be excluded under applicable law.",
+          "Our courses and materials are educational. They teach skills and methods; they do not guarantee any specific result, income, or outcome, which depends on your own effort and circumstances.",
+          "To the fullest extent permitted by law, our liability arising from your use of the platform or any purchase is limited to the amount you paid for the relevant order. Nothing in these Terms limits rights you have that cannot be excluded under applicable law.",
         ],
       },
       {
@@ -128,71 +129,65 @@ export const POLICIES: Policy[] = [
     ],
   },
   {
-    slug: "returns",
-    title: "Returns & Refunds",
-    summary: `Free ${30}-day returns on unused items.`,
+    slug: "refunds",
+    title: "Refund Policy",
+    summary: `A ${14}-day guarantee on courses and the Pass.`,
     updated: UPDATED,
     sections: [
       {
-        heading: "Our promise",
+        heading: "Our guarantee",
         body: [
-          `If you're not happy, you have ${STORE.returnWindowDays} days from delivery to request a return for a full refund. Items must be unused and in their original packaging.`,
+          `If a course or the Pass isn't right for you, email us within ${STORE.returnWindowDays} days of purchase and we'll issue a full refund — no hard feelings. We'd rather you learn something valuable than keep money for something that didn't help.`,
         ],
       },
       {
-        heading: "How to start a return",
+        heading: "How to request a refund",
         body: [
-          `Email ${STORE.email} with your order number and the item you'd like to return. We'll reply with a prepaid return label and instructions.`,
+          `Email ${STORE.email} from the address you purchased with, and let us know which purchase you'd like refunded. We'll process it to your original payment method within 5–10 business days.`,
         ],
       },
       {
-        heading: "Refunds",
+        heading: "Subscriptions",
         body: [
-          "Once we receive and inspect your return, we'll issue your refund to the original payment method within 5–10 business days. You'll get an email when it's on the way.",
+          "You can cancel the Pass at any time from your account or by emailing us. Cancelling stops future billing and you keep access until the end of the current billing period. We don't charge cancellation fees.",
         ],
       },
       {
-        heading: "Exchanges & damaged items",
+        heading: "Services & custom work",
         body: [
-          "Need a different item? Start a return and place a new order. If anything arrives damaged or defective, contact us within 48 hours of delivery with a photo and we'll make it right at no cost to you.",
-        ],
-      },
-      {
-        heading: "Exceptions",
-        body: [
-          "For hygiene and safety reasons, a small number of items may be final sale; these are clearly marked on the product page.",
+          "One-on-one coaching, custom chatbots, done-for-you builds, and platform licensing are booked engagements. Refund terms for these are agreed in writing before work begins, since they involve reserved time and delivered work.",
         ],
       },
     ],
   },
   {
-    slug: "shipping",
-    title: "Shipping Policy",
-    summary: "Where we ship, how long it takes, and what it costs.",
+    slug: "access",
+    title: "Access & Delivery",
+    summary: "Everything is digital — you get in instantly.",
     updated: UPDATED,
     sections: [
       {
-        heading: "Processing time",
+        heading: "Instant access",
         body: [
-          `Orders are processed and dispatched within ${STORE.shipWithinDays} business days. You'll receive a tracking number by email as soon as your order ships.`,
+          "There's nothing to ship. The moment your purchase is confirmed, your course, prompt library, or Pass is unlocked and ready to watch or use — on any device, whenever you want.",
         ],
       },
       {
-        heading: "Delivery estimates",
+        heading: "How courses are delivered",
         body: [
-          "Standard domestic delivery typically arrives in 3–7 business days after dispatch. International delivery times vary by destination and customs processing.",
+          "Each micro-course is a focused video, under five minutes, with its chapters listed on the page. You can revisit any course you own as many times as you like.",
         ],
       },
       {
-        heading: "Shipping costs",
+        heading: "Bookings & sessions",
         body: [
-          "Shipping is calculated at checkout based on your address and the items in your cart. Any duties or import taxes for international orders are the responsibility of the recipient.",
+          "For coaching and custom engagements, we'll email you to confirm details and schedule. Sessions are held over video, and you keep any recordings and materials we agree to.",
         ],
       },
       {
-        heading: "Lost or delayed parcels",
+        heading: "Trouble getting in?",
         body: [
-          `If your tracking hasn't updated in several days or your parcel appears lost, email ${STORE.email} and we'll open a claim with the carrier and get a replacement moving.`,
+          `If a purchase doesn't unlock or a video won't play, email ${STORE.email} and we'll get you sorted quickly.`,
         ],
       },
     ],
@@ -217,7 +212,7 @@ export const POLICIES: Policy[] = [
       {
         heading: "Before you write",
         body: [
-          "Many questions are answered in our Shipping and Returns policies. For order-specific help, please include your order number so we can assist you faster.",
+          "Many questions are answered by Ada, the AI guide on every offer — she's available around the clock. For account or purchase help, email from the address you bought with so we can find you faster.",
         ],
       },
     ],

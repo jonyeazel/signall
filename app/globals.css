@@ -1,10 +1,20 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-background: #fafafa;
-  --color-foreground: #171717;
+  --color-background: #f1efe8;
+  --color-foreground: #16150f;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-display);
+}
+
+:root {
+  --paper: #f1efe8;
+  --shell: #fbfaf5;
+  --mineral: #e8e5dc;
+  --ink: #16150f;
+  --rule: #d6d2c8;
+  --signal: #e23a1e;
 }
 
 * {
@@ -12,115 +22,84 @@
 }
 
 html {
+  background: var(--paper);
   scroll-behavior: smooth;
 }
 
 body {
-  background: #eaeaea;
-  color: #171717;
-  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans), "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-feature-settings: "kern" 1, "liga" 1;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-::selection {
-  background: rgba(0, 0, 0, 0.12);
+/* The authority voice. */
+.font-display {
+  font-family: var(--font-display), Georgia, "Times New Roman", serif;
+  font-optical-sizing: auto;
 }
 
-/* --- Scroll areas --- */
+::selection {
+  background: rgba(226, 58, 30, 0.18);
+  color: var(--ink);
+}
+
+:where(button, a, input, textarea):focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 3px;
+}
 
 .carousel-x {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
+.carousel-x::-webkit-scrollbar { display: none; }
 
-.carousel-x::-webkit-scrollbar {
-  display: none;
+.feed-scroll {
+  scrollbar-color: #b8b4aa transparent;
+  scrollbar-width: thin;
 }
-
-.feed-scroll::-webkit-scrollbar {
-  width: 8px;
-}
-
+.feed-scroll::-webkit-scrollbar { width: 7px; }
 .feed-scroll::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.12);
-  border-radius: 999px;
+  background: #b8b4aa;
   border: 2px solid transparent;
   background-clip: padding-box;
 }
+.feed-scroll::-webkit-scrollbar-track { background: transparent; }
 
-.feed-scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-/* --- Chat typing indicator --- */
-
-.chat-typing > span {
-  animation: chat-bounce 1.2s infinite ease-in-out;
-}
-
-.chat-typing > span:nth-child(2) {
-  animation-delay: 0.15s;
-}
-
-.chat-typing > span:nth-child(3) {
-  animation-delay: 0.3s;
-}
-
+.chat-typing > span { animation: chat-bounce 1.1s infinite ease-in-out; }
+.chat-typing > span:nth-child(2) { animation-delay: 0.15s; }
+.chat-typing > span:nth-child(3) { animation-delay: 0.3s; }
 @keyframes chat-bounce {
-  0%,
-  60%,
-  100% {
-    opacity: 0.3;
-    transform: translateY(0);
-  }
-  30% {
-    opacity: 0.9;
-    transform: translateY(-3px);
-  }
+  0%, 60%, 100% { opacity: 0.28; transform: translateY(0); }
+  30% { opacity: 0.8; transform: translateY(-2px); }
 }
 
-/* Streaming caret — a soft blink that trails the words as the concierge
-   "writes", so a reply feels composed in the moment rather than pasted in. */
 .chat-caret {
   display: inline-block;
   width: 2px;
   height: 1em;
-  margin-left: 1px;
+  margin-left: 2px;
   vertical-align: -0.15em;
-  border-radius: 2px;
   background: currentColor;
-  opacity: 0.55;
+  opacity: 0.5;
   animation: chat-caret-blink 1s steps(1) infinite;
 }
-
 @keyframes chat-caret-blink {
-  0%,
-  50% {
-    opacity: 0.55;
-  }
-  50.01%,
-  100% {
-    opacity: 0;
-  }
+  0%, 50% { opacity: 0.5; }
+  50.01%, 100% { opacity: 0; }
 }
 
-/* --- Cursor --- */
+button, a { cursor: pointer; }
+button:disabled { cursor: not-allowed; }
 
-button,
-a {
-  cursor: pointer;
-}
-
-button:disabled {
-  cursor: not-allowed;
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }
