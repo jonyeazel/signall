@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { BRAND } from "../lib/brand";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Optimo",
-  description: "A considered Shopify theme.",
+  title: BRAND.name,
+  description: BRAND.description,
 };
 
 // viewport-fit=cover makes env(safe-area-inset-*) meaningful so the mobile

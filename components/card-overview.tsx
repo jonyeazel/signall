@@ -4,6 +4,7 @@ import { useRef, useEffect, useLayoutEffect, useState, useCallback } from "react
 import { motion } from "motion/react";
 import { type Offering } from "../lib/offerings";
 import { T, WHISPER_PATTERN } from "../lib/theme";
+import { HatchPlaceholder } from "./hatch-placeholder";
 
 type Dims = {
   photoW: number;
@@ -108,10 +109,10 @@ function ExpandingCard({
         onAnimationComplete={onDone}
         style={{ position: "absolute", overflow: "hidden", background: T.surface }}
       >
-        <img
-          src={offering.images[0] || "/placeholder.svg"}
-          alt=""
-          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+        <HatchPlaceholder
+          src={offering.images?.[0]}
+          radius={0}
+          style={{ position: "absolute", inset: 0 }}
         />
       </motion.div>
     </div>
@@ -161,10 +162,10 @@ function ShrinkingCard({
           boxShadow: "0 24px 60px -24px rgba(0,0,0,0.28)",
         }}
       >
-        <img
-          src={offering.images[0] || "/placeholder.svg"}
-          alt=""
-          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+        <HatchPlaceholder
+          src={offering.images?.[0]}
+          radius={0}
+          style={{ position: "absolute", inset: 0 }}
         />
       </motion.div>
 
@@ -442,10 +443,11 @@ export function CardOverview({
                       border: `1px solid ${T.border}`,
                     }}
                   >
-                    <img
-                      src={o.images[0] || "/placeholder.svg"}
+                    <HatchPlaceholder
+                      src={o.images?.[0]}
                       alt={o.title}
-                      style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+                      radius={0}
+                      style={{ position: "absolute", inset: 0 }}
                     />
                   </div>
                   {/* Explainer beneath, on the frosted backdrop */}

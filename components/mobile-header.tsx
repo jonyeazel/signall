@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { LayoutGrid, ShoppingBag } from "lucide-react";
 import { type RefObject } from "react";
 import { T, SPRING_SOFT } from "../lib/theme";
+import { BRAND, MONOGRAM } from "../lib/brand";
 import { Wordmark } from "./wordmark";
 
 const roundBtn = {
@@ -100,7 +101,7 @@ export function MobileHeader({
               letterSpacing: "-0.02em",
             }}
           >
-            O
+            {MONOGRAM}
           </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
@@ -114,7 +115,7 @@ export function MobileHeader({
               textShadow: "0 1px 12px rgba(251,251,251,0.92), 0 0 4px rgba(251,251,251,0.92)",
             }}
           >
-            Shopify Theme
+            {BRAND.tagline}
           </span>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import { type Offering } from "../lib/offerings";
 import { T } from "../lib/theme";
+import { HatchPlaceholder } from "./hatch-placeholder";
 
 /** White text-halo that keeps copy legible over any (light) product photo. */
 const HALO = "0 1px 12px rgba(251,251,251,0.92), 0 0 4px rgba(251,251,251,0.92)";
@@ -34,16 +35,11 @@ export function CardIdentity({ offering }: { offering: Offering }) {
             boxShadow: "0 2px 10px rgba(0,0,0,0.10)",
           }}
         >
-          <img
-            src={offering.images[1] ?? offering.images[0] ?? "/placeholder.svg"}
-            alt=""
-            style={{
-              width: "100%",
-              height: "100%",
-              borderRadius: "50%",
-              objectFit: "cover",
-              display: "block",
-            }}
+          <HatchPlaceholder
+            src={offering.images?.[1] ?? offering.images?.[0]}
+            radius={999}
+            hatchGap={6}
+            style={{ width: "100%", height: "100%" }}
           />
         </div>
         {/* Title + price share one row; the price rides in a dark "Buy Now"

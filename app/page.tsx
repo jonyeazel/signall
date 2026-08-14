@@ -18,8 +18,8 @@ import { T, SPRING_SOFT, WHISPER_PATTERN } from "../lib/theme";
 /**
  * The desktop canvas — a seamless photography "studio sweep": light at the top,
  * settling into a subtly deeper floor, with the faint whisper contour texture
- * rising from the bottom. Deliberately neutral *material*: the brand's signature
- * gesture is the red dot in the wordmark, not the background. Less, but better.
+ * rising from the bottom. Deliberately neutral *material*, so the products are
+ * the only thing with colour on the page. Less, but better.
  */
 function DesktopBackdrop() {
   return (
@@ -212,7 +212,7 @@ export default function Home() {
         flexDirection: "column",
       }}
     >
-      {/* Optimo's signature desktop canvas (studio sweep + red bottom) */}
+      {/* The signature desktop canvas (studio sweep + contour texture) */}
       {!isMobile && <DesktopBackdrop />}
 
       {/* Header: floating & product-aware on mobile, identity bar on desktop */}
@@ -237,7 +237,7 @@ export default function Home() {
             gap: 12,
             padding: "20px 28px",
             // The header is now a pure, centered wordmark — the cart has moved
-            // to a floating control, so nothing pulls "Optimo" off-center.
+            // to a floating control, so nothing pulls the wordmark off-center.
             background: "transparent",
           }}
         >

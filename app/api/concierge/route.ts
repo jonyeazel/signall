@@ -1,5 +1,7 @@
 import { streamText } from "ai";
 import { OFFERINGS } from "../../../lib/offerings";
+import { BRAND } from "../../../lib/brand";
+import { STORE } from "../../../lib/legal";
 
 // Chat should feel instant but has room to think on a hard question.
 export const maxDuration = 30;
@@ -43,10 +45,10 @@ export async function POST(req: Request) {
     `Specifications: ${product.stats.map((s) => `${s.label} — ${s.value}`).join("; ")}`,
     `Categories: ${product.tags.join(", ")}`,
     `Rating: ${product.rating} out of 5 from ${product.reviews.toLocaleString()} reviews`,
-    `Shipping & returns: ships within 2 business days with tracking; free 30-day returns.`,
+    `Shipping & returns: ships within ${STORE.shipWithinDays} business days with tracking; free ${STORE.returnWindowDays}-day returns.`,
   ].join("\n");
 
-  const system = `You are the personal concierge for one product in Optimo, a premium design store. You speak only about the product in FACTS. Your job is to make the shopper feel understood and to make deciding feel effortless and obvious.
+  const system = `You are the personal concierge for one product in ${BRAND.name}, an online store. You speak only about the product in FACTS. Your job is to make the shopper feel understood and to make deciding feel effortless and obvious.
 
 FACTS (the only information you may treat as true):
 ${facts}
@@ -58,7 +60,7 @@ VOICE
 - Plain language. No hype, no clichés, no exclamation marks, no emojis, no bullet lists.
 
 PERSUASION — use lightly and honestly
-- Presuppose the good outcome instead of arguing for it ("where you set it on your desk", "the light you'll come back to"). Assume the fit; never pressure it.
+- Presuppose the good outcome instead of arguing for it ("where you'd put it", "the one you'll keep reaching for"). Assume the fit; never pressure it.
 - Anchor to what the shopper values, then connect exactly one relevant fact to it.
 - When they are close to deciding, make the next step feel small and natural.
 - Never use false urgency, scarcity, or flattery. Honesty is the entire strategy.
