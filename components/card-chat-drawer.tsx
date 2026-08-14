@@ -116,15 +116,9 @@ export function CardChatDrawer({
     messagesRef.current = messages;
   }, [messages]);
 
-  // Prefer the product's own hand-written openers (set per product in the
-  // catalog) so the empty state sparks the exact conversation that sells THIS
-  // piece; fall back to a universal set for any product without them.
   const suggestions = useMemo(
-    () =>
-      offering.chatSeeds && offering.chatSeeds.length > 0
-        ? offering.chatSeeds
-        : ["Is it right for me?", "What's it made of?", `Why ${offering.price}?`],
-    [offering.chatSeeds, offering.price],
+    () => ["Is it right for me?", "What's it made of?", `Why ${offering.price}?`],
+    [offering.price],
   );
 
   // Keyboard etiquette — the whole point of a great chat on iOS:
