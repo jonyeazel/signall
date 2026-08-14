@@ -1,10 +1,12 @@
 "use client";
 
 import { useRef, useEffect, useLayoutEffect, useState, useCallback } from "react";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { type Offering } from "../lib/offerings";
 import { T, WHISPER_PATTERN } from "../lib/theme";
 import { HatchPlaceholder } from "./hatch-placeholder";
+import { CardIdentity } from "./card-identity";
+import { CardActionBar } from "./card-action-bar";
 
 type Dims = {
   photoW: number;
@@ -27,6 +29,15 @@ const TEXT_GAP = 16;
 // the screen — a spring's long settle tail is what made the "text on top"
 // arrive a beat late.
 const PHOTO_MORPH = { type: "tween" as const, duration: 0.44, ease: [0.32, 0.72, 0, 1] as const };
+
+// Entering the overview (the shrink) is deliberately slower than opening a
+// card: opening should feel eager, but stepping back should feel like the
+// feed calmly settling into its deck. An ease-in-out over a longer beat reads
+// composed where the snappy open curve read rushed.
+const ENTER_MORPH = { type: "tween" as const, duration: 0.68, ease: [0.65, 0, 0.35, 1] as const };
+// How long the deck / frost / dots take to materialize *during* the shrink —
+// they finish together with ENTER_MORPH so nothing pops in after it lands.
+const ENTER_FADE = 0.6;
 
 /** The centered explainer block: a small quiet name + the two-line blurb.
  *  Rendered on the frosted overview backdrop (never on a white panel). */
@@ -65,6 +76,39 @@ function Explainer({ offering, faded }: { offering: Offering; faded?: boolean })
       >
         {offering.blurb}
       </p>
+    </div>
+  );
+}
+
+/**
+ * A non-interactive copy of the live card's bottom chrome (identity block +
+ * action row), pixel-matched to OfferingCard's mobile overlay. The morph
+ * clones render it so the card's text doesn't vanish/appear in a single frame
+ * at either end of the transition: it dissolves OUT as the card shrinks into
+ * the deck, and dissolves IN as a picked card lands full-bleed.
+ *
+ * The action bar gets a `-ghost` id: its internal `ai-surface-${id}` layoutId
+ * would otherwise collide with the real card's bar (both mounted at once) and
+ * motion would fly the AI button between them.
+ */
+function ChromeGhost({ offering }: { offering: Offering }) {
+  return (
+    <div
+      aria-hidden
+      style={{
+        position: "absolute",
+        left: 0,
+        right: 0,
+        bottom: 0,
+        padding: "12px 12px 14px",
+        display: "flex",
+        flexDirection: "column",
+        gap: 12,
+        pointerEvents: "none",
+      }}
+    >
+      <CardIdentity offering={offering} />
+      <CardActionBar id={`${offering.id}-ghost`} title={offering.title} height={58} />
     </div>
   );
 }
@@ -114,6 +158,18 @@ function ExpandingCard({
           radius={0}
           style={{ position: "absolute", inset: 0 }}
         />
+        {/* The card's chrome rides in during the landing beat (finishes at
+            0.24 + 0.2 = the morph's 0.44s), so when the overview dissolves
+            away the real card's chrome is already painted underneath in the
+            exact same place — the handoff swaps identical pixels. */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.2, delay: 0.24, ease: "easeOut" }}
+          style={{ position: "absolute", inset: 0 }}
+        >
+          <ChromeGhost offering={offering} />
+        </motion.div>
       </motion.div>
     </div>
   );
@@ -134,32 +190,47 @@ function ShrinkingCard({
   onDone,
 }: {
   offering: Offering;
-  target: DOMRect | null;
+  // Always measured before mount. Mounting with a null target and swapping it
+  // in later is what silently BROKE this morph: the null-target render made
+  // `animate` equal `initial`, framer completed that zero-length animation,
+  // and its completion callback ran after the re-render had already supplied
+  // the target — so an `if (target)` guard passed and onDone fired on frame
+  // one. The shrink never played; entering the deck was an instant cut.
+  target: DOMRect;
   vw: number;
   vh: number;
   onDone: () => void;
 }) {
-  const full = { top: 0, left: 0, width: vw, height: vh, borderRadius: 0 } as const;
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 80, pointerEvents: "none" }}>
-      {/* Photo: from full-bleed down to the miniature's frame */}
+      {/* Photo: from full-bleed down to the miniature's frame. The drop shadow
+          gives it depth mid-flight but decays to transparent by landing — the
+          real deck card underneath has NO shadow, so a shadow held to the end
+          would pop off on the handoff frame. */}
       <motion.div
-        initial={full}
-        animate={
-          target
-            ? { top: target.top, left: target.left, width: target.width, height: target.height, borderRadius: CARD_RADIUS }
-            : full
-        }
-        transition={PHOTO_MORPH}
-        onAnimationComplete={() => {
-          if (target) onDone();
+        initial={{
+          top: 0,
+          left: 0,
+          width: vw,
+          height: vh,
+          borderRadius: 0,
+          boxShadow: "0 24px 60px -24px rgba(0,0,0,0.28)",
         }}
+        animate={{
+          top: target.top,
+          left: target.left,
+          width: target.width,
+          height: target.height,
+          borderRadius: CARD_RADIUS,
+          boxShadow: "0 24px 60px -24px rgba(0,0,0,0)",
+        }}
+        transition={ENTER_MORPH}
+        onAnimationComplete={onDone}
         style={{
           position: "absolute",
           overflow: "hidden",
           background: T.surface,
           border: `1px solid ${T.border}`,
-          boxShadow: "0 24px 60px -24px rgba(0,0,0,0.28)",
         }}
       >
         <HatchPlaceholder
@@ -167,19 +238,31 @@ function ShrinkingCard({
           radius={0}
           style={{ position: "absolute", inset: 0 }}
         />
+        {/* The card's own chrome dissolves off as it steps back into the deck
+            — without this it vanishes in one frame the instant the clone
+            covers the real card. Quick, and done before real travel begins
+            (the ease-in-out barely moves in its first fifth). */}
+        <motion.div
+          initial={{ opacity: 1 }}
+          animate={{ opacity: 0 }}
+          transition={{ duration: 0.22, ease: "easeOut" }}
+          style={{ position: "absolute", inset: 0 }}
+        >
+          <ChromeGhost offering={offering} />
+        </motion.div>
       </motion.div>
 
-      {/* Explainer settles in beneath the shrunken photo */}
-      {target && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.26, delay: 0.18, ease: "easeOut" }}
-          style={{ position: "absolute", top: target.bottom + TEXT_GAP, left: 0, right: 0, display: "flex", justifyContent: "center" }}
-        >
-          <Explainer offering={offering} />
-        </motion.div>
-      )}
+      {/* Explainer settles in beneath the shrunken photo. Its timing mirrors
+          the deck's own fade so when this clone unmounts, the real explainer
+          underneath is already at full opacity — a seamless swap, no pop. */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: ENTER_FADE - 0.1, delay: 0.18, ease: "easeOut" }}
+        style={{ position: "absolute", top: target.bottom + TEXT_GAP, left: 0, right: 0, display: "flex", justifyContent: "center" }}
+      >
+        <Explainer offering={offering} />
+      </motion.div>
     </div>
   );
 }
@@ -210,9 +293,13 @@ export function CardOverview({
   const [picked, setPicked] = useState<{ i: number; rect: DOMRect } | null>(null);
   const [current, setCurrent] = useState(activeIndex);
   const pickedRef = useRef(false);
+  // Skip both zoom morphs for reduced-motion users: the deck appears live
+  // immediately and picking a card opens it directly. The remaining opacity
+  // fades are gentle enough to keep.
+  const reduceMotion = useReducedMotion();
   // Opening transition: the fullscreen card shrinks into its miniature before
   // the real deck is revealed.
-  const [phase, setPhase] = useState<"enter" | "live">("enter");
+  const [phase, setPhase] = useState<"enter" | "live">(reduceMotion ? "live" : "enter");
   const [shrinkRect, setShrinkRect] = useState<DOMRect | null>(null);
 
   // Size the photo to the live card's aspect ratio (vw : vh), filling most of
@@ -297,15 +384,22 @@ export function CardOverview({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dims]);
 
-  const handlePick = useCallback((i: number, e: React.MouseEvent<HTMLButtonElement>) => {
-    if (pickedRef.current) return;
-    // Measure the PHOTO element (not the whole column) so the morph grows from
-    // the image exactly.
-    const photoEl = e.currentTarget.querySelector<HTMLElement>("[data-photo]");
-    const rect = (photoEl ?? e.currentTarget).getBoundingClientRect();
-    pickedRef.current = true;
-    setPicked({ i, rect });
-  }, []);
+  const handlePick = useCallback(
+    (i: number, e: React.MouseEvent<HTMLButtonElement>) => {
+      if (pickedRef.current) return;
+      pickedRef.current = true;
+      if (reduceMotion) {
+        onPick(i);
+        return;
+      }
+      // Measure the PHOTO element (not the whole column) so the morph grows
+      // from the image exactly.
+      const photoEl = e.currentTarget.querySelector<HTMLElement>("[data-photo]");
+      const rect = (photoEl ?? e.currentTarget).getBoundingClientRect();
+      setPicked({ i, rect });
+    },
+    [reduceMotion, onPick],
+  );
 
   return (
     <motion.div
@@ -336,7 +430,7 @@ export function CardOverview({
         background: shrinkRect ? "rgba(248,248,248,0.96)" : "transparent",
         backdropFilter: shrinkRect ? "blur(28px) saturate(1.3)" : "none",
         WebkitBackdropFilter: shrinkRect ? "blur(28px) saturate(1.3)" : "none",
-        transition: "background 0.2s ease",
+        transition: `background ${ENTER_FADE}s ease`,
       }}
     >
       {/* Whisper texture — the same barely-there contour lines as the AI drawer,
@@ -362,10 +456,17 @@ export function CardOverview({
 
       {/* Horizontal deck — shrinks in from the full feed. No header chrome:
           the photos + text own the whole height. Tapping the empty backdrop
-          closes; taps on a card are stopped from bubbling. */}
+          closes; taps on a card are stopped from bubbling.
+
+          The deck fades in DURING the shrink, not after it: the shrinking
+          clone sits opaquely on top of its own slot, so the neighbors emerge
+          around it while it travels, and by the time it lands everything is
+          already present. Waiting for `phase === "live"` here was the jolt —
+          the whole deck popped in right after the morph finished. */}
       <motion.div
-        animate={{ opacity: phase === "live" ? 1 : 0 }}
-        transition={{ duration: 0.2, ease: "easeOut" }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: ENTER_FADE, delay: 0.08, ease: "easeOut" }}
         style={{
           flex: 1,
           minHeight: 0,
@@ -469,8 +570,10 @@ export function CardOverview({
           justifyContent: "center",
           gap: 6,
           padding: "2px 0 calc(20px + env(safe-area-inset-bottom))",
-          opacity: picked || phase !== "live" ? 0 : 1,
-          transition: "opacity 0.2s ease",
+          // Gated on the measurement (not the phase) so the dots ease in with
+          // the deck during the shrink rather than popping in after it.
+          opacity: picked || !shrinkRect ? 0 : 1,
+          transition: `opacity ${ENTER_FADE}s ease`,
         }}
       >
         {offerings.map((o, i) => (
@@ -487,8 +590,12 @@ export function CardOverview({
         ))}
       </div>
 
-      {/* Zoom-to-close morph — the fullscreen card shrinking into its deck slot */}
-      {phase === "enter" && dims && (
+      {/* Zoom-to-close morph — the fullscreen card shrinking into its deck slot.
+          Mounted only once the target is measured (which happens in a layout
+          effect, i.e. before first paint, so nothing flashes). Mounting earlier
+          with a null target is the completion-callback race documented on
+          ShrinkingCard. */}
+      {phase === "enter" && dims && shrinkRect && (
         <ShrinkingCard
           offering={offerings[activeIndex]}
           target={shrinkRect}
