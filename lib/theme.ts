@@ -3,8 +3,7 @@
  * Kept as plain values so both inline styles and motion components can use them.
  */
 export const T = {
-  gutter: "#E7E7E7",
-  bg: "#FBFBFB",
+  bg: "#FFFFFF",
   bgSubtle: "#F4F4F4",
   surface: "#FFFFFF",
   border: "#DBDBDB",
@@ -18,6 +17,19 @@ export const T = {
   skeleton: "#EFEFEF",
   ghost: "#F5F5F5",
 } as const;
+
+/**
+ * The empty-media fill: flat grey with faint diagonal rules.
+ *
+ * This is the template's placeholder language — every frame that has no image
+ * yet wears it, so an unfilled storefront reads as a deliberate wireframe
+ * rather than as something broken. `gap` tightens the rules for small
+ * thumbnails, where the default spacing reads as noise.
+ */
+export const hatch = (gap = 11) => ({
+  background: T.skeleton,
+  backgroundImage: `repeating-linear-gradient(-45deg, rgba(0,0,0,0.05) 0px, rgba(0,0,0,0.05) 1.5px, transparent 1.5px, transparent ${gap}px)`,
+});
 
 // Spring feel used across the app for the "fluid, future UI" motion signature.
 export const SPRING = { type: "spring", stiffness: 420, damping: 38, mass: 0.9 } as const;

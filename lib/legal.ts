@@ -13,8 +13,11 @@
  * with Meta's prohibited-content and personal-attributes policies.
  */
 
+import { BRAND } from "./brand";
+
 export const STORE = {
-  name: "Optimo",
+  /** Trading name — set once in `lib/brand.ts`. */
+  name: BRAND.name,
   legalName: "[Your Legal Company Name]",
   email: "support@example.com",
   address: "[Street Address, City, State/Region, Postal Code, Country]",

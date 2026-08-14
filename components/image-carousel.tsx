@@ -2,7 +2,7 @@
 
 import { motion } from "motion/react";
 import { useRef, useState, useCallback, type CSSProperties, type ReactNode } from "react";
-import { T, SPRING } from "../lib/theme";
+import { T, SPRING, hatch } from "../lib/theme";
 
 /**
  * Full-width, horizontally-paged image carousel with pagination dots.
@@ -45,7 +45,10 @@ export function ImageCarousel({
   style?: CSSProperties;
   children?: ReactNode;
 }) {
-  const slides = images && images.length > 0 ? images.length : count;
+  // An empty array counts as "no photography yet" just like an omitted one, so
+  // the hatch placeholder shows instead of a run of broken image frames.
+  const hasImages = Boolean(images && images.length > 0);
+  const slides = hasImages ? images!.length : count;
   const trackRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
   const raf = useRef(0);
@@ -114,15 +117,12 @@ export function ImageCarousel({
               height: "100%",
               scrollSnapAlign: "start",
               position: "relative",
-              background: T.skeleton,
-              backgroundImage: images
-                ? undefined
-                : "repeating-linear-gradient(-45deg, rgba(0,0,0,0.05) 0px, rgba(0,0,0,0.05) 1.5px, transparent 1.5px, transparent 11px)",
+              ...hatch(),
             }}
           >
-            {images && (
+            {hasImages && (
               <img
-                src={images[i] || "/placeholder.svg"}
+                src={images![i]}
                 alt={alt}
                 draggable={false}
                 style={{

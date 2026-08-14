@@ -4,12 +4,7 @@ import { motion } from "motion/react";
 import { X, Trash2, ShoppingBag } from "lucide-react";
 import { type Offering } from "../lib/offerings";
 import { T, SPRING } from "../lib/theme";
-
-const HATCH = {
-  background: T.skeleton,
-  backgroundImage:
-    "repeating-linear-gradient(-45deg, rgba(0,0,0,0.05) 0px, rgba(0,0,0,0.05) 1.5px, transparent 1.5px, transparent 8px)",
-};
+import { HatchPlaceholder } from "./hatch-placeholder";
 
 export type CartLine = { offering: Offering; qty: number };
 
@@ -166,9 +161,11 @@ export function CartSheet({
                   key={offering.id}
                   style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 8px" }}
                 >
-                  <div
-                    style={{ width: 52, height: 52, borderRadius: 12, flexShrink: 0, border: `1px solid ${T.border}`, ...HATCH }}
-                    aria-hidden
+                  <HatchPlaceholder
+                    src={offering.images?.[0]}
+                    radius={12}
+                    hatchGap={8}
+                    style={{ width: 52, height: 52, flexShrink: 0, border: `1px solid ${T.border}` }}
                   />
                   <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
                     <span

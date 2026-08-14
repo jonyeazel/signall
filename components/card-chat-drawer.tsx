@@ -5,6 +5,8 @@ import { AnimatePresence, motion, useDragControls } from "motion/react";
 import { ArrowUp, Check, ShoppingBag } from "lucide-react";
 import { type Offering } from "../lib/offerings";
 import { T, WHISPER_PATTERN } from "../lib/theme";
+import { STORE } from "../lib/legal";
+import { HatchPlaceholder } from "./hatch-placeholder";
 
 /** Functional assets the concierge can surface inline in the thread. */
 type Asset = "buy" | "specs";
@@ -209,7 +211,7 @@ export function CardChatDrawer({
       }
       if (/(ship|deliver|return|refund|exchange|warranty|track|arrive)/.test(s)) {
         return {
-          text: "It ships within two business days with tracking, and there's a free 30-day return window — so you can live with it before you fully decide.",
+          text: `It ships within ${STORE.shipWithinDays} business days with tracking, and there's a free ${STORE.returnWindowDays}-day return window — so you can live with it before you fully decide.`,
           asks: ["Is it right for me?", `Why ${offering.price}?`],
         };
       }
@@ -704,30 +706,19 @@ function BuyCard({
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <div
-          style={{
-            width: 52,
-            height: 52,
-            borderRadius: 12,
-            overflow: "hidden",
-            flexShrink: 0,
-            background: T.ghost,
-            border: `1px solid ${T.border}`,
-          }}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={offering.images[0] || "/placeholder.svg"}
-            alt={offering.title}
-            style={{ width: "100%", height: "100%", objectFit: "cover" }}
-          />
-        </div>
+        <HatchPlaceholder
+          src={offering.images?.[0]}
+          alt={offering.title}
+          radius={12}
+          hatchGap={8}
+          style={{ width: 52, height: 52, flexShrink: 0, border: `1px solid ${T.border}` }}
+        />
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ fontSize: 14.5, fontWeight: 600, letterSpacing: "-0.01em", color: T.textPrimary }}>
             {offering.title}
           </div>
           <div style={{ fontSize: 13, color: T.textSecondary, marginTop: 1 }}>
-            {offering.price} · free 30-day returns
+            {offering.price} · free {STORE.returnWindowDays}-day returns
           </div>
         </div>
       </div>

@@ -1,8 +1,9 @@
 import { T } from "../lib/theme";
+import { BRAND } from "../lib/brand";
 
 /**
- * The Optimo wordmark — "Optimo" set in Geist. Clean and unadorned: we do less,
- * so the name stands on its own with no ornament.
+ * The wordmark — the brand name set in Geist. Clean and unadorned: the name
+ * stands on its own with no ornament. Rename the store in `lib/brand.ts`.
  */
 export function Wordmark({
   size = 23,
@@ -28,7 +29,7 @@ export function Wordmark({
         textShadow: glow ? "0 1px 12px rgba(251,251,251,0.92), 0 0 4px rgba(251,251,251,0.92)" : undefined,
       }}
     >
-      Optimo
+      {BRAND.name}
     </span>
   );
 }

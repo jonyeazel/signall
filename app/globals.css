@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-background: #fafafa;
+  --color-background: #ffffff;
   --color-foreground: #171717;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
@@ -16,7 +16,7 @@ html {
 }
 
 body {
-  background: #eaeaea;
+  background: #ffffff;
   color: #171717;
   font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;

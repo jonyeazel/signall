@@ -13,35 +13,7 @@ import { CardOverview } from "../components/card-overview";
 import { CartSheet, type CartLine } from "../components/cart-sheet";
 import { OFFERINGS } from "../lib/offerings";
 import { useMediaQuery } from "../hooks/use-media-query";
-import { T, SPRING_SOFT, WHISPER_PATTERN } from "../lib/theme";
-
-/**
- * The desktop canvas — a seamless photography "studio sweep": light at the top,
- * settling into a subtly deeper floor, with the faint whisper contour texture
- * rising from the bottom. Deliberately neutral *material*: the brand's signature
- * gesture is the red dot in the wordmark, not the background. Less, but better.
- */
-function DesktopBackdrop() {
-  return (
-    <div aria-hidden style={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none", overflow: "hidden" }}>
-      {/* Studio sweep */}
-      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, #FFFFFF 0%, #FBFBFB 54%, #EFEFEF 100%)" }} />
-      {/* Whisper contour texture, rising from the floor */}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          backgroundImage: WHISPER_PATTERN,
-          backgroundSize: "240px 180px",
-          backgroundRepeat: "repeat",
-          opacity: 0.5,
-          maskImage: "linear-gradient(180deg, transparent 28%, #000 100%)",
-          WebkitMaskImage: "linear-gradient(180deg, transparent 28%, #000 100%)",
-        }}
-      />
-    </div>
-  );
-}
+import { T, SPRING_SOFT } from "../lib/theme";
 
 export default function Home() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -212,9 +184,6 @@ export default function Home() {
         flexDirection: "column",
       }}
     >
-      {/* Optimo's signature desktop canvas (studio sweep + red bottom) */}
-      {!isMobile && <DesktopBackdrop />}
-
       {/* Header: floating & product-aware on mobile, identity bar on desktop */}
       {isMobile ? (
         <MobileHeader
@@ -237,7 +206,7 @@ export default function Home() {
             gap: 12,
             padding: "20px 28px",
             // The header is now a pure, centered wordmark — the cart has moved
-            // to a floating control, so nothing pulls "Optimo" off-center.
+            // to a floating control, so nothing pulls the wordmark off-center.
             background: "transparent",
           }}
         >
