@@ -3,7 +3,7 @@
 import { motion } from "motion/react";
 import { useState, type RefObject } from "react";
 import { type Offering } from "../lib/offerings";
-import { T, SPRING } from "../lib/theme";
+import { T, SPRING, MORPH, PANEL_RADIUS, PANEL_PAD, MEDIA_RADIUS } from "../lib/theme";
 import { ImageCarousel } from "./image-carousel";
 import { CardActionBar } from "./card-action-bar";
 import { CardIdentity } from "./card-identity";
@@ -136,20 +136,23 @@ export function OfferingCard({
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ root: rootRef, once: true, amount: 0.2 }}
       transition={{ ...SPRING, delay: Math.min(index * 0.04, 0.2) }}
-      style={{ width: "100%" }}
+      // Hover lift lives on this OUTER wrapper, never on the layoutId node
+      // below: a transform on the element that owns layout projection fights
+      // that projection, and since a card is always clicked while hovered, the
+      // morph would begin from a node with a live competing scale.
+      whileHover={chatOpen ? undefined : { scale: 1.01 }}
+      style={{ width: "100%", transformOrigin: "center center" }}
     >
       <motion.div
         layoutId={`card-${offering.id}`}
-        whileHover={chatOpen ? undefined : { scale: 1.01 }}
-        transition={SPRING}
+        transition={MORPH}
         style={{
           position: "relative",
-          transformOrigin: "center center",
           width: "100%",
           background: T.surface,
           border: `1px solid ${T.border}`,
-          borderRadius: 20,
-          padding: 12,
+          borderRadius: PANEL_RADIUS,
+          padding: PANEL_PAD,
           display: "flex",
           flexDirection: "column",
           gap: 12,
@@ -162,12 +165,14 @@ export function OfferingCard({
         >
           {/* Slideshow view: a single 1:1 hero, no dots and not scrollable —
               browsing images belongs to the expanded card, so this never
-              hijacks the horizontal slide between products. */}
+              hijacks the horizontal slide between products.
+              MEDIA_RADIUS is shared with the sheet so the morph never animates
+              curvature — see the token's note in lib/theme.ts. */}
           <ImageCarousel
             layoutId={`media-${offering.id}`}
             images={offering.images}
             alt={offering.title}
-            radius={12}
+            radius={MEDIA_RADIUS}
             dots={false}
             scrollable={false}
             style={{ height: "100%", width: "100%" }}
