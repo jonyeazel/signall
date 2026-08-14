@@ -1,10 +1,12 @@
 "use client";
 
 import { useRef, useEffect, useLayoutEffect, useState, useCallback } from "react";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { type Offering } from "../lib/offerings";
 import { T, WHISPER_PATTERN } from "../lib/theme";
 import { HatchPlaceholder } from "./hatch-placeholder";
+import { CardIdentity } from "./card-identity";
+import { CardActionBar } from "./card-action-bar";
 
 type Dims = {
   photoW: number;
@@ -79,6 +81,39 @@ function Explainer({ offering, faded }: { offering: Offering; faded?: boolean })
 }
 
 /**
+ * A non-interactive copy of the live card's bottom chrome (identity block +
+ * action row), pixel-matched to OfferingCard's mobile overlay. The morph
+ * clones render it so the card's text doesn't vanish/appear in a single frame
+ * at either end of the transition: it dissolves OUT as the card shrinks into
+ * the deck, and dissolves IN as a picked card lands full-bleed.
+ *
+ * The action bar gets a `-ghost` id: its internal `ai-surface-${id}` layoutId
+ * would otherwise collide with the real card's bar (both mounted at once) and
+ * motion would fly the AI button between them.
+ */
+function ChromeGhost({ offering }: { offering: Offering }) {
+  return (
+    <div
+      aria-hidden
+      style={{
+        position: "absolute",
+        left: 0,
+        right: 0,
+        bottom: 0,
+        padding: "12px 12px 14px",
+        display: "flex",
+        flexDirection: "column",
+        gap: 12,
+        pointerEvents: "none",
+      }}
+    >
+      <CardIdentity offering={offering} />
+      <CardActionBar id={`${offering.id}-ghost`} title={offering.title} height={58} />
+    </div>
+  );
+}
+
+/**
  * The zoom-to-open morph. The photo grows uniformly from the miniature's photo
  * frame up to full-bleed while the centered explainer text beneath it fades —
  * as if the words are absorbed into the image. On completion it hands off to
@@ -123,6 +158,18 @@ function ExpandingCard({
           radius={0}
           style={{ position: "absolute", inset: 0 }}
         />
+        {/* The card's chrome rides in during the landing beat (finishes at
+            0.24 + 0.2 = the morph's 0.44s), so when the overview dissolves
+            away the real card's chrome is already painted underneath in the
+            exact same place — the handoff swaps identical pixels. */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.2, delay: 0.24, ease: "easeOut" }}
+          style={{ position: "absolute", inset: 0 }}
+        >
+          <ChromeGhost offering={offering} />
+        </motion.div>
       </motion.div>
     </div>
   );
@@ -156,10 +203,27 @@ function ShrinkingCard({
 }) {
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 80, pointerEvents: "none" }}>
-      {/* Photo: from full-bleed down to the miniature's frame */}
+      {/* Photo: from full-bleed down to the miniature's frame. The drop shadow
+          gives it depth mid-flight but decays to transparent by landing — the
+          real deck card underneath has NO shadow, so a shadow held to the end
+          would pop off on the handoff frame. */}
       <motion.div
-        initial={{ top: 0, left: 0, width: vw, height: vh, borderRadius: 0 }}
-        animate={{ top: target.top, left: target.left, width: target.width, height: target.height, borderRadius: CARD_RADIUS }}
+        initial={{
+          top: 0,
+          left: 0,
+          width: vw,
+          height: vh,
+          borderRadius: 0,
+          boxShadow: "0 24px 60px -24px rgba(0,0,0,0.28)",
+        }}
+        animate={{
+          top: target.top,
+          left: target.left,
+          width: target.width,
+          height: target.height,
+          borderRadius: CARD_RADIUS,
+          boxShadow: "0 24px 60px -24px rgba(0,0,0,0)",
+        }}
         transition={ENTER_MORPH}
         onAnimationComplete={onDone}
         style={{
@@ -167,7 +231,6 @@ function ShrinkingCard({
           overflow: "hidden",
           background: T.surface,
           border: `1px solid ${T.border}`,
-          boxShadow: "0 24px 60px -24px rgba(0,0,0,0.28)",
         }}
       >
         <HatchPlaceholder
@@ -175,6 +238,18 @@ function ShrinkingCard({
           radius={0}
           style={{ position: "absolute", inset: 0 }}
         />
+        {/* The card's own chrome dissolves off as it steps back into the deck
+            — without this it vanishes in one frame the instant the clone
+            covers the real card. Quick, and done before real travel begins
+            (the ease-in-out barely moves in its first fifth). */}
+        <motion.div
+          initial={{ opacity: 1 }}
+          animate={{ opacity: 0 }}
+          transition={{ duration: 0.22, ease: "easeOut" }}
+          style={{ position: "absolute", inset: 0 }}
+        >
+          <ChromeGhost offering={offering} />
+        </motion.div>
       </motion.div>
 
       {/* Explainer settles in beneath the shrunken photo. Its timing mirrors
@@ -218,9 +293,13 @@ export function CardOverview({
   const [picked, setPicked] = useState<{ i: number; rect: DOMRect } | null>(null);
   const [current, setCurrent] = useState(activeIndex);
   const pickedRef = useRef(false);
+  // Skip both zoom morphs for reduced-motion users: the deck appears live
+  // immediately and picking a card opens it directly. The remaining opacity
+  // fades are gentle enough to keep.
+  const reduceMotion = useReducedMotion();
   // Opening transition: the fullscreen card shrinks into its miniature before
   // the real deck is revealed.
-  const [phase, setPhase] = useState<"enter" | "live">("enter");
+  const [phase, setPhase] = useState<"enter" | "live">(reduceMotion ? "live" : "enter");
   const [shrinkRect, setShrinkRect] = useState<DOMRect | null>(null);
 
   // Size the photo to the live card's aspect ratio (vw : vh), filling most of
@@ -305,15 +384,22 @@ export function CardOverview({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dims]);
 
-  const handlePick = useCallback((i: number, e: React.MouseEvent<HTMLButtonElement>) => {
-    if (pickedRef.current) return;
-    // Measure the PHOTO element (not the whole column) so the morph grows from
-    // the image exactly.
-    const photoEl = e.currentTarget.querySelector<HTMLElement>("[data-photo]");
-    const rect = (photoEl ?? e.currentTarget).getBoundingClientRect();
-    pickedRef.current = true;
-    setPicked({ i, rect });
-  }, []);
+  const handlePick = useCallback(
+    (i: number, e: React.MouseEvent<HTMLButtonElement>) => {
+      if (pickedRef.current) return;
+      pickedRef.current = true;
+      if (reduceMotion) {
+        onPick(i);
+        return;
+      }
+      // Measure the PHOTO element (not the whole column) so the morph grows
+      // from the image exactly.
+      const photoEl = e.currentTarget.querySelector<HTMLElement>("[data-photo]");
+      const rect = (photoEl ?? e.currentTarget).getBoundingClientRect();
+      setPicked({ i, rect });
+    },
+    [reduceMotion, onPick],
+  );
 
   return (
     <motion.div
