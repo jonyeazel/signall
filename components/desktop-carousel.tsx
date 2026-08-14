@@ -43,9 +43,15 @@ export function DesktopCarousel({
       const cellCenter = cell.offsetLeft + cell.offsetWidth / 2;
       const dist = Math.abs(center - cellCenter);
       const norm = Math.min(dist / (CARD_W * 1.15), 1); // 0 at center → 1 far away
-      const scale = 1.05 - norm * 0.2; // 1.05 centered → 0.85 edges
+      // The focused card rests at exactly 1 and neighbors recede below it.
+      // It must not be magnified past 1: a transformed ANCESTOR of a
+      // layout-projection node corrupts the shared-element morph's measured
+      // origin (and scales its corner radius, so the card's 8px image radius
+      // rendered as 8.4px against the sheet's 8px). Clearing the transform
+      // outright at rest leaves the morph origin a plain, untransformed box.
+      const scale = 1 - norm * 0.15; // 1 centered → 0.85 edges
       const opacity = 1 - norm * 0.42; // 1 centered → ~0.58 edges
-      cell.style.transform = `scale(${scale.toFixed(4)})`;
+      cell.style.transform = scale > 0.999 ? "none" : `scale(${scale.toFixed(4)})`;
       cell.style.opacity = opacity.toFixed(3);
       cell.style.zIndex = String(Math.round((1 - norm) * 10));
     });

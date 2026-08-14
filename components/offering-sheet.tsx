@@ -4,7 +4,7 @@ import { motion, useDragControls, type PanInfo } from "motion/react";
 import { useState } from "react";
 import { Check, Star } from "lucide-react";
 import { type Offering } from "../lib/offerings";
-import { T, SPRING } from "../lib/theme";
+import { T, SPRING, MORPH, PANEL_RADIUS, PANEL_PAD, MEDIA_RADIUS } from "../lib/theme";
 import { ImageCarousel } from "./image-carousel";
 import { CardChatDrawer } from "./card-chat-drawer";
 
@@ -41,12 +41,19 @@ export function OfferingSheet({
   // Hero image gallery — shared instance (keeps the layoutId morph intact).
   // 1:1 aspect on both breakpoints so product imagery composes identically to
   // the slideshow card; dots + horizontal scroll are enabled here for browsing.
+  //
+  // The carousel owns its OWN radius and clip rather than sitting inside a
+  // rounded wrapper. That wrapper was not a layout-projection node, so it
+  // clipped the photo in the sheet's FINAL coordinates while the photo itself
+  // was projected back to the card's position — the image was being windowed
+  // mid-flight. Owning the radius also means the morph's two ends can carry
+  // one identical value, so curvature never animates.
   const hero = (
     <ImageCarousel
       layoutId={isMobile ? undefined : `media-${offering.id}`}
       images={offering.images}
       alt={offering.title}
-      radius={0}
+      radius={isMobile ? 10 : MEDIA_RADIUS}
       dotBottom={16}
       style={
         isMobile
@@ -282,7 +289,9 @@ export function OfferingSheet({
         dragConstraints={{ top: 0, bottom: 0 }}
         dragElastic={{ top: 0, bottom: 0.5 }}
         onDragEnd={handleDragEnd}
-        transition={SPRING}
+        // Mobile is a bottom sheet sliding on a spring; desktop is a
+        // shared-element morph, which wants the decisive fixed-duration ease.
+        transition={isMobile ? SPRING : MORPH}
         style={{
           position: "relative",
           width: "100%",
@@ -291,7 +300,9 @@ export function OfferingSheet({
           maxHeight: isMobile ? `calc(100dvh - ${topInset + 16}px)` : "86vh",
           background: T.surface,
           border: `1px solid ${T.border}`,
-          borderRadius: isMobile ? "22px 22px 0 0" : 28,
+          // Desktop matches the card exactly (PANEL_RADIUS): the morph's two
+          // ends must share one radius or the corners animate mid-scale.
+          borderRadius: isMobile ? "22px 22px 0 0" : PANEL_RADIUS,
           display: "flex",
           flexDirection: isMobile ? "column" : "row",
           overflow: "hidden",
@@ -311,14 +322,12 @@ export function OfferingSheet({
                 flexDirection: "column",
               }}
             >
-              {/* Framed hero — a 12px inset + rounded inner image mirrors the
-                  slideshow card, so the product photo sits in a clean frame
-                  rather than bleeding to the sheet's edges. */}
-              <div style={{ padding: "12px 12px 0", flexShrink: 0 }}>
-                <div style={{ position: "relative", borderRadius: 14, overflow: "hidden" }}>
-                  {hero}
-                </div>
-              </div>
+              {/* Framed hero — a 12px inset mirrors the slideshow card, so the
+                  product photo sits in a clean frame rather than bleeding to
+                  the sheet's edges. The carousel rounds itself (radius 10 =
+                  the mobile panel's 22 minus this 12px inset, so the corners
+                  nest concentrically). */}
+              <div style={{ padding: `${PANEL_PAD}px ${PANEL_PAD}px 0`, flexShrink: 0 }}>{hero}</div>
               {body}
             </div>
             {buyBar}
@@ -340,14 +349,11 @@ export function OfferingSheet({
                 flexShrink: 0,
                 height: "100%",
                 aspectRatio: "1 / 1",
-                padding: 12,
+                padding: PANEL_PAD,
                 boxSizing: "border-box",
               }}
             >
-              {/* Inner radius = outer 28 − 12 padding, so the corners nest concentrically */}
-              <div style={{ position: "relative", height: "100%", width: "100%", borderRadius: 16, overflow: "hidden" }}>
-                {hero}
-              </div>
+              {hero}
             </div>
             {/* Right column is its own section — a hairline divider joins the
                 image section and gives the buy bar's top border something to
