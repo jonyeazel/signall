@@ -13,35 +13,7 @@ import { CardOverview } from "../components/card-overview";
 import { CartSheet, type CartLine } from "../components/cart-sheet";
 import { OFFERINGS } from "../lib/offerings";
 import { useMediaQuery } from "../hooks/use-media-query";
-import { T, SPRING_SOFT, WHISPER_PATTERN } from "../lib/theme";
-
-/**
- * The desktop canvas — a seamless photography "studio sweep": light at the top,
- * settling into a subtly deeper floor, with the faint whisper contour texture
- * rising from the bottom. Deliberately neutral *material*, so the products are
- * the only thing with colour on the page. Less, but better.
- */
-function DesktopBackdrop() {
-  return (
-    <div aria-hidden style={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none", overflow: "hidden" }}>
-      {/* Studio sweep */}
-      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, #FFFFFF 0%, #FBFBFB 54%, #EFEFEF 100%)" }} />
-      {/* Whisper contour texture, rising from the floor */}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          backgroundImage: WHISPER_PATTERN,
-          backgroundSize: "240px 180px",
-          backgroundRepeat: "repeat",
-          opacity: 0.5,
-          maskImage: "linear-gradient(180deg, transparent 28%, #000 100%)",
-          WebkitMaskImage: "linear-gradient(180deg, transparent 28%, #000 100%)",
-        }}
-      />
-    </div>
-  );
-}
+import { T, SPRING_SOFT } from "../lib/theme";
 
 export default function Home() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -212,9 +184,6 @@ export default function Home() {
         flexDirection: "column",
       }}
     >
-      {/* The signature desktop canvas (studio sweep + contour texture) */}
-      {!isMobile && <DesktopBackdrop />}
-
       {/* Header: floating & product-aware on mobile, identity bar on desktop */}
       {isMobile ? (
         <MobileHeader

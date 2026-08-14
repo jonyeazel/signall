@@ -3,8 +3,7 @@
  * Kept as plain values so both inline styles and motion components can use them.
  */
 export const T = {
-  gutter: "#E7E7E7",
-  bg: "#FBFBFB",
+  bg: "#FFFFFF",
   bgSubtle: "#F4F4F4",
   surface: "#FFFFFF",
   border: "#DBDBDB",

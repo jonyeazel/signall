@@ -19,10 +19,10 @@ export const metadata: Metadata = {
 };
 
 // viewport-fit=cover makes env(safe-area-inset-*) meaningful so the mobile
-// app-frame clears the notch/home indicator; themeColor matches the backdrop
-// gutter so the browser chrome blends into the framed look.
+// app-frame clears the notch/home indicator; themeColor matches the page so the
+// browser chrome disappears into it.
 export const viewport: Viewport = {
-  themeColor: "#EAEAEA",
+  themeColor: "#FFFFFF",
   viewportFit: "cover",
   width: "device-width",
   initialScale: 1,
@@ -39,10 +39,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        style={{ background: "#EAEAEA", color: "#171717" }}
-      >
+      {/* Background and text colour live in globals.css so there is exactly one
+          source of truth — an inline style here would silently outrank it. */}
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         {children}
       </body>
     </html>
