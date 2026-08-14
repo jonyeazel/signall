@@ -7,7 +7,6 @@ import { type Offering } from "../lib/offerings";
 import { T, SPRING } from "../lib/theme";
 import { ImageCarousel } from "./image-carousel";
 import { CardChatDrawer } from "./card-chat-drawer";
-import { CourseVideo } from "./course-video";
 
 // Content is present immediately (no fade/stagger): during the shared-layout
 // morph, fading pieces in drew the eye to areas that made the grid transform
@@ -46,8 +45,6 @@ export function OfferingSheet({
     <ImageCarousel
       layoutId={isMobile ? undefined : `media-${offering.id}`}
       images={offering.images}
-      offering={offering}
-      coverVariant="backdrop"
       alt={offering.title}
       radius={0}
       dotBottom={16}
@@ -78,7 +75,7 @@ export function OfferingSheet({
               marginTop: 10,
               width: 40,
               height: 5,
-              borderRadius: 8,
+              borderRadius: 999,
               background: "rgba(20,20,20,0.28)",
             }}
           />
@@ -133,13 +130,6 @@ export function OfferingSheet({
         </motion.div>
       </div>
 
-      {/* Course video + curriculum — only for taught offers */}
-      {(offering.kind === "course" || offering.kind === "digital") && (offering.lessons?.length || offering.duration) && (
-        <motion.div variants={content} initial="hidden" animate="show" custom={1}>
-          <CourseVideo offering={offering} />
-        </motion.div>
-      )}
-
       {/* Description */}
       <motion.p
         variants={content}
@@ -169,14 +159,7 @@ export function OfferingSheet({
     </div>
   );
 
-  // Sticky action bar — adapts to how the offer transacts.
-  //  · book  → high-ticket services/engagements: one "Book a call" primary.
-  //  · subscribe → the Pass: one "Get the Pass" primary.
-  //  · buy → courses/digital: "Add to cart" + the offer's own CTA primary.
-  const isBook = offering.action === "book";
-  const isSubscribe = offering.action === "subscribe";
-  const showCart = offering.action === "buy";
-  const primaryLabel = offering.cta || (isBook ? "Book a call" : isSubscribe ? "Get the Pass" : "Buy now");
+  // Sticky action bar — Add to cart + Buy now + Ai, all in one row.
   const buyBar = (
     <div
       style={{
@@ -185,45 +168,45 @@ export function OfferingSheet({
         alignItems: "center",
         gap: 10,
         padding: isMobile ? "12px 16px calc(14px + env(safe-area-inset-bottom))" : "14px 20px",
-        borderTop: `1px solid ${T.borderStrong}`,
-        background: T.surface,
+        borderTop: `1px solid ${T.border}`,
+        background: "rgba(255,255,255,0.9)",
+        backdropFilter: "blur(10px)",
+        WebkitBackdropFilter: "blur(10px)",
       }}
     >
-      {showCart && (
-        <motion.button
-          whileTap={{ scale: 0.98 }}
-          onClick={onAddToCart}
-          style={{
-            flex: 1,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            height: 52,
-            borderRadius: 8,
-            background: T.ghost,
-            color: T.textPrimary,
-            border: `1px solid ${T.border}`,
-            fontSize: 15.5,
-            fontWeight: 600,
-            letterSpacing: "-0.01em",
-            cursor: "pointer",
-          }}
-        >
-          Add to cart
-        </motion.button>
-      )}
       <motion.button
         whileTap={{ scale: 0.98 }}
-        onClick={onBuy}
+        onClick={onAddToCart}
         style={{
-          flex: showCart ? 1 : 3,
+          flex: 1,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           height: 52,
-          borderRadius: 8,
-          background: isBook || isSubscribe ? T.signal : T.ink,
-          color: isBook || isSubscribe ? T.onSignal : "#fff",
+          borderRadius: 999,
+          background: T.ghost,
+          color: T.textPrimary,
+          border: `1px solid ${T.border}`,
+          fontSize: 15.5,
+          fontWeight: 600,
+          letterSpacing: "-0.01em",
+          cursor: "pointer",
+        }}
+      >
+        Add to cart
+      </motion.button>
+      <motion.button
+        whileTap={{ scale: 0.98 }}
+        onClick={onBuy}
+        style={{
+          flex: 1,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          height: 52,
+          borderRadius: 999,
+          background: T.ink,
+          color: "#fff",
           border: "none",
           fontSize: 15.5,
           fontWeight: 600,
@@ -231,7 +214,7 @@ export function OfferingSheet({
           cursor: "pointer",
         }}
       >
-        {primaryLabel}
+        Buy now
       </motion.button>
       <motion.button
         whileTap={{ scale: 0.94 }}
@@ -243,7 +226,7 @@ export function OfferingSheet({
           flexShrink: 0,
           display: "grid",
           placeItems: "center",
-          borderRadius: 8,
+          borderRadius: "50%",
           background: T.surface,
           color: T.textPrimary,
           border: `1px solid ${T.borderActive}`,
@@ -281,7 +264,9 @@ export function OfferingSheet({
         style={{
           position: "absolute",
           inset: 0,
-          background: "rgba(28,28,26,0.24)",
+          background: "rgba(20,20,20,0.14)",
+          backdropFilter: "blur(8px)",
+          WebkitBackdropFilter: "blur(8px)",
         }}
       />
 
@@ -305,9 +290,8 @@ export function OfferingSheet({
           height: isMobile ? undefined : "min(600px, 86vh)",
           maxHeight: isMobile ? `calc(100dvh - ${topInset + 16}px)` : "86vh",
           background: T.surface,
-          border: `1px solid ${T.borderStrong}`,
-          borderRadius: isMobile ? "10px 10px 0 0" : 10,
-          boxShadow: "0 8px 28px rgba(28,28,26,0.16)",
+          border: `1px solid ${T.border}`,
+          borderRadius: isMobile ? "22px 22px 0 0" : 28,
           display: "flex",
           flexDirection: isMobile ? "column" : "row",
           overflow: "hidden",
@@ -331,7 +315,7 @@ export function OfferingSheet({
                   slideshow card, so the product photo sits in a clean frame
                   rather than bleeding to the sheet's edges. */}
               <div style={{ padding: "12px 12px 0", flexShrink: 0 }}>
-                <div style={{ position: "relative", borderRadius: 6, overflow: "hidden" }}>
+                <div style={{ position: "relative", borderRadius: 14, overflow: "hidden" }}>
                   {hero}
                 </div>
               </div>
@@ -361,7 +345,7 @@ export function OfferingSheet({
               }}
             >
               {/* Inner radius = outer 28 − 12 padding, so the corners nest concentrically */}
-              <div style={{ position: "relative", height: "100%", width: "100%", borderRadius: 6, overflow: "hidden" }}>
+              <div style={{ position: "relative", height: "100%", width: "100%", borderRadius: 16, overflow: "hidden" }}>
                 {hero}
               </div>
             </div>

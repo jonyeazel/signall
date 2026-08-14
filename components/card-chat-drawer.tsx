@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback, useMemo, type KeyboardEvent }
 import { AnimatePresence, motion, useDragControls } from "motion/react";
 import { ArrowUp, Check, ShoppingBag } from "lucide-react";
 import { type Offering } from "../lib/offerings";
-import { T, COVERS } from "../lib/theme";
+import { T, WHISPER_PATTERN } from "../lib/theme";
 
 /** Functional assets the concierge can surface inline in the thread. */
 type Asset = "buy" | "specs";
@@ -116,15 +116,9 @@ export function CardChatDrawer({
     messagesRef.current = messages;
   }, [messages]);
 
-  // Prefer the product's own hand-written openers (set per product in the
-  // catalog) so the empty state sparks the exact conversation that sells THIS
-  // piece; fall back to a universal set for any product without them.
   const suggestions = useMemo(
-    () =>
-      offering.chatSeeds && offering.chatSeeds.length > 0
-        ? offering.chatSeeds
-        : ["Is it right for me?", "What's it made of?", `Why ${offering.price}?`],
-    [offering.chatSeeds, offering.price],
+    () => ["Is it right for me?", "What's it made of?", `Why ${offering.price}?`],
+    [offering.price],
   );
 
   // Keyboard etiquette — the whole point of a great chat on iOS:
@@ -204,40 +198,38 @@ export function CardChatDrawer({
   const localReply = useCallback(
     (q: string): { text: string; assets?: Asset[]; asks?: string[] } => {
       const s = q.toLowerCase();
-      if (/(what.*(learn|inside|included|cover|get)|structure|lesson|chapter|module|how long|length)/.test(s)) {
-        const detail = offering.features[0]?.toLowerCase() ?? offering.description.toLowerCase();
-        const extra = offering.features[1] ? `, plus ${offering.features[1].toLowerCase()}` : "";
-        const dur = offering.duration ? ` It's taught in a single video, ${offering.duration}.` : "";
+      if (/(material|made|build|fabric|construct|finish|quality)/.test(s)) {
+        const detail = offering.features[1]?.toLowerCase() ?? offering.description.toLowerCase();
+        const extra = offering.features[2] ? `, ${offering.features[2].toLowerCase()}` : "";
         return {
-          text: `You'll walk away with ${detail}${extra}.${dur}`,
+          text: `${offering.title} is ${detail}${extra}. It's built to sit in your space for years, not seasons.`,
           assets: ["specs"],
-          asks: ["Is this right for me?", "Should I just get the Pass?"],
+          asks: ["Is it right for me?", "How soon does it ship?"],
         };
       }
-      if (/(beginner|new|start|code|experience|hard|difficult|level)/.test(s)) {
+      if (/(ship|deliver|return|refund|exchange|warranty|track|arrive)/.test(s)) {
         return {
-          text: `No coding required — this is about the rhythm, not the syntax. If you can describe what you want, you can follow along and ship it.`,
-          assets: ["buy"],
-          asks: ["What will I build?", `Why ${offering.price}?`],
+          text: "It ships within two business days with tracking, and there's a free 30-day return window — so you can live with it before you fully decide.",
+          asks: ["Is it right for me?", `Why ${offering.price}?`],
         };
       }
       if (/(right for me|should i|fit|suit|good for|worth|help|recommend|me)/.test(s)) {
         return {
-          text: `If you want ${offering.tags.slice(0, 2).join(" and ").toLowerCase()}, this is a direct hit — ${offering.tagline.toLowerCase()} It pays for itself the first time you use it.`,
+          text: `If you value ${offering.tags.slice(0, 2).join(" and ").toLowerCase()}, ${offering.title} earns its spot — ${offering.tagline.toLowerCase()} Picture where you'd set it down first.`,
           assets: ["buy"],
-          asks: ["What will I learn?", "Should I just get the Pass?"],
+          asks: ["What's it made of?", "How soon does it ship?"],
         };
       }
-      if (/(price|cost|how much|expensive|why|value|pass|subscribe|bundle)/.test(s)) {
+      if (/(price|cost|how much|expensive|why|value)/.test(s)) {
         return {
-          text: `${offering.title} is ${offering.price}. If you're eyeing more than a couple of courses, the Pass at $39/mo unlocks all eight plus everything I release next — cancel anytime.`,
+          text: `${offering.title} is ${offering.price}. You're paying for ${offering.features[0]?.toLowerCase() ?? "the details that last"} — the kind of piece you keep and stop thinking about.`,
           assets: ["buy"],
-          asks: ["What's included?", "Is this right for me?"],
+          asks: ["Is it right for me?", "What's included?"],
         };
       }
       return {
-        text: `${offering.description} What would you like to know?`,
-        asks: ["Is this right for me?", "What will I learn?"],
+        text: `${offering.description} What would you like to picture first?`,
+        asks: ["Is it right for me?", "What's it made of?"],
       };
     },
     [offering],
@@ -371,7 +363,9 @@ export function CardChatDrawer({
               position: "absolute",
               inset: 0,
               zIndex: 19,
-              background: "rgba(28,28,26,0.22)",
+              background: "rgba(255,255,255,0.5)",
+              backdropFilter: "blur(3px)",
+              WebkitBackdropFilter: "blur(3px)",
             }}
           />
           {/* The drawer slides up to ~82% of the card at rest. When the
@@ -403,13 +397,38 @@ export function CardChatDrawer({
               zIndex: 20,
               display: "flex",
               flexDirection: "column",
-              background: T.bg,
-              borderTopLeftRadius: flatTop ? 0 : 10,
-              borderTopRightRadius: flatTop ? 0 : 10,
-              borderTop: `1px solid ${T.borderStrong}`,
-              boxShadow: "0 -2px 0 rgba(28,28,26,0.06)",
+              background: "rgba(255,255,255,0.985)",
+              backdropFilter: "blur(28px) saturate(1.6)",
+              WebkitBackdropFilter: "blur(28px) saturate(1.6)",
+              borderTopLeftRadius: flatTop ? 0 : 20,
+              borderTopRightRadius: flatTop ? 0 : 20,
+              borderTop: `1px solid ${T.border}`,
+              boxShadow: "0 -14px 40px -14px rgba(0,0,0,0.2)",
             }}
           >
+            {/* Stripe-style decorative wash — barely-there flowing contour lines
+                over a soft top glow, masked to dissolve downward. Purely
+                aesthetic; sits behind the content and never intercepts taps. */}
+            <div
+              aria-hidden
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 260,
+                zIndex: 0,
+                pointerEvents: "none",
+                borderTopLeftRadius: flatTop ? 0 : 20,
+                borderTopRightRadius: flatTop ? 0 : 20,
+                backgroundImage: `${WHISPER_PATTERN}, radial-gradient(95% 80% at 50% -20%, rgba(23,23,23,0.05), rgba(23,23,23,0) 70%)`,
+                backgroundSize: "240px 180px, 100% 100%",
+                backgroundRepeat: "repeat, no-repeat",
+                maskImage: "linear-gradient(to bottom, #000 0%, rgba(0,0,0,0.5) 55%, transparent 100%)",
+                WebkitMaskImage: "linear-gradient(to bottom, #000 0%, rgba(0,0,0,0.5) 55%, transparent 100%)",
+              }}
+            />
+
             {/* Minimal top — the grabber IS the control: drag it down to close. */}
             <div
               role="button"
@@ -429,7 +448,7 @@ export function CardChatDrawer({
                 WebkitTapHighlightColor: "transparent",
               }}
             >
-              <span aria-hidden style={{ width: 44, height: 5, borderRadius: 8, background: T.borderActive }} />
+              <span aria-hidden style={{ width: 44, height: 5, borderRadius: 999, background: T.borderActive }} />
             </div>
 
             {/* Messages */}
@@ -454,12 +473,14 @@ export function CardChatDrawer({
                 display: "flex",
                 flexDirection: "column",
                 gap: 10,
+                maskImage: "linear-gradient(to bottom, #000 calc(100% - 30px), transparent 100%)",
+                WebkitMaskImage: "linear-gradient(to bottom, #000 calc(100% - 30px), transparent 100%)",
               }}
             >
               {/* Assistant welcome */}
               <Bubble role="assistant">
-                Hey — I&apos;m Ada. Ask me anything about {offering.title}, or tell me what you&apos;re trying to
-                build and I&apos;ll tell you honestly if it&apos;s the right move.
+                Hi — I&apos;m your guide to {offering.title}. Ask me anything, or tell me what you&apos;re looking
+                for and I&apos;ll tell you honestly if it fits.
               </Bubble>
 
               {messages.length === 0 && (
@@ -530,7 +551,7 @@ export function CardChatDrawer({
                   alignItems: "center",
                   gap: 6,
                   height: 48,
-                  borderRadius: 8,
+                  borderRadius: 999,
                   background: T.surface,
                   border: `1px solid ${T.borderActive}`,
                   paddingLeft: 18,
@@ -608,9 +629,9 @@ function Bubble({
         background: isUser ? T.ink : T.surface,
         color: isUser ? "#FFFFFF" : T.textPrimary,
         border: isUser ? "none" : `1px solid ${T.border}`,
-        borderRadius: 8,
-        borderBottomRightRadius: isUser ? 2 : 8,
-        borderBottomLeftRadius: isUser ? 8 : 2,
+        borderRadius: 18,
+        borderBottomRightRadius: isUser ? 6 : 18,
+        borderBottomLeftRadius: isUser ? 18 : 6,
         padding: "10px 13px",
         fontSize: 14,
         lineHeight: 1.45,
@@ -638,7 +659,7 @@ function Chip({ label, index, onClick }: { label: string; index: number; onClick
         color: T.textPrimary,
         background: T.surface,
         border: `1px solid ${T.border}`,
-        borderRadius: 8,
+        borderRadius: 999,
         padding: "7px 12px",
         cursor: "pointer",
         WebkitTapHighlightColor: "transparent",
@@ -690,22 +711,23 @@ function BuyCard({
             borderRadius: 12,
             overflow: "hidden",
             flexShrink: 0,
-            display: "grid",
-            placeItems: "center",
-            background: COVERS[offering.cover].bg,
-            color: COVERS[offering.cover].accent,
+            background: T.ghost,
             border: `1px solid ${T.border}`,
           }}
-          aria-hidden
         >
-          <offering.icon size={24} strokeWidth={1.8} />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={offering.images[0] || "/placeholder.svg"}
+            alt={offering.title}
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
         </div>
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ fontSize: 14.5, fontWeight: 600, letterSpacing: "-0.01em", color: T.textPrimary }}>
             {offering.title}
           </div>
           <div style={{ fontSize: 13, color: T.textSecondary, marginTop: 1 }}>
-            {offering.price} · {offering.action === "subscribe" ? "cancel anytime" : "lifetime access"}
+            {offering.price} · free 30-day returns
           </div>
         </div>
       </div>
@@ -721,7 +743,7 @@ function BuyCard({
           style={{
             flex: 1,
             height: 42,
-            borderRadius: 8,
+            borderRadius: 999,
             background: added ? T.ghost : T.ink,
             color: added ? T.textPrimary : "#FFFFFF",
             border: added ? `1px solid ${T.border}` : "none",
@@ -755,7 +777,7 @@ function BuyCard({
               flexShrink: 0,
               height: 42,
               padding: "0 16px",
-              borderRadius: 8,
+              borderRadius: 999,
               background: T.surface,
               color: T.textPrimary,
               border: `1px solid ${T.borderActive}`,
