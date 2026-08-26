@@ -191,8 +191,8 @@ export function CardActionBar({
             value={value}
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={`Ask about ${title}…`}
-            aria-label={`Ask about ${title}`}
+            placeholder="Tell it what to print…"
+            aria-label={`Tell ${title} what to print`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.06 }}

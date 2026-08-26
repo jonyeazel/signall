@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback, useMemo, type KeyboardEvent } from "react";
+import { useState, useRef, useEffect, useCallback, type KeyboardEvent } from "react";
 import { AnimatePresence, motion, useDragControls } from "motion/react";
 import { ArrowUp, Check, ShoppingBag } from "lucide-react";
 import { type Offering } from "../lib/offerings";
 import { T, WHISPER_PATTERN } from "../lib/theme";
 import { STORE } from "../lib/legal";
 import { HatchPlaceholder } from "./hatch-placeholder";
+import { usePress } from "./press-provider";
+import { useMediaQuery } from "../hooks/use-media-query";
 
 /** Functional assets the concierge can surface inline in the thread. */
 type Asset = "buy" | "specs";
@@ -25,17 +27,21 @@ type Msg = {
 const DRAWER_SPRING = { type: "spring", stiffness: 320, damping: 36, mass: 0.85 } as const;
 
 /**
- * Parse the concierge's raw stream into display text + functional assets.
+ * Parse the engine's raw stream into display text + functional assets.
  *
  * The model may append machine-read control tokens on the final lines:
  *   [[assets: buy, specs]]      → render a buy card / spec snapshot
  *   [[asks: A follow-up? | B?]] → render tappable follow-up chips
+ *   [[print: composed brief]]   → fire the press with this brief
  * Everything from the first "[[" onward is stripped from the visible message,
  * so a half-streamed token never flashes on screen.
  */
-function parseMeta(raw: string): { display: string; assets?: Asset[]; asks?: string[] } {
+function parseMeta(raw: string): { display: string; assets?: Asset[]; asks?: string[]; print?: string } {
   let assets: Asset[] | undefined;
   let asks: string[] | undefined;
+
+  const printMatch = raw.match(/\[\[print:([^\]]*)\]\]/i);
+  const print = printMatch?.[1].trim() || undefined;
 
   const assetsMatch = raw.match(/\[\[assets:([^\]]*)\]\]/i);
   if (assetsMatch) {
@@ -59,7 +65,7 @@ function parseMeta(raw: string): { display: string; assets?: Asset[]; asks?: str
   let display = raw;
   const cut = display.indexOf("[[");
   if (cut >= 0) display = display.slice(0, cut);
-  return { display: display.trim(), assets, asks };
+  return { display: display.trim(), assets, asks, print };
 }
 
 /**
@@ -114,14 +120,22 @@ export function CardChatDrawer({
   const messagesRef = useRef<Msg[]>([]);
   const dragControls = useDragControls();
 
+  // The press — where a [[print: …]] token from this engine's brain lands.
+  // The artwork is composed natively for the frame it's being born into:
+  // tall on the phone's full-bleed card, square everywhere else.
+  const { print } = usePress();
+  const isMobile = useMediaQuery("(max-width: 640px)");
+  // The same brief must never fire twice (a re-render replaying the final
+  // parse would double-bill a print job).
+  const lastPrinted = useRef<string | null>(null);
+
   useEffect(() => {
     messagesRef.current = messages;
   }, [messages]);
 
-  const suggestions = useMemo(
-    () => ["Is it right for me?", "What's it made of?", `Why ${offering.price}?`],
-    [offering.price],
-  );
+  // Opening moves in the maker's own voice — each a real brief the engine can
+  // print from immediately.
+  const suggestions = offering.starters;
 
   // Keyboard etiquette — the whole point of a great chat on iOS:
   //  • Summon the keyboard ONLY when the shopper opened the chat to *type*
@@ -195,46 +209,41 @@ export function CardChatDrawer({
     if (el && open) el.scrollTo({ top: el.scrollHeight });
   }, [kb, open]);
 
-  // Grounded local fallback — used only if the streamed concierge is
-  // unreachable, so a forked template with no gateway key still feels alive.
+  // Grounded local fallback — used only if the streamed brain is unreachable.
+  // A question about the machine still gets a real answer; anything else is
+  // treated as a brief and sent to the press AS GIVEN (the press re-attaches
+  // this engine's style server-side, so even a brainless print stays on
+  // taste). If the whole gateway is down the press shows its own jam note.
   const localReply = useCallback(
-    (q: string): { text: string; assets?: Asset[]; asks?: string[] } => {
+    (q: string): { text: string; assets?: Asset[]; asks?: string[]; print?: string } => {
       const s = q.toLowerCase();
-      if (/(material|made|build|fabric|construct|finish|quality)/.test(s)) {
-        const detail = offering.features[1]?.toLowerCase() ?? offering.description.toLowerCase();
-        const extra = offering.features[2] ? `, ${offering.features[2].toLowerCase()}` : "";
+      if (/(ship|deliver|return|refund|exchange|track|arrive)/.test(s)) {
         return {
-          text: `${offering.title} is ${detail}${extra}. It's built to sit in your space for years, not seasons.`,
+          text: `The file is yours the moment a print lands. On paper, it ships within ${STORE.shipWithinDays} business days with tracking, and there's a free ${STORE.returnWindowDays}-day return window.`,
+          asks: [`Why ${offering.price}?`, suggestions[0]],
+        };
+      }
+      if (/(price|cost|how much|expensive|why|value|edition|one of one|buy)/.test(s)) {
+        return {
+          text: `${offering.price}, and the print is a one-of-one — once it's yours, that exact artwork is never sold again.`,
+          assets: ["buy"],
+          asks: [suggestions[0], suggestions[1]],
+        };
+      }
+      if (/(how (do|does)|what (are|is) (you|this)|work|about you)/.test(s)) {
+        return {
+          text: `${offering.description}`,
           assets: ["specs"],
-          asks: ["Is it right for me?", "How soon does it ship?"],
-        };
-      }
-      if (/(ship|deliver|return|refund|exchange|warranty|track|arrive)/.test(s)) {
-        return {
-          text: `It ships within ${STORE.shipWithinDays} business days with tracking, and there's a free ${STORE.returnWindowDays}-day return window — so you can live with it before you fully decide.`,
-          asks: ["Is it right for me?", `Why ${offering.price}?`],
-        };
-      }
-      if (/(right for me|should i|fit|suit|good for|worth|help|recommend|me)/.test(s)) {
-        return {
-          text: `If you value ${offering.tags.slice(0, 2).join(" and ").toLowerCase()}, ${offering.title} earns its spot — ${offering.tagline.toLowerCase()} Picture where you'd set it down first.`,
-          assets: ["buy"],
-          asks: ["What's it made of?", "How soon does it ship?"],
-        };
-      }
-      if (/(price|cost|how much|expensive|why|value)/.test(s)) {
-        return {
-          text: `${offering.title} is ${offering.price}. You're paying for ${offering.features[0]?.toLowerCase() ?? "the details that last"} — the kind of piece you keep and stop thinking about.`,
-          assets: ["buy"],
-          asks: ["Is it right for me?", "What's included?"],
+          asks: [suggestions[0], suggestions[1]],
         };
       }
       return {
-        text: `${offering.description} What would you like to picture first?`,
-        asks: ["Is it right for me?", "What's it made of?"],
+        text: "Taking your words exactly as given — setting it now. Watch the frame.",
+        print: q,
+        asks: ["Try another idea?", `Why ${offering.price}?`],
       };
     },
-    [offering],
+    [offering, suggestions],
   );
 
   // Stream a grounded reply from the concierge, patching tokens into the last
@@ -281,6 +290,12 @@ export function CardChatDrawer({
         setMessages((m) =>
           patchLast(m, { text: final.display, assets: final.assets, asks: final.asks, streaming: false }),
         );
+        // The brain decided to print — fire the press once. The artwork lands
+        // on the card's own frame behind this drawer, composed natively for it.
+        if (final.print && final.print !== lastPrinted.current) {
+          lastPrinted.current = final.print;
+          print(offering.id, final.print, isMobile ? "portrait" : "square");
+        }
       } catch (err) {
         if (err instanceof DOMException && err.name === "AbortError") return;
         setTyping(false);
@@ -301,9 +316,13 @@ export function CardChatDrawer({
           }
           return next;
         });
+        if (fb.print && fb.print !== lastPrinted.current) {
+          lastPrinted.current = fb.print;
+          print(offering.id, fb.print, isMobile ? "portrait" : "square");
+        }
       }
     },
-    [offering.id, localReply],
+    [offering.id, localReply, print, isMobile],
   );
 
   const send = useCallback(
@@ -479,11 +498,8 @@ export function CardChatDrawer({
                 WebkitMaskImage: "linear-gradient(to bottom, #000 calc(100% - 30px), transparent 100%)",
               }}
             >
-              {/* Assistant welcome */}
-              <Bubble role="assistant">
-                Hi — I&apos;m your guide to {offering.title}. Ask me anything, or tell me what you&apos;re looking
-                for and I&apos;ll tell you honestly if it fits.
-              </Bubble>
+              {/* The machine greets you in its own voice — authored per engine. */}
+              <Bubble role="assistant">{offering.welcome}</Bubble>
 
               {messages.length === 0 && (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginTop: 2 }}>

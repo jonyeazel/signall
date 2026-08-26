@@ -38,7 +38,16 @@ export function OfferingCard({
   // What this engine last printed. A ready artifact REPLACES the plate — the
   // idle hatch is the machine at rest, the print is the machine mid-show.
   const artifact = useArtifact(offering.id);
-  const plate = artifact?.status === "ready" && artifact.url ? [artifact.url] : offering.images;
+  const printed = artifact?.status === "ready" && artifact.url;
+  const plate = printed ? [artifact.url!] : offering.images;
+
+  // A print is composed NATIVELY for one frame and must never be cropped
+  // after. When the artifact's aspect matches the frame it fills edge to edge
+  // (cover); when the visitor crosses the breakpoint (a square print viewed on
+  // the phone's 9:16 card, or vice versa) it letterboxes whole (contain) —
+  // an amputated composition is worse than visible margin.
+  const mobileFit = printed && artifact!.aspect !== "portrait" ? "contain" : "cover";
+  const desktopFit = printed && artifact!.aspect !== "square" ? "contain" : "cover";
 
   // ---- Mobile: full-bleed immersive card ------------------------------------
   // The product image fills the entire card; a soft legibility veil at the
@@ -80,6 +89,7 @@ export function OfferingCard({
               radius={0}
               dots={false}
               scrollable={false}
+              imageFit={mobileFit}
               style={{ height: "100%", width: "100%" }}
             />
             {/* The machine's output tray — printing chip / save chip / jam
@@ -185,6 +195,7 @@ export function OfferingCard({
             radius={MEDIA_RADIUS}
             dots={false}
             scrollable={false}
+            imageFit={desktopFit}
             style={{ height: "100%", width: "100%" }}
           />
           {/* The machine's output tray — printing chip / save chip / jam note */}

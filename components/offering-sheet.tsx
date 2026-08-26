@@ -39,7 +39,11 @@ export function OfferingSheet({
   // The engine's latest print follows the card into the expanded sheet — one
   // artifact, every view (the press provider is the single owner).
   const artifact = useArtifact(offering.id);
-  const plate = artifact?.status === "ready" && artifact.url ? [artifact.url] : offering.images;
+  const printed = artifact?.status === "ready" && artifact.url;
+  const plate = printed ? [artifact.url!] : offering.images;
+  // The sheet's hero is a square frame on every viewport — a portrait print
+  // (born on the phone card) letterboxes whole rather than being cropped.
+  const heroFit = printed && artifact!.aspect !== "square" ? "contain" : "cover";
 
   const handleDragEnd = (_: unknown, info: PanInfo) => {
     if (info.offset.y > 120 || info.velocity.y > 500) onClose();
@@ -62,6 +66,7 @@ export function OfferingSheet({
       alt={offering.title}
       radius={isMobile ? 10 : MEDIA_RADIUS}
       dotBottom={16}
+      imageFit={heroFit}
       style={
         isMobile
           ? { width: "100%", aspectRatio: "1 / 1", flexShrink: 0 }
