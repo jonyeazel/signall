@@ -8,6 +8,8 @@ import { ImageCarousel } from "./image-carousel";
 import { CardActionBar } from "./card-action-bar";
 import { CardIdentity } from "./card-identity";
 import { CardChatDrawer } from "./card-chat-drawer";
+import { useArtifact } from "./press-provider";
+import { PressSurface } from "./press-surface";
 
 export function OfferingCard({
   offering,
@@ -32,6 +34,11 @@ export function OfferingCard({
   // expands the inline composer (like mobile); submitting seeds the drawer.
   const [chatOpen, setChatOpen] = useState(false);
   const [chatSeed, setChatSeed] = useState<string | undefined>(undefined);
+
+  // What this engine last printed. A ready artifact REPLACES the plate — the
+  // idle hatch is the machine at rest, the print is the machine mid-show.
+  const artifact = useArtifact(offering.id);
+  const plate = artifact?.status === "ready" && artifact.url ? [artifact.url] : offering.images;
 
   // ---- Mobile: full-bleed immersive card ------------------------------------
   // The product image fills the entire card; a soft legibility veil at the
@@ -68,13 +75,16 @@ export function OfferingCard({
           >
             <ImageCarousel
               layoutId={`media-${offering.id}`}
-              images={offering.images}
+              images={plate}
               alt={offering.title}
               radius={0}
               dots={false}
               scrollable={false}
               style={{ height: "100%", width: "100%" }}
             />
+            {/* The machine's output tray — printing chip / save chip / jam
+                note. insetTop ducks the save chip under the floating header. */}
+            <PressSurface engineId={offering.id} artifact={artifact} inset={14} insetTop={72} />
           </div>
 
           {/* Bottom content — classic profile block + action row.
@@ -161,7 +171,7 @@ export function OfferingCard({
       >
         <div
           onClick={onOpen}
-          style={{ width: "100%", aspectRatio: "1 / 1", flexShrink: 0, cursor: "pointer" }}
+          style={{ position: "relative", width: "100%", aspectRatio: "1 / 1", flexShrink: 0, cursor: "pointer" }}
         >
           {/* Slideshow view: a single 1:1 hero, no dots and not scrollable —
               browsing images belongs to the expanded card, so this never
@@ -170,13 +180,15 @@ export function OfferingCard({
               curvature — see the token's note in lib/theme.ts. */}
           <ImageCarousel
             layoutId={`media-${offering.id}`}
-            images={offering.images}
+            images={plate}
             alt={offering.title}
             radius={MEDIA_RADIUS}
             dots={false}
             scrollable={false}
             style={{ height: "100%", width: "100%" }}
           />
+          {/* The machine's output tray — printing chip / save chip / jam note */}
+          <PressSurface engineId={offering.id} artifact={artifact} />
         </div>
 
         <button

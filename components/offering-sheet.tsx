@@ -7,6 +7,8 @@ import { type Offering } from "../lib/offerings";
 import { T, SPRING, MORPH, PANEL_RADIUS, PANEL_PAD, MEDIA_RADIUS } from "../lib/theme";
 import { ImageCarousel } from "./image-carousel";
 import { CardChatDrawer } from "./card-chat-drawer";
+import { useArtifact } from "./press-provider";
+import { PressSurface } from "./press-surface";
 
 // Content is present immediately (no fade/stagger): during the shared-layout
 // morph, fading pieces in drew the eye to areas that made the grid transform
@@ -34,6 +36,11 @@ export function OfferingSheet({
   const dragControls = useDragControls();
   const [chatOpen, setChatOpen] = useState(false);
 
+  // The engine's latest print follows the card into the expanded sheet — one
+  // artifact, every view (the press provider is the single owner).
+  const artifact = useArtifact(offering.id);
+  const plate = artifact?.status === "ready" && artifact.url ? [artifact.url] : offering.images;
+
   const handleDragEnd = (_: unknown, info: PanInfo) => {
     if (info.offset.y > 120 || info.velocity.y > 500) onClose();
   };
@@ -51,7 +58,7 @@ export function OfferingSheet({
   const hero = (
     <ImageCarousel
       layoutId={isMobile ? undefined : `media-${offering.id}`}
-      images={offering.images}
+      images={plate}
       alt={offering.title}
       radius={isMobile ? 10 : MEDIA_RADIUS}
       dotBottom={16}
@@ -61,6 +68,8 @@ export function OfferingSheet({
           : { width: "100%", height: "100%", flexShrink: 0 }
       }
     >
+      {/* The machine's output tray — printing chip / save chip / jam note */}
+      <PressSurface engineId={offering.id} artifact={artifact} />
       {/* Drag handle (mobile) — starts the dismiss gesture */}
       {isMobile && (
         <div

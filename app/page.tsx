@@ -11,11 +11,22 @@ import { MobileHeader } from "../components/mobile-header";
 import { Wordmark } from "../components/wordmark";
 import { CardOverview } from "../components/card-overview";
 import { CartSheet, type CartLine } from "../components/cart-sheet";
+import { PressProvider } from "../components/press-provider";
 import { OFFERINGS } from "../lib/offerings";
 import { useMediaQuery } from "../hooks/use-media-query";
 import { T, SPRING_SOFT } from "../lib/theme";
 
+/** Every surface below reads the press's artifacts, so the provider owns the
+ *  whole page — one owner, many views (card, sheet, overview, chat). */
 export default function Home() {
+  return (
+    <PressProvider>
+      <PressFloor />
+    </PressProvider>
+  );
+}
+
+function PressFloor() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [viewportH, setViewportH] = useState(0);
   const [headerH, setHeaderH] = useState(0);

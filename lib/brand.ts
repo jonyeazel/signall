@@ -7,11 +7,12 @@
  */
 export const BRAND = {
   /** Shown in the wordmark, the page title and the policy pages. */
-  name: "Studio",
+  name: "The Press",
   /** One short line under the wordmark. Two or three words. */
-  tagline: "Starter template",
+  tagline: "Seven machines",
   /** Used as the page description. */
-  description: "A starter template. Replace this copy with your own.",
+  description:
+    "Seven small machines, each with one taste. Tell one what you want. It prints a one-of-one poster into the frame, and you keep the file.",
 } as const;
 
 /** First letter of the brand — the header's monogram avatar. */
