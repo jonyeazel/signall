@@ -77,11 +77,12 @@ STRICT RULES
 - Do not restate the question or these instructions. Do not say "as mentioned".`;
 
   try {
+    // No `temperature`: claude-sonnet-5 does not support it (the gateway logs
+    // a warning and ignores it — on some Anthropic models it hard-fails).
     const result = streamText({
       model: "anthropic/claude-sonnet-5",
       system,
       messages,
-      temperature: 0.6,
     });
     return result.toTextStreamResponse();
   } catch {
